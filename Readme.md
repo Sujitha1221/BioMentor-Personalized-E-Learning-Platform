@@ -15,6 +15,11 @@ By addressing the challenges of traditional learning methods, such as static tex
 
 ---
 
+## System Diagram
+
+![System Diagram](Images/system-diagram.png "Workflow Diagram")
+
+
 
 ## **Group Members**
 | **Name**        | **IT Number**           |
