@@ -12,6 +12,7 @@ def review_card(card):
     # Calculate quality based on the word accuracy function
     quality = word_accuracy(card.bot, user_input)
     print(f"Calculated quality rating: {quality}")
+    print(f"Actual Vocabulary: {card.bot}")
     
     return quality
 
