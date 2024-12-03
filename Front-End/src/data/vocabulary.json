@@ -1,0 +1,39 @@
+[
+    {
+      "term": "organism",
+      "hint": "A living entity capable of growth, reproduction, and adaptation."
+    },
+    {
+      "term": "metabolism",
+      "hint": "The chemical processes occurring within a living organism."
+    },
+    {
+      "term": "molecule",
+      "hint": "A group of atoms bonded together."
+    },
+    {
+      "term": "organelle",
+      "hint": "Specialized structures within a cell that perform specific functions."
+    },
+    {
+      "term": "cell",
+      "hint": "The basic unit of life in all living organisms."
+    },
+    {
+      "term": "tissue",
+      "hint": "Groups of cells that perform a similar function."
+    },
+    {
+      "term": "organ",
+      "hint": "A part of the body with a specific function, like the heart or lungs."
+    },
+    {
+      "term": "ecosystem",
+      "hint": "A community of interacting organisms and their environment."
+    },
+    {
+      "term": "biosphere",
+      "hint": "The regions of Earth occupied by living organisms."
+    }
+  ]
+  
