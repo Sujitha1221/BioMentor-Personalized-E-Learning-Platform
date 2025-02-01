@@ -1,7 +1,9 @@
 import logging
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from generate_answers import generate_structured_answer
+from typing import Optional
+from generate_answers import generate_structured_answer, generate_essay_answer
+from evaluate_answers import evaluate_user_answer
 from fastapi.middleware.cors import CORSMiddleware
 
 # Configure logging
@@ -53,6 +55,37 @@ def generate_answer(request: QuestionRequest):
     except Exception as e:
         logging.error(f"Error while generating answer: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="An error occurred while generating the answer.")
+
+@app.post("/evaluate-answer")
+def evaluate_answer(request: EvaluationRequest):
+    """
+    API endpoint to evaluate a user's answer based on the question type.
+    """
+    logging.info(f"Received request to evaluate answer: {request.dict()}")
+    try:
+        # Call the `evaluate_user_answer` function
+        result = evaluate_user_answer(
+            question=request.question,
+            user_answer=request.user_answer,
+            question_type=request.question_type
+        )
+        logging.info("User answer evaluated successfully.")
+        return {
+            "status": "success",
+            "question": result["question"],
+            "question_type": result["question_type"],
+            "user_answer": result["user_answer"],
+            "model_answer": result["model_answer"],
+            "evaluation_result": result["evaluation_result"],
+        }
+    except ValueError as e:
+        # Handle invalid question type or other validation errors
+        logging.error(f"Validation error while evaluating answer: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        # Handle unexpected errors
+        logging.error(f"Unexpected error while evaluating answer: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="An unexpected error occurred: " + str(e))
 
 
 @app.get("/")
