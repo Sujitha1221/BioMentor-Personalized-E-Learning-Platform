@@ -1,0 +1,14 @@
+# General Python ignores
+__pycache__/
+*.py[cod]
+*.so
+*.dll
+*.dylib
+*.pyd
+
+# Virtual environment (inside Back-End/Monolith/)
+Back-End/Monolith/venv/
+Back-End/Monolith/__pycache__/
+Back-End/Monolith/uploads
+
+
