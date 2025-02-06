@@ -2,10 +2,10 @@ import logging
 import logging.config
 import yaml
 from fastapi import FastAPI, UploadFile, Form, HTTPException
-from Rag import RAGModel
-from Text_extraction_service import extract_content, clean_text, format_as_paragraph
-from Voice_service import text_to_speech
-from File_handler import save_uploaded_file
+from rag import RAGModel
+from text_extraction_service import extract_content, clean_text, format_as_paragraph
+from voice_service import text_to_speech
+from file_handler import save_uploaded_file
 from fastapi import BackgroundTasks
 import os
 
