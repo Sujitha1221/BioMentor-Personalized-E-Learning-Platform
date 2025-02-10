@@ -48,3 +48,354 @@ def save_evaluation(student_id, question, question_type, user_answer, model_answ
         logging.error(f"Error saving evaluation data: {e}", exc_info=True)
         raise
 
+# Retrieve Evaluations for a Student
+def get_student_evaluations(student_id):
+    """
+    Retrieve all evaluations for a specific student.
+    """
+    try:
+        collection = db["evaluations"]
+        evaluations = list(collection.find({"student_id": student_id}))
+        logging.info(f"Retrieved {len(evaluations)} evaluations for student_id: {student_id}")
+        return convert_objectid(evaluations)
+    except Exception as e:
+        logging.error(f"Error retrieving evaluations for student_id: {student_id}", exc_info=True)
+        raise
+
+# Compute Average Scores
+def compute_average_scores(student_id):
+    """
+    Compute average scores for a student.
+    """
+    evaluations = get_student_evaluations(student_id)
+    if not evaluations:
+        logging.warning(f"No evaluations found for student_id: {student_id}")
+        return {"message": f"No evaluations found for student_id: {student_id}"}
+
+    metrics = ["semantic_score", "tfidf_score", "jaccard_score", "grammar_score"]
+    averages = {metric: 0 for metric in metrics}
+
+    for eval in evaluations:
+        for metric in metrics:
+            averages[metric] += eval["evaluation_result"].get(metric, 0)
+
+    averages = {metric: round(total / len(evaluations), 2) for metric, total in averages.items()}
+    logging.info(f"Average scores for student_id {student_id}: {averages}")
+    return averages
+
+# Get Score Trends
+def get_score_trends(student_id):
+    """
+    Get score trends for a student as a dictionary.
+    """
+    evaluations = get_student_evaluations(student_id)
+    if not evaluations:
+        logging.warning(f"No evaluations found for student_id: {student_id}")
+        return {"message": f"No evaluations found for student_id: {student_id}"}
+
+    timestamps = [eval["timestamp"] for eval in evaluations]
+    scores = {metric: [] for metric in ["semantic_score", "tfidf_score", "jaccard_score", "grammar_score"]}
+
+    for eval in evaluations:
+        for metric in scores.keys():
+            scores[metric].append(eval["evaluation_result"].get(metric, 0))
+
+    trends = {
+        "timestamps": timestamps,
+        "scores": scores
+    }
+
+    logging.info(f"Score trends for student_id {student_id}: {trends}")
+    return trends
+
+# Group-Level Analysis
+def get_group_analysis(student_ids):
+    """
+    Perform group-level analysis for specific students and return the results as a dictionary.
+    """
+    try:
+        # Ensure student_ids is a list
+        if not isinstance(student_ids, list):
+            if isinstance(student_ids, str):
+                student_ids = [student_ids]  # Convert single string to list
+            else:
+                raise ValueError("student_ids must be a list or a single string.")
+
+        collection = db["evaluations"]
+        
+        # Query evaluations for the specified student IDs
+        evaluations = list(collection.find({"student_id": {"$in": student_ids}}))
+
+        if not evaluations:
+            logging.warning(f"No evaluations found for the given student IDs: {student_ids}")
+            return {"message": f"No evaluations found for the given student IDs: {student_ids}"}
+
+        metrics = ["semantic_score", "tfidf_score", "jaccard_score", "grammar_score"]
+        averages = {metric: 0 for metric in metrics}
+
+        for eval in evaluations:
+            for metric in metrics:
+                averages[metric] += eval["evaluation_result"].get(metric, 0)
+
+        num_evaluations = len(evaluations)
+        averages = {metric: round(total / num_evaluations, 2) for metric, total in averages.items()}
+
+        # Group analysis details
+        analysis_details = {
+            "student_ids": student_ids,
+            "total_evaluations": num_evaluations,
+            "average_scores": averages,
+            "evaluations_per_student": {
+                student_id: len(list(filter(lambda x: x["student_id"] == student_id, evaluations)))
+                for student_id in student_ids
+            }
+        }
+
+        logging.info(f"Group-level analysis by student IDs: {analysis_details}")
+        return analysis_details
+    except ValueError as ve:
+        logging.error(f"ValueError during group-level analysis: {ve}", exc_info=True)
+        return {"message": str(ve)}
+    except Exception as e:
+        logging.error(f"Error during group-level analysis by student IDs: {e}", exc_info=True)
+        return {"message": "An error occurred during group-level analysis."}
+
+
+
+# Generate Feedback Report
+def generate_feedback_report(student_id):
+    """
+    Generate a feedback report for a student.
+    """
+    evaluations = get_student_evaluations(student_id)
+    if not evaluations:
+        logging.warning(f"No evaluations found for student_id: {student_id}")
+        return {"message": f"No evaluations found for student_id: {student_id}"}
+
+    logging.info(f"Generating feedback report for student_id: {student_id}")
+    strengths = []
+    weaknesses = []
+    missing_keywords = set()
+    extra_keywords = set()
+    grammar_errors = 0
+
+    for eval in evaluations:
+        feedback = eval["evaluation_result"].get("feedback", {})
+        missing_keywords.update(feedback.get("missing_keywords", []))
+        extra_keywords.update(feedback.get("extra_keywords", []))
+        grammar_errors += len(feedback.get("grammar_suggestions", []))
+
+        # Strengths and weaknesses
+        if eval["evaluation_result"]["final_score"] > 80:
+            strengths.append(eval["question"])
+        else:
+            weaknesses.append(eval["question"])
+
+    report = {
+        "strengths": strengths,
+        "weaknesses": weaknesses,
+        "missing_keywords": list(missing_keywords),
+        "extra_keywords": list(extra_keywords),
+        "grammar_errors": grammar_errors,
+    }
+
+    logging.info(f"Feedback Report for student_id {student_id}: {report}")
+    return report
+
+# Generate Adaptive Feedback and Recommendations
+def generate_recommendations(student_id):
+    """
+    Generate adaptive feedback and learning path recommendations based on evaluation data.
+    """
+    evaluations = get_student_evaluations(student_id)
+    if not evaluations:
+        logging.warning(f"No evaluations found for student_id: {student_id}")
+        return {"message": f"No evaluations found for student_id: {student_id}"}
+
+    logging.info(f"Generating adaptive feedback and recommendations for student_id: {student_id}")
+    all_keywords = {"mastered": set(), "weak": set(), "frequent_mistakes": set()}
+    learning_path = []
+    personalized_exercises = []
+
+    for eval in evaluations:
+        feedback = eval["evaluation_result"].get("feedback", {})
+        missing_keywords = set(feedback.get("missing_keywords", []))
+        extra_keywords = set(feedback.get("extra_keywords", []))
+        all_keywords["weak"].update(missing_keywords)
+        all_keywords["frequent_mistakes"].update(extra_keywords)
+
+        # Identify mastered keywords as those appearing in none of the weak or frequent mistakes
+        all_keywords["mastered"] = all_keywords["mastered"].union(set(eval["question"].lower().split())) - all_keywords["weak"] - all_keywords["frequent_mistakes"]
+
+        # Add learning path suggestions
+        if missing_keywords:
+            topic = eval["question"].split(" ")[-1]  # Assume topic is the last word in the question
+            learning_path.append(f"Review materials on: {topic} - Missing keywords: {', '.join(missing_keywords)}")
+
+        # Generate personalized exercises
+        if extra_keywords:
+            personalized_exercises.append(f"Create a sentence using: {', '.join(extra_keywords)}")
+        else:
+            personalized_exercises.append(f"Write a short paragraph explaining the topic: {eval['question']}")
+
+    # Generate recommendations as a dictionary
+    recommendations = {
+        "learning_path": learning_path,
+        "personalized_exercises": personalized_exercises,
+        "keyword_mastery": {
+            "mastered": list(all_keywords["mastered"]),
+            "weak": list(all_keywords["weak"]),
+            "frequent_mistakes": list(all_keywords["frequent_mistakes"])
+        }
+    }
+
+    logging.info(f"Recommendations for student_id {student_id}: {recommendations}")
+    return recommendations
+
+def get_student_analytic_details(student_id):
+    """
+    Generate and return all details for a given student_id.
+    Includes evaluations, average scores, score trends, feedback report, and recommendations.
+    """
+    try:
+        # Step 1: Retrieve evaluations
+        evaluations = get_student_evaluations(student_id)
+        if not evaluations:
+            return {"message": f"No evaluations found for student_id: {student_id}"}
+
+        # Step 2: Compute average scores
+        average_scores = compute_average_scores(student_id)
+
+        # Step 3: Get score trends
+        score_trends = get_score_trends(student_id)
+
+        # Step 4: Generate feedback report
+        feedback_report = generate_feedback_report(student_id)
+
+        # Step 5: Generate adaptive feedback and recommendations
+        recommendations = generate_recommendations(student_id)
+
+        # Perform group-level analysis
+        group_averages = get_group_analysis(student_id)
+
+        # Combine all details into a single dictionary
+        student_details = {
+            "student_id": student_id,
+            "evaluations": evaluations,
+            "average_scores": average_scores,
+            "score_trends": score_trends,
+            "feedback_report": feedback_report,
+            "recommendations": recommendations,
+            "group_analysis": group_averages,
+        }
+
+        logging.info(f"Generated all details for student_id {student_id}")
+        return student_details
+    except Exception as e:
+        logging.error(f"Error generating details for student_id {student_id}: {e}", exc_info=True)
+        return {"message": f"An error occurred while generating details for student_id: {student_id}"}
+
+def convert_objectid(data):
+    """
+    Recursively convert ObjectId to string in a dictionary or list.
+    """
+    if isinstance(data, list):
+        return [convert_objectid(item) for item in data]
+    elif isinstance(data, dict):
+        return {key: convert_objectid(value) for key, value in data.items()}
+    elif isinstance(data, ObjectId):
+        return str(data)
+    else:
+        return data
+
+# Example Usage
+if __name__ == "__main__":
+    evaluations = [
+        {
+            "student_id": "student123",
+            "question": "Explain the process of photosynthesis.",
+            "question_type": "structured",
+            "user_answer": "Photosynthesis produces glucos using sunligt and waterr.",
+            "model_answer": "Photosynthesis is a process where plants use sunlight, water, and carbon dioxide to produce glucose and oxygen.",
+            "evaluation_result": {
+                "final_score": 85.0,
+                "semantic_score": 90.0,
+                "tfidf_score": 80.0,
+                "jaccard_score": 75.0,
+                "grammar_score": 95.0,
+                "feedback": {
+                    "missing_keywords": ["carbon dioxide"],
+                    "extra_keywords": ["glucos", "sunligt", "waterr"],
+                    "grammar_suggestions": ["Replace 'glucos' with 'glucose'"]
+                }
+            }
+        },
+        {
+            "student_id": "student123",
+            "question": "What is the importance of water in human life?",
+            "question_type": "essay",
+            "user_answer": "Water is vital for humans. It helps in hydration, reguation of body temperature, and digestion.",
+            "model_answer": "Water is essential for human survival as it regulates body temperature, aids in digestion, removes toxins, and keeps cells hydrated.",
+            "evaluation_result": {
+                "final_score": 78.0,
+                "semantic_score": 85.0,
+                "tfidf_score": 70.0,
+                "jaccard_score": 60.0,
+                "grammar_score": 90.0,
+                "feedback": {
+                    "missing_keywords": ["toxins", "cells"],
+                    "extra_keywords": ["reguation"],
+                    "grammar_suggestions": ["Replace 'reguation' with 'regulation'"]
+                }
+            }
+        },
+        {
+            "student_id": "student123",
+            "question": "Define gravity and its role in the solar system.",
+            "question_type": "structured",
+            "user_answer": "Gravity is a force that pulls objects. It keps planets in orbit.",
+            "model_answer": "Gravity is the force of attraction that governs the motion of planets, keeping them in orbit around the sun and causing smaller objects to stay on celestial bodies.",
+            "evaluation_result": {
+                "final_score": 72.0,
+                "semantic_score": 80.0,
+                "tfidf_score": 65.0,
+                "jaccard_score": 70.0,
+                "grammar_score": 85.0,
+                "feedback": {
+                    "missing_keywords": ["motion", "celestial bodies", "attraction"],
+                    "extra_keywords": ["keps"],
+                    "grammar_suggestions": ["Replace 'keps' with 'keeps'"]
+                }
+            }
+        }
+    ]
+
+    # Save evaluations
+    for evaluation in evaluations:
+        save_evaluation(
+            evaluation["student_id"],
+            evaluation["question"],
+            evaluation["question_type"],
+            evaluation["user_answer"],
+            evaluation["model_answer"],
+            evaluation["evaluation_result"]
+        )
+
+    # Compute averages
+    averages = compute_average_scores("student123")
+    print("Average Scores:", averages)
+
+    # Get score trends
+    score_trends = get_score_trends("student123")
+    print("Score Trends:", score_trends)
+
+    # Perform group-level analysis
+    group_averages = get_group_analysis()
+    print("Group-Level Averages:", group_averages)
+
+    # Generate feedback report
+    feedback = generate_feedback_report("student123")
+    print("Feedback Report:", feedback)
+
+    recommendations = generate_recommendations("student123")
+    print("Adaptive Feedback and Recommendations:", recommendations)

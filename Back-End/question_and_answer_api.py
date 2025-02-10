@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import Optional
 from generate_answers import generate_structured_answer, generate_essay_answer
 from evaluate_answers import evaluate_user_answer
+from answer_evaluation_tool import get_student_analytic_details, convert_objectid
 from fastapi.middleware.cors import CORSMiddleware
 
 # Configure logging
@@ -28,7 +29,17 @@ app.add_middleware(
 # Define a generate answer request schema for the API
 class QuestionRequest(BaseModel):
     question: str
-    type: str 
+    type: str  
+
+# Define a evaluate answer request schema for the API
+class EvaluationRequest(BaseModel):
+    question: str
+    user_answer: str
+    question_type: str 
+
+class StudentEvaluationRequest(BaseModel):
+    student_id: str
+
 
 @app.post("/generate-answer")
 def generate_answer(request: QuestionRequest):
@@ -48,6 +59,18 @@ def generate_answer(request: QuestionRequest):
             )
             logging.info("Structured answer generated successfully.")
             return {"type": "structured", "answer": answer}
+        
+        elif question_type == "essay":
+            # Generate an essay-style answer
+            answer = generate_essay_answer(
+                query=request.question,
+                k=5,  # Default k for essay
+                min_words=175,  # Default min words for essay
+                max_words=300  # Default max words for essay
+            )
+            logging.info("Essay answer generated successfully.")
+            return {"type": "essay", "answer": answer}
+        
         else:
             # Invalid type provided
             logging.error("Invalid question type provided.")
@@ -86,6 +109,30 @@ def evaluate_answer(request: EvaluationRequest):
         # Handle unexpected errors
         logging.error(f"Unexpected error while evaluating answer: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="An unexpected error occurred: " + str(e))
+
+@app.post("/student-analytics")
+def student_analytics(request: StudentEvaluationRequest):
+    """
+    API endpoint to get detailed analytics for a specific student.
+    """
+    logging.info(f"Received request for student analytics: {request.dict()}")
+    try:
+        # Get the analytic details for the student
+        analytics = get_student_analytic_details(request.student_id)
+        
+        if "message" in analytics:
+            # Handle case where no data is found
+            logging.warning(f"No data found for student_id: {request.student_id}")
+            raise HTTPException(status_code=404, detail=analytics["message"])
+        
+        # Convert ObjectId fields to strings
+        analytics = convert_objectid(analytics)
+
+        logging.info(f"Analytics generated successfully for student_id: {request.student_id}")
+        return {"status": "success", "student_id": request.student_id, "analytics": analytics}
+    except Exception as e:
+        logging.error(f"Error while generating student analytics: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="An error occurred while retrieving student analytics.")
 
 
 @app.get("/")
