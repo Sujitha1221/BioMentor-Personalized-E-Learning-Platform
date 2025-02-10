@@ -1,18 +1,12 @@
-import os
 import re
 import logging
 from tqdm import tqdm
 from docx import Document
 from pptx import Presentation
-from PyPDF2 import PdfReader
-from pdf2image import convert_from_path
-from pytesseract import image_to_string
 from autocorrect import Speller
 import fitz  # PyMuPDF
 import tabula
-import pandas as pd
 from PIL import Image
-import io
 import numpy as np
 import easyocr
 

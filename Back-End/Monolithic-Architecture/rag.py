@@ -1,13 +1,10 @@
 import logging
-import os
 import pandas as pd
-import numpy as np
 from sentence_transformers import SentenceTransformer
 import faiss
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from autocorrect import Speller
 import language_tool_python
-from collections import Counter
 import re
 
 # Configure logging

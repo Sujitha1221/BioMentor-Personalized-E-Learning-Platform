@@ -6,9 +6,9 @@ __pycache__/
 *.dylib
 *.pyd
 
-# Virtual environment (inside Back-End/Monolith/)
-Back-End/Monolith/venv/
-Back-End/Monolith/__pycache__/
-Back-End/Monolith/uploads
+# Virtual environment (inside Back-End/Monolithic-Architecture/)
+Back-End/Monolithic-Architecture/venv/
+Back-End/Monolithic-Architecture/__pycache__/
+Back-End/Monolithic-Architecture/uploads
 
 
