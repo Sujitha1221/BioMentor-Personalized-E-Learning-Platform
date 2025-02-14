@@ -10,3 +10,7 @@ language-tool-python
 pandas
 faiss-cpu
 flask
+uvicorn
+fastapi
+spacy
+en-core-web-sm==3.4.0
