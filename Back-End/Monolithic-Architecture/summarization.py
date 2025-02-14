@@ -57,22 +57,28 @@ async def process_document(file: UploadFile, word_count: int = Form(...)):
         # Generate a summary
         summary = rag_model.generate_summary_for_long_text(formatted_text, max_words=word_count)
 
+        # Generate dynamic filenames
+        summary_file_path = file_path.rsplit(".", 1)[0] + "_summary.txt"
+        audio_file_path = file_path.rsplit(".", 1)[0] + ".mp3"
+
         # Save summary in memory
         summary_bytes = summary.encode("utf-8")
-        file_store["summary.txt"] = summary_bytes
-        
+        file_store["last_summary_file"] = summary_file_path  # Store last summary filename
+        file_store["last_audio_file"] = audio_file_path  # Store last audio filename
+        file_store[summary_file_path] = summary_bytes
+
         # Generate voice file
         audio_file = io.BytesIO()
         text_to_speech(summary, audio_file)
         audio_file.seek(0)
-        file_store["summary.mp3"] = audio_file.read()
+        file_store[audio_file_path] = audio_file.read()
 
         logger.info("Document processed successfully.")
 
         return {
             "summary": summary,
-            "summary_file": "/download-summary-text/",
-            "voice_file": "/download-summary-audio/"
+            "summary_file": f"/download-summary-text/",
+            "voice_file": f"/download-summary-audio/"
         }
     except Exception as e:
         logger.error(f"Error processing document: {e}")
@@ -85,25 +91,31 @@ async def process_query(query: str = Form(...), word_count: int = Form(...)):
     """
     try:
         logger.info(f"Processing query: {query}")
-        
+
         # Retrieve relevant texts
         relevant_texts = rag_model.retrieve_relevant_content(query)
         if not relevant_texts:
             logger.warning("No relevant content found for the query.")
             raise HTTPException(status_code=400, detail="No relevant content found for the given query.")
-        
+
         combined_text = " ".join(relevant_texts)
         summary = rag_model.generate_summary_for_long_text(combined_text, max_words=word_count)
-        
+
+        # Generate dynamic filenames
+        summary_file_path = f"query_summary_{hash(query)}.txt"
+        audio_file_path = f"query_audio_{hash(query)}.mp3"
+
         # Save summary in memory
         summary_bytes = summary.encode("utf-8")
-        file_store["summary.txt"] = summary_bytes
-        
+        file_store["last_summary_file"] = summary_file_path  # Store last summary filename
+        file_store["last_audio_file"] = audio_file_path  # Store last audio filename
+        file_store[summary_file_path] = summary_bytes
+
         # Generate voice file
         audio_file = io.BytesIO()
         text_to_speech(summary, audio_file)
         audio_file.seek(0)
-        file_store["summary.mp3"] = audio_file.read()
+        file_store[audio_file_path] = audio_file.read()
 
         logger.info("Query processed successfully.")
 
@@ -116,7 +128,6 @@ async def process_query(query: str = Form(...), word_count: int = Form(...)):
         logger.error(f"Error processing query: {e}")
         raise HTTPException(status_code=500, detail="Failed to process query.")
 
-
 @app.post("/summarize-text/")
 async def summarize_text(text: str = Form(...), word_count: int = Form(...)):
     """
@@ -124,20 +135,27 @@ async def summarize_text(text: str = Form(...), word_count: int = Form(...)):
     """
     try:
         logger.info("Received request to summarize text.")
+
         if not text.strip():
             raise HTTPException(status_code=400, detail="Text input cannot be empty.")
 
         summary = rag_model.generate_summary_for_long_text(text, max_words=word_count)
 
+        # Use fixed names for summarize-text API
+        summary_file_path = "summary.txt"
+        audio_file_path = "summary.mp3"
+
         # Save summary in memory
         summary_bytes = summary.encode("utf-8")
-        file_store["summary.txt"] = summary_bytes
-        
+        file_store["last_summary_file"] = summary_file_path
+        file_store["last_audio_file"] = audio_file_path
+        file_store[summary_file_path] = summary_bytes
+
         # Generate voice file
         audio_file = io.BytesIO()
         text_to_speech(summary, audio_file)
         audio_file.seek(0)
-        file_store["summary.mp3"] = audio_file.read()
+        file_store[audio_file_path] = audio_file.read()
 
         return {
             "summary": summary,
@@ -151,17 +169,33 @@ async def summarize_text(text: str = Form(...), word_count: int = Form(...)):
 
 @app.get("/download-summary-text/")
 async def download_summary_text():
-    """Endpoint to download the summary text file."""
-    if "summary.txt" not in file_store:
+    """Endpoint to download the last generated summary text file."""
+    if "last_summary_file" not in file_store:
+        raise HTTPException(status_code=404, detail="No summary file found.")
+
+    summary_file_path = file_store["last_summary_file"]
+
+    if summary_file_path not in file_store:
         raise HTTPException(status_code=404, detail="Summary file not found.")
-    return StreamingResponse(io.BytesIO(file_store["summary.txt"]), media_type="text/plain", headers={"Content-Disposition": "attachment; filename=summary.txt"})
+
+    return StreamingResponse(io.BytesIO(file_store[summary_file_path]), 
+                             media_type="text/plain", 
+                             headers={"Content-Disposition": f"attachment; filename={os.path.basename(summary_file_path)}"})
 
 @app.get("/download-summary-audio/")
 async def download_summary_audio():
-    """Endpoint to download the summary audio file."""
-    if "summary.mp3" not in file_store:
+    """Endpoint to download the last generated summary audio file."""
+    if "last_audio_file" not in file_store:
+        raise HTTPException(status_code=404, detail="No audio file found.")
+
+    audio_file_path = file_store["last_audio_file"]
+
+    if audio_file_path not in file_store:
         raise HTTPException(status_code=404, detail="Audio file not found.")
-    return StreamingResponse(io.BytesIO(file_store["summary.mp3"]), media_type="audio/mpeg", headers={"Content-Disposition": "attachment; filename=summary.mp3"})
+
+    return StreamingResponse(io.BytesIO(file_store[audio_file_path]), 
+                             media_type="audio/mpeg", 
+                             headers={"Content-Disposition": f"attachment; filename={os.path.basename(audio_file_path)}"})
 
 
 
