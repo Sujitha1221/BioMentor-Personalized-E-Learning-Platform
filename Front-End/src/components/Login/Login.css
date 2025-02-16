@@ -1,0 +1,28 @@
+.button-login{
+    background-color: #00FF84;
+    color: black;
+}
+.button-login:hover{
+    color: #00FF84;
+    background-color: transparent;
+    border: 2px solid #00FF84;
+}
+.button-login-github{
+    color: #000000;
+    background-color: transparent;
+    border: 2px solid #020202;
+}
+
+.button-login-github:hover{
+    background-color: #101010;
+    color: aliceblue;
+}
+.button-login-google{
+    color: #D93025;
+    background-color: transparent;
+    border: 2px solid #D93025
+}
+.button-login-google:hover{
+    background-color: #D93025;
+    color: aliceblue;
+}
