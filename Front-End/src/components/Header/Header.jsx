@@ -58,10 +58,10 @@ const Header = () => {
                 <div className={`${menuOpen ? 'block' : 'hidden'} w-full md:flex md:flex-1 md:justify-center`} id="navbar-default">
                     <ul className="font-medium flex flex-col gap-3 justify-center p-4 md:p-0 mt-4 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 items-center">
                         <li><ActiveLink to={'/'}>Home</ActiveLink></li>
-                        <li><ActiveLink to={'/courses'}>MCQ</ActiveLink></li>
-                        <li><ActiveLink to={'/events'}>Q & A</ActiveLink></li>
-                        <li><ActiveLink to={'/blogs'}>Vocabulary</ActiveLink></li>
-                        <li><ActiveLink to={'/contact'}>Summarize</ActiveLink></li>
+                        <li><ActiveLink to={'/mcq'}>MCQ</ActiveLink></li>
+                        <li><ActiveLink to={'/q&a'}>Q & A</ActiveLink></li>
+                        <li><ActiveLink to={'/vocabulary'}>Vocabulary</ActiveLink></li>
+                        <li><ActiveLink to={'/summarize'}>Summarize</ActiveLink></li>
                     </ul>
                 </div>
 
