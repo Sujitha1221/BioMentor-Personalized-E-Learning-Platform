@@ -13,4 +13,4 @@ flask
 uvicorn
 fastapi
 spacy
-en-core-web-sm==3.4.0
+duckduckgo_search
