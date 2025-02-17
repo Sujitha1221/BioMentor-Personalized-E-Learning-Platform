@@ -1,0 +1,73 @@
+[
+    {
+      "title": "React Conference 2024",
+      "date": "June 20, 2024",
+      "location": "San Francisco, CA",
+      "description": "A conference discussing the latest in React development.",
+      "banner": "https://img.freepik.com/free-photo/people-taking-part-high-protocol-event_23-2150951243.jpg?t=st=1717645347~exp=1717648947~hmac=7a0357f8fd26a98db1f5c175a3ab274e27a7fd808bf84f141e0259e5b01ace0b&w=1380"
+    },
+    {
+      "title": "JavaScript Summit 2024",
+      "date": "July 15, 2024",
+      "location": "New York, NY",
+      "description": "Join us for a summit on modern JavaScript trends and techniques.",
+      "banner": "https://img.freepik.com/free-photo/people-taking-part-high-protocol-event_23-2150951243.jpg?t=st=1717645347~exp=1717648947~hmac=7a0357f8fd26a98db1f5c175a3ab274e27a7fd808bf84f141e0259e5b01ace0b&w=1380"
+    },
+    {
+      "title": "CSS Grid Workshop",
+      "date": "August 5, 2024",
+      "location": "Online",
+      "description": "A workshop to master CSS Grid layout.",
+      "banner": "https://img.freepik.com/free-photo/people-taking-part-high-protocol-event_23-2150951243.jpg?t=st=1717645347~exp=1717648947~hmac=7a0357f8fd26a98db1f5c175a3ab274e27a7fd808bf84f141e0259e5b01ace0b&w=1380"
+    },
+    {
+      "title": "Vue.js Conference",
+      "date": "September 12, 2024",
+      "location": "Paris, France",
+      "description": "Explore the Vue.js ecosystem and latest features.",
+      "banner": "https://img.freepik.com/free-photo/people-taking-part-high-protocol-event_23-2150951243.jpg?t=st=1717645347~exp=1717648947~hmac=7a0357f8fd26a98db1f5c175a3ab274e27a7fd808bf84f141e0259e5b01ace0b&w=1380"
+    },
+    {
+      "title": "Node.js Live",
+      "date": "October 10, 2024",
+      "location": "Berlin, Germany",
+      "description": "An event for Node.js developers to share knowledge and experiences.",
+      "banner": "https://img.freepik.com/free-photo/people-taking-part-high-protocol-event_23-2150951243.jpg?t=st=1717645347~exp=1717648947~hmac=7a0357f8fd26a98db1f5c175a3ab274e27a7fd808bf84f141e0259e5b01ace0b&w=1380"
+    },
+    {
+      "title": "Angular Connect",
+      "date": "November 1, 2024",
+      "location": "London, UK",
+      "description": "The annual gathering of Angular enthusiasts.",
+      "banner": "https://img.freepik.com/free-photo/people-taking-part-high-protocol-event_23-2150951243.jpg?t=st=1717645347~exp=1717648947~hmac=7a0357f8fd26a98db1f5c175a3ab274e27a7fd808bf84f141e0259e5b01ace0b&w=1380"
+    },
+    {
+      "title": "Web Accessibility Summit",
+      "date": "November 25, 2024",
+      "location": "Toronto, Canada",
+      "description": "Learn about best practices in web accessibility.",
+      "banner": "https://img.freepik.com/free-photo/people-taking-part-high-protocol-event_23-2150951243.jpg?t=st=1717645347~exp=1717648947~hmac=7a0357f8fd26a98db1f5c175a3ab274e27a7fd808bf84f141e0259e5b01ace0b&w=1380"
+    },
+    {
+      "title": "Frontend Masters Meetup",
+      "date": "December 10, 2024",
+      "location": "Sydney, Australia",
+      "description": "Meetup for frontend developers to share projects and ideas.",
+      "banner": "https://img.freepik.com/free-vector/ecological-press-conference-member-speaking-stage-before-audience-presenting-graphs-with-earth_74855-14011.jpg?t=st=1717645406~exp=1717649006~hmac=a33f06e97e97d7da622c56ffbfb8a421ffc58b2a07114ca73025deeb16b9d589&w=1380"
+    },
+    {
+      "title": "Tech Lead Conference",
+      "date": "January 15, 2025",
+      "location": "Singapore",
+      "description": "Conference focusing on leadership skills for tech leads.",
+      "banner": "https://img.freepik.com/free-photo/people-taking-part-high-protocol-event_23-2150951243.jpg?t=st=1717645347~exp=1717648947~hmac=7a0357f8fd26a98db1f5c175a3ab274e27a7fd808bf84f141e0259e5b01ace0b&w=1380"
+    },
+    {
+      "title": "AI in Web Development",
+      "date": "February 20, 2025",
+      "location": "Tokyo, Japan",
+      "description": "Discussing the impact of AI on web development.",
+      "banner": "https://img.freepik.com/free-photo/people-taking-part-high-protocol-event_23-2150951243.jpg?t=st=1717645347~exp=1717648947~hmac=7a0357f8fd26a98db1f5c175a3ab274e27a7fd808bf84f141e0259e5b01ace0b&w=1380"
+    }
+  ]
+  
