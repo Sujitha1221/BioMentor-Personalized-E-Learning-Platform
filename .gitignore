@@ -7,8 +7,8 @@ __pycache__/
 *.pyd
 
 # Virtual environment (inside Back-End/Monolithic-Architecture/)
-Back-End/Monolithic-Architecture/venv/
-Back-End/Monolithic-Architecture/__pycache__/
-Back-End/Monolithic-Architecture/uploads
+Back-End/Summarization/Monolithic-Architecture/venv/
+Back-End/Summarization/Monolithic-Architecture/__pycache__/
+Back-End/Summarization/Monolithic-Architecture/uploads
 
 
