@@ -4,6 +4,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity as cosine
 from rapidfuzz.distance import Levenshtein
 import spacy
+from datetime import datetime
+from pymongo import MongoClient
 from language_tool_python import LanguageTool
 from generate_answers import generate_structured_answer, generate_essay_answer
 
@@ -14,6 +16,44 @@ logging.basicConfig(
     handlers=[logging.StreamHandler()]
 )
 
+# MongoDB Connection
+def get_db():
+    """
+    Connect to MongoDB and return the database object.
+    """
+    try:
+        client = MongoClient("mongodb://localhost:27017/")  # Update with your MongoDB URI
+        db = client["evaluation_db"]
+        logging.info("Connected to MongoDB successfully.")
+        return db
+    except Exception as e:
+        logging.error(f"Failed to connect to MongoDB: {e}", exc_info=True)
+        raise
+
+db = get_db()
+
+# Save Evaluation Data
+def save_evaluation(student_id, question, question_type, user_answer, model_answer, evaluation_result):
+    """
+    Save evaluation data to MongoDB.
+    """
+    try:
+        collection = db["evaluations"]
+        record = {
+            "student_id": student_id,
+            "question": question,
+            "question_type": question_type,
+            "user_answer": user_answer,
+            "model_answer": model_answer,
+            "evaluation_result": evaluation_result,
+            "timestamp": datetime.utcnow()
+        }
+        collection.insert_one(record)
+        logging.info(f"Evaluation data saved for student_id: {student_id}")
+    except Exception as e:
+        logging.error(f"Error saving evaluation data: {e}", exc_info=True)
+        raise
+    
 # Load SciBERT for semantic similarity
 def load_scibert_model():
     """
@@ -204,6 +244,9 @@ def evaluate_user_answer(question, user_answer, question_type):
         result = evaluate_answer_hybrid(user_answer, model_answer)
         logging.info("Evaluation completed successfully.")
         
+        # Save evaluation result
+        save_evaluation("student_id", question, question_type, user_answer, model_answer, result)
+
         return {
             "question": question,
             "question_type": question_type,

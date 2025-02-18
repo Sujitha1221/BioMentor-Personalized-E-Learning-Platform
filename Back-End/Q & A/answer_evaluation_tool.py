@@ -252,6 +252,59 @@ def generate_recommendations(student_id):
     logging.info(f"Recommendations for student_id {student_id}: {recommendations}")
     return recommendations
 
+def calculate_class_average():
+    """
+    Calculate the overall class average scores across all students.
+    """
+    try:
+        collection = db["evaluations"]
+        all_evaluations = list(collection.find({}))  # Fetch all evaluations
+
+        if not all_evaluations:
+            return {
+                "semantic_score": 0,
+                "tfidf_score": 0,
+                "jaccard_score": 0,
+                "grammar_score": 0,
+                "total_students": 0
+            }
+
+        metrics = ["semantic_score", "tfidf_score", "jaccard_score", "grammar_score"]
+        total_scores = {metric: 0 for metric in metrics}
+        student_scores = {}
+
+        # Iterate through each evaluation and sum scores
+        for evaluation in all_evaluations:
+            student_id = evaluation["student_id"]
+            if student_id not in student_scores:
+                student_scores[student_id] = {metric: 0 for metric in metrics}
+                student_scores[student_id]["count"] = 0
+
+            for metric in metrics:
+                student_scores[student_id][metric] += evaluation["evaluation_result"].get(metric, 0)
+
+            student_scores[student_id]["count"] += 1
+
+        total_students = len(student_scores)
+
+        # Calculate final class-wide averages
+        for student_id, scores in student_scores.items():
+            for metric in metrics:
+                total_scores[metric] += scores[metric] / scores["count"]
+
+        class_average = {metric: round(total / total_students, 2) for metric, total in total_scores.items()}
+        class_average["total_students"] = total_students
+
+        logging.info(f"Class average calculated: {class_average}")
+        return class_average
+
+    except Exception as e:
+        logging.error(f"Error calculating class averages: {e}", exc_info=True)
+        return {
+            "message": "An error occurred while calculating class averages.",
+            "error": str(e)
+        }
+
 def get_student_analytic_details(student_id):
     """
     Generate and return all details for a given student_id.
@@ -278,6 +331,9 @@ def get_student_analytic_details(student_id):
         # Perform group-level analysis
         group_averages = get_group_analysis(student_id)
 
+        # Get overall class-wide averages
+        class_average = calculate_class_average()
+
         # Combine all details into a single dictionary
         student_details = {
             "student_id": student_id,
@@ -287,6 +343,7 @@ def get_student_analytic_details(student_id):
             "feedback_report": feedback_report,
             "recommendations": recommendations,
             "group_analysis": group_averages,
+            "class_average": class_average,
         }
 
         logging.info(f"Generated all details for student_id {student_id}")
