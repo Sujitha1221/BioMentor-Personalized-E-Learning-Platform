@@ -36,10 +36,9 @@ const SummarizeDocument = () => {
                 Summarize Documents with Ease
               </h3>
               <p className="mt-2 text-sm">
-                Upload PDFs, Word docs, PPTs, or text files, or{" "}
-                <b>paste text directly</b> to generate{" "}
-                <b>structured summaries</b> instantly. The tool ensures{" "}
-                <b>no key details are lost</b> and offers an{" "}
+                Upload PDFs, Word docs, PPTs, text files, or paste text directly
+                to generate <b>structured summaries</b> instantly. The tool
+                ensures <b>no key details are lost</b> and offers an{" "}
                 <b>audible summary</b> for hands-free learning.
               </p>
             </div>
@@ -110,16 +109,15 @@ const SummarizeDocument = () => {
             transition={{ duration: 0.5, delay: 0.4 }}
           >
             <motion.a
-  href="#topic-summary"
-  className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-white 
-             bg-[#140342] font-semibold rounded-lg 
+              href="#topic-summary"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-[#140342]
+              font-semibold rounded-lg 
              hover:bg-[#140342] hover:text-white hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
-  whileHover={{ scale: 1.05 }}
-  whileTap={{ scale: 0.95 }}
->
-  Upload or Paste Text
-</motion.a>
-
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Upload or Paste Text
+            </motion.a>
           </motion.div>
         </div>
       </div>

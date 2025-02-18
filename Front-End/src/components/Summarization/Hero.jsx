@@ -1,18 +1,18 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { DocumentTextIcon, AcademicCapIcon } from "@heroicons/react/24/outline";
-import summarizer from "../../assets/image/download.gif"; 
+import summarizer from "../../assets/image/download.png";
 
-const Hero = () => {
+const Hero = ({ scrollToSummarize }) => {
   return (
     <section className="relative h-screen flex flex-col items-center justify-center text-white overflow-hidden bg-[#140342] px-4 sm:px-6">
       {/* Animated Logo */}
       <motion.img
         src={summarizer}
-        alt="Bio Mentor Logo"
+        alt="Summarize image"
         className="w-60 h-40 sm:w-72 sm:h-48 mt-4 sm:mt-20 mb-2 sm:mb-6"
-        animate={{ x: [0, -5, 5, -5, 5, 0] }}
-        transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut" }}
+        animate={{ x: [0, -3, 3, -3, 3, 0], rotate: [0, -2, 2, -2, 2, 0] }}
+        transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
       />
 
       {/* Hero Content */}
@@ -34,28 +34,33 @@ const Hero = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.2 }}
         >
-          Generate clear and concise summaries of <b>biology topics</b> from <b>documents</b>. Instead of simple text extraction, this tool restructures key information for clarity and readability. Designed for <b>A/L Biology students</b>, it extracts concepts from <b>approved educational resources</b> and offers <b>voice output for enhanced learning</b>.
+          Generate clear and concise summaries of <b>biology topics</b> from{" "}
+          <b>documents</b>. Instead of simple text extraction, this tool
+          restructures key information for clarity and readability. Designed for{" "}
+          <b>A/L Biology students</b>, it extracts concepts from{" "}
+          <b>approved educational resources</b> and offers{" "}
+          <b>voice output for enhanced learning</b>.
         </motion.p>
 
-        {/* CTA Buttons - Styled to Match the Provided Image */}
+        {/* Call to Action Buttons */}
         <motion.div
           className="mt-10 flex flex-wrap justify-center gap-4 sm:gap-6"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.4 }}
         >
-          {/* Solid Button */}
-          <motion.a
-            href="#document-summary"
+          {/* Button that Scrolls to Summarization Section */}
+          <motion.button
+            onClick={scrollToSummarize} // Calls function to scroll smoothly
             className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-slate-300 hover:bg-[#140342] hover:text-[#64B5F6] text-black font-semibold rounded-lg shadow-md transition-all duration-300 group"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
             <DocumentTextIcon className="w-6 h-6 text-black group-hover:text-[#64B5F6] transition-all duration-300" />
             Summarize a Document/Text
-          </motion.a>
+          </motion.button>
 
-          {/* Outlined Button */}
+          {/* Alternative Button */}
           <motion.a
             href="#topic-summary"
             className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#00FF84] text-[#00FF84] font-semibold rounded-lg hover:bg-[#00FF84] hover:text-black hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
