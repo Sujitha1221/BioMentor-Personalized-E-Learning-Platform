@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Link, useLocation } from "react-router-dom"; // Import useLocation
 import ActiveLink from "../ActiveLink/ActiveLink";
 import "./Header.css";
-import { Link } from "react-router-dom";
 import { FaUserCircle } from "react-icons/fa";
 import logo from "../../../src/assets/Logo.png";
 
@@ -9,6 +9,12 @@ const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const location = useLocation(); // Get current route
+
+  // Scroll to top whenever location changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]); // Runs when the pathname changes
 
   const handleToggleMenu = () => {
     setMenuOpen(!menuOpen);
