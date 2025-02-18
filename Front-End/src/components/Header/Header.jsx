@@ -59,7 +59,7 @@ const Header = () => {
                     <ul className="font-medium flex flex-col gap-3 justify-center p-4 md:p-0 mt-4 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 items-center">
                         <li><ActiveLink to={'/'}>Home</ActiveLink></li>
                         <li><ActiveLink to={'/courses'}>MCQ</ActiveLink></li>
-                        <li><ActiveLink to={'/events'}>Q & A</ActiveLink></li>
+                        <li><ActiveLink to={'/Q&A-home'}>Q & A</ActiveLink></li>
                         <li><ActiveLink to={'/blogs'}>Vocabulary</ActiveLink></li>
                         <li><ActiveLink to={'/contact'}>Summarize</ActiveLink></li>
                     </ul>

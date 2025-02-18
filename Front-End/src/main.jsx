@@ -14,9 +14,10 @@ import About from './components/About/About.jsx';
 import Contact from './components/Contact/Contact.jsx';
 import Login from './components/Login/Login.jsx';
 import SignUp from './components/SignUp/SignUp.jsx';
+import QuestionAndAnsweringHomePage from './components/Q&A/QuestionAndAnsweringHomePage.jsx';
 
 
-const router = createBrowserRouter([
+const router = createBrowserRouter([  
   {
     path: "/",
     element: <Main></Main>,
@@ -32,8 +33,8 @@ const router = createBrowserRouter([
         loader: () => fetch('data.json'),
       },
       {
-        path: '/events',
-        element: <Events></Events>,
+        path: '/Q&A-home',
+        element: <QuestionAndAnsweringHomePage></QuestionAndAnsweringHomePage>,
         loader: () => fetch('eventData.json')
       },
       {
