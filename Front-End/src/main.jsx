@@ -12,7 +12,6 @@ import Contact from "./components/Contact/Contact.jsx";
 import Login from "./components/Login/Login.jsx";
 import SignUp from "./components/SignUp/SignUp.jsx";
 import Summarization from "./components/Summarization/Summarization.jsx";
-import SummarizeDocument from "./components/Summarization/SummarizeDocument.jsx";
 
 const router = createBrowserRouter([
   {
@@ -53,10 +52,6 @@ const router = createBrowserRouter([
       {
         path: "/signup",
         element: <SignUp></SignUp>,
-      },
-      {
-        path: "/summarize-document",
-        element: <SummarizeDocument></SummarizeDocument>,
       },
     ],
   },
