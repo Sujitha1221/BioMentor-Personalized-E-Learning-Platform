@@ -43,15 +43,15 @@ const UploadModal = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-xl w-[800px] max-h-[90vh] p-6 transition-all max-w-full sm:p-6 relative overflow-x-hidden">
+      <div className="bg-white rounded-2xl shadow-xl w-[800px] max-h-[90vh] p-6 transition-all max-w-full sm:p-6 relative">
         {/* Modal Header */}
-        <div className="relative mb-4">
+        <div className="relative mb-4 px-5">
           <h2 className="text-2xl font-bold text-[#140342] text-center w-full">
             Generate Summary
           </h2>
           <button
             aria-label="Close Modal"
-            className="absolute right-0 top-0 text-gray-500 hover:text-gray-700 text-xl"
+            className="absolute right-5 top-0 text-gray-500 hover:text-gray-700 text-xl transition duration-200"
             onClick={onClose}
           >
             <MdOutlineClose />
@@ -59,7 +59,7 @@ const UploadModal = ({ isOpen, onClose }) => {
         </div>
 
         {/* Scrollable Content */}
-        <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden">
+        <div className="max-h-[70vh] overflow-y-auto px-5">
           {/* Tabs */}
           <div className="flex mb-4 border-b">
             <button
@@ -161,14 +161,14 @@ const UploadModal = ({ isOpen, onClose }) => {
             <motion.div className="mt-4 flex justify-center">
               <motion.button
                 onClick={handleProcessSummary}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-[#140342] font-semibold rounded-lg 
-                hover:bg-[#140342] hover:text-white hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-white bg-[#140342] font-semibold rounded-lg 
+                transition-transform duration-300 hover:scale-105 hover:bg-[#32265a]"
               >
                 Process Summary
               </motion.button>
             </motion.div>
 
-            {/* Summary Output */}
+            {/* Summary Output with Copy Button */}
             <div className="relative">
               <label className="font-semibold text-[#140342]">
                 Summary Output
@@ -181,7 +181,7 @@ const UploadModal = ({ isOpen, onClose }) => {
               ></textarea>
               <button
                 onClick={handleCopy}
-                className="absolute top-8 right-2 bg-gray-200 p-2 rounded-md hover:bg-gray-300 transition"
+                className="absolute top-8 right-2 bg-gray-200 p-2 rounded-md transition duration-300 hover:bg-gray-400"
                 aria-label="Copy Summary"
               >
                 <FaRegCopy />
@@ -192,8 +192,8 @@ const UploadModal = ({ isOpen, onClose }) => {
             <div className="flex justify-center mt-3">
               <motion.button
                 onClick={handleDownload}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#00FF84] text-[#00FF84] font-semibold rounded-lg 
-                hover:bg-[#00FF84] hover:text-[#140342] hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#00FF84] text-[#140342] bg-[#00FF84] font-semibold rounded-lg 
+                transition-transform duration-300 hover:scale-105 hover:bg-[#00cc70]"
               >
                 <FaDownload /> Download Summary
               </motion.button>
@@ -206,16 +206,16 @@ const UploadModal = ({ isOpen, onClose }) => {
               </label>
               <div className="flex gap-4 mt-2">
                 <motion.button
-                  className="flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#6440FB] text-[#6440FB] font-semibold rounded-lg 
-                  hover:bg-[#6440FB] hover:text-white hover:shadow-lg transition-all duration-300 group"
+                  className="flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-white bg-[#140342] font-semibold rounded-lg 
+                  transition-transform duration-300 hover:scale-105 hover:bg-[#32265a]"
                 >
                   <FaPlay /> Play
                 </motion.button>
 
                 <motion.button
                   onClick={handleDownloadAudio}
-                  className="flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#00FF84] text-[#00FF84] font-semibold rounded-lg 
-                  hover:bg-[#00FF84] hover:text-[#140342] hover:shadow-lg transition-all duration-300 group"
+                  className="flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#00FF84] bg-[#00FF84] text-[#140342] font-semibold rounded-lg 
+                  transition-transform duration-300 hover:scale-105 hover:bg-[#00cc70]"
                 >
                   <FaDownload /> Download Audio
                 </motion.button>
