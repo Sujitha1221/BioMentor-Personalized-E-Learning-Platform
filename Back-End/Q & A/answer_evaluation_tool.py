@@ -1,7 +1,17 @@
+import os
+import faiss
+import numpy as np
+import pandas as pd
 import logging
 from pymongo import MongoClient
 from datetime import datetime
 from bson import ObjectId
+from sentence_transformers import SentenceTransformer
+
+NOTES_CSV_PATH = "cleaned_Notes.csv"  # Study Notes CSV
+FAISS_INDEX_PATH = "cleaned_Notes_faiss_index.bin"  # FAISS Index Storage
+MODEL_NAME = 'all-MiniLM-L6-v2'  # Fast & Lightweight SentenceTransformer Model
+
 
 # Configure logging
 logging.basicConfig(
@@ -25,6 +35,48 @@ def get_db():
         raise
 
 db = get_db()
+
+# Load the notes dataset
+def load_notes():
+    if not os.path.exists(NOTES_CSV_PATH):
+        raise FileNotFoundError(f"Notes file not found: {NOTES_CSV_PATH}")
+    return pd.read_csv(NOTES_CSV_PATH)
+
+# Load or create FAISS Index without saving embeddings
+def load_or_create_faiss(notes_df):
+    model = SentenceTransformer(MODEL_NAME)
+
+    if os.path.exists(FAISS_INDEX_PATH):
+        print("Loading existing FAISS index...")
+        index = faiss.read_index(FAISS_INDEX_PATH)
+
+        # Check if FAISS has the same number of records as the dataset
+        if index.ntotal == len(notes_df):
+            print("FAISS index is up-to-date. No need to recompute embeddings.")
+            return index
+
+        print("Detected new study materials. Updating FAISS index...")
+    else:
+        print("Creating new FAISS index...")
+
+    # Convert all study materials into embeddings (only in memory, not saved)
+    notes_texts = notes_df["Text Content"].tolist()
+    notes_embeddings = model.encode(notes_texts)
+    notes_embeddings = np.array(notes_embeddings)
+
+    # Initialize FAISS index (L2 Distance)
+    embedding_dim = notes_embeddings.shape[1]
+    index = faiss.IndexFlatL2(embedding_dim)
+    index.add(notes_embeddings)
+
+    # Save FAISS index (but not embeddings)
+    faiss.write_index(index, FAISS_INDEX_PATH)
+
+    print(f"FAISS index updated | {index.ntotal} entries")
+    return index
+
+notes_df = load_notes()  
+index = load_or_create_faiss(notes_df)  
 
 # Save Evaluation Data
 def save_evaluation(student_id, question, question_type, user_answer, model_answer, evaluation_result):
@@ -334,6 +386,10 @@ def get_student_analytic_details(student_id):
         # Get overall class-wide averages
         class_average = calculate_class_average()
 
+        # Find matched study materials based on weak areas
+        model = SentenceTransformer(MODEL_NAME)
+        matched_notes = recommend_study_materials(student_id, notes_df, index, model)
+
         # Combine all details into a single dictionary
         student_details = {
             "student_id": student_id,
@@ -344,6 +400,7 @@ def get_student_analytic_details(student_id):
             "recommendations": recommendations,
             "group_analysis": group_averages,
             "class_average": class_average,
+            "matched_study_materials": matched_notes.to_dict(orient="records"),
         }
 
         logging.info(f"Generated all details for student_id {student_id}")
@@ -364,6 +421,32 @@ def convert_objectid(data):
         return str(data)
     else:
         return data
+    
+# Recommend Study Materials Based on Weak Areas
+def recommend_study_materials(student_id, notes_df, index, model, top_k=3):
+    """Recommend study materials based on the student's weak areas."""
+    feedback_report = generate_feedback_report(student_id)
+    if "message" in feedback_report:
+        logging.warning(f"No feedback report found for student_id: {student_id}")
+        return {"message": f"No feedback report available for student_id: {student_id}"}
+
+    weak_keywords = feedback_report.get("missing_keywords", [])
+    if not weak_keywords:
+        logging.info(f"No weak keywords found for student_id: {student_id}. No study materials needed.")
+        return {"message": f"No weak areas identified for student_id: {student_id}"}
+
+    # Combine weak areas into a single query for semantic search
+    query_text = " ".join(weak_keywords)
+    query_embedding = model.encode([query_text])
+
+    # Search in FAISS (Find top k matches)
+    D, I = index.search(np.array(query_embedding), k=top_k)
+
+    # Retrieve the best study notes
+    matched_notes = notes_df.iloc[I[0]]
+
+    return matched_notes
+
 
 # Example Usage
 if __name__ == "__main__":
