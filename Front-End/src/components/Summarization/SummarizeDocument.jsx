@@ -6,8 +6,11 @@ import {
 } from "@heroicons/react/24/outline";
 import uploadImg from "../../assets/image/doc-summarize.jpeg";
 import { motion } from "framer-motion";
+import UploadModal from "./UploadModal"; // Import the modal component
 
 const SummarizeDocument = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false); // State for modal
+
   return (
     <section className="relative bg-gray-100 px-6 sm:px-12 py-16">
       {/* Content Wrapper */}
@@ -28,10 +31,7 @@ const SummarizeDocument = () => {
             </div>
 
             {/* Text Section */}
-            <div
-              className="p-6 text-black p-6 bg-[#140342] text-white"
-              style={{}}
-            >
+            <div className="p-6 text-black p-6 bg-[#140342] text-white">
               <h3 className="text-lg font-semibold">
                 Summarize Documents with Ease
               </h3>
@@ -101,26 +101,28 @@ const SummarizeDocument = () => {
           </div>
 
           {/* Upload Button */}
-
           <motion.div
             className="mt-10 flex flex-wrap justify-center gap-4 sm:gap-6"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.4 }}
           >
-            <motion.a
-              href="#topic-summary"
+            <motion.button
+              onClick={() => setIsModalOpen(true)} // Opens Modal on Click
               className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-[#140342]
               font-semibold rounded-lg 
-             hover:bg-[#140342] hover:text-white hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
+              hover:bg-[#140342] hover:text-white hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
               Upload or Paste Text
-            </motion.a>
+            </motion.button>
           </motion.div>
         </div>
       </div>
+
+      {/* Upload Modal */}
+      <UploadModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </section>
   );
 };
