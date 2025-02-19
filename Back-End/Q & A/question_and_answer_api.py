@@ -6,6 +6,7 @@ from generate_answers import generate_structured_answer, generate_essay_answer
 from evaluate_answers import evaluate_user_answer
 from answer_evaluation_tool import get_student_analytic_details, convert_objectid
 from fastapi.middleware.cors import CORSMiddleware
+from duckduckgo_search import DDGS  
 
 # Configure logging
 logging.basicConfig(
@@ -57,8 +58,10 @@ def generate_answer(request: QuestionRequest):
                 k=3,  # Default k for structured
                 max_words=50  # Default max words for structured
             )
+
+            related_websites = get_related_websites(request.question)
             logging.info("Structured answer generated successfully.")
-            return {"type": "structured", "answer": answer}
+            return {"type": "structured", "answer": answer, "related_websites": related_websites}
         
         elif question_type == "essay":
             # Generate an essay-style answer
@@ -68,8 +71,10 @@ def generate_answer(request: QuestionRequest):
                 min_words=175,  # Default min words for essay
                 max_words=300  # Default max words for essay
             )
+
+            related_websites = get_related_websites(request.question)
             logging.info("Essay answer generated successfully.")
-            return {"type": "essay", "answer": answer}
+            return {"type": "essay", "answer": answer, "related_websites": related_websites}
         
         else:
             # Invalid type provided
@@ -85,6 +90,7 @@ def evaluate_answer(request: EvaluationRequest):
     API endpoint to evaluate a user's answer based on the question type.
     """
     logging.info(f"Received request to evaluate answer: {request.dict()}")
+    
     try:
         # Call the `evaluate_user_answer` function
         result = evaluate_user_answer(
@@ -92,6 +98,8 @@ def evaluate_answer(request: EvaluationRequest):
             user_answer=request.user_answer,
             question_type=request.question_type
         )
+
+        related_websites = get_related_websites(request.question)
         logging.info("User answer evaluated successfully.")
         return {
             "status": "success",
@@ -100,6 +108,7 @@ def evaluate_answer(request: EvaluationRequest):
             "user_answer": result["user_answer"],
             "model_answer": result["model_answer"],
             "evaluation_result": result["evaluation_result"],
+            "related_websites": related_websites
         }
     except ValueError as e:
         # Handle invalid question type or other validation errors
@@ -134,7 +143,21 @@ def student_analytics(request: StudentEvaluationRequest):
         logging.error(f"Error while generating student analytics: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="An error occurred while retrieving student analytics.")
 
-
+# Function to fetch related websites using the free DuckDuckGo search (using DDGS)
+def get_related_websites(query: str):
+    results = []
+    try:
+        with DDGS() as ddgs:
+            # Perform a text search; adjust parameters as needed
+            search_results = ddgs.text(query, max_results=5)
+            for result in search_results:
+                href = result.get("href")
+                if href:
+                    results.append(href)
+    except Exception as e:
+        logging.error(f"Error fetching related websites: {e}", exc_info=True)
+    return results
+    
 @app.get("/")
 def root():
     """
