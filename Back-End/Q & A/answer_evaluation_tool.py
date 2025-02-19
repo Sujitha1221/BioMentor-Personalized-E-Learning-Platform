@@ -9,7 +9,7 @@ from bson import ObjectId
 from sentence_transformers import SentenceTransformer
 
 NOTES_CSV_PATH = "Notes/cleaned_Notes.csv"  # Study Notes CSV
-FAISS_INDEX_PATH = "cleaned_Notes_faiss_index.bin"  # FAISS Index Storage
+FAISS_INDEX_PATH = "DB/cleaned_Notes_faiss_index.bin"  # FAISS Index Storage
 MODEL_NAME = 'all-MiniLM-L6-v2'  # Fast & Lightweight SentenceTransformer Model
 
 

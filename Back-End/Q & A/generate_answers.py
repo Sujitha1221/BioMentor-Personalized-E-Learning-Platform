@@ -24,7 +24,7 @@ chunked_notes_df = pd.read_csv('Notes/cleaned_Notes.csv', encoding='ISO-8859-1')
 # Load the embedding model and FAISS index
 logging.info("Loading embedding model and FAISS index...")
 embedder = SentenceTransformer('sentence-transformers/multi-qa-mpnet-base-dot-v1')
-index = faiss.read_index('faiss_index.bin')
+index = faiss.read_index('DB/faiss_index.bin')
 
 # Load the LLaMA model for text generation
 logging.info("Loading text generation model...")
