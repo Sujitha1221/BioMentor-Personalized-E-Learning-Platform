@@ -16,6 +16,7 @@ import Login from './components/Login/Login.jsx';
 import SignUp from './components/SignUp/SignUp.jsx';
 import QuestionAndAnsweringHomePage from './components/Q&A/QuestionAndAnsweringHomePage.jsx';
 import QuestionAndAnsweringStudentDashboard from './components/Q&A/QuestionAndAnsweringStudentDashboard.jsx'
+import QuestionAndAnsweringStudentHistory from './components/Q&A/QuestionAndAnsweringStudentHistory.jsx';
 
 const router = createBrowserRouter([  
   {
@@ -40,6 +41,11 @@ const router = createBrowserRouter([
       {
         path: '/Q&A-dashboard',
         element: <QuestionAndAnsweringStudentDashboard></QuestionAndAnsweringStudentDashboard>,
+        loader: () => fetch('eventData.json')
+      },
+      {
+        path: '/Q&A-history',
+        element: <QuestionAndAnsweringStudentHistory></QuestionAndAnsweringStudentHistory>,
         loader: () => fetch('eventData.json')
       },
       {

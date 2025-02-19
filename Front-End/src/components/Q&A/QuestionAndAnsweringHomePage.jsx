@@ -2,20 +2,11 @@ import React, { useState, useEffect } from "react";
 import QuestionAndAnsweringModal from "./models/QuestionAndAnsweringModal";
 import { FcBiomass } from "react-icons/fc";
 import { motion } from "framer-motion";
+import LoadingScreen from "../LoadingScreen/LoadingScreen";
 import logo from '../../../src/assets/Logo.png';
 
 const QuestionAndAnsweringHomePage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isLargeScreen, setIsLargeScreen] = useState(false);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsLargeScreen(window.innerWidth >= 1024);
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
 
   return (
     <>
@@ -137,11 +128,11 @@ const QuestionAndAnsweringHomePage = () => {
               ))}
             </div>
             <button
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg mt-6 hover:bg-blue-800"
-              onClick={() => setIsModalOpen(true)}
-            >
-              View Answer History
-            </button>
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg mt-6 hover:bg-blue-800"
+                onClick={() => window.location.href = "http://localhost:5173/Q&A-history"}
+              >
+                View Answer History
+              </button>
             <QuestionAndAnsweringModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
           </div>
 

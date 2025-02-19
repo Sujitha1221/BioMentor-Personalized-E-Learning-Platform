@@ -2,18 +2,8 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, CartesianGrid } from "recharts";
 import { motion } from "framer-motion";
+import LoadingScreen from "../LoadingScreen/LoadingScreen";
 import { AiOutlineUser, AiOutlineBarChart, AiOutlineRise, AiOutlineLineChart } from "react-icons/ai";
-
-const LoadingScreen = () => (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-        <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
-            className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full"
-        />
-        <p className="mt-4 text-lg font-semibold text-indigo-600">Loading Student Data...</p>
-    </div>
-);
 
 const QuestionAndAnsweringStudentDashboard = () => {
     const [studentData, setStudentData] = useState(null);
