@@ -102,7 +102,7 @@ def main():
     # File paths
     qa_file = 'questionanswer.csv'
     notes_file = 'Notes.csv'
-    faiss_index_file = 'faiss_index.bin'
+    faiss_index_file = 'DB/faiss_index.bin'
 
     try:
         # Load datasets
