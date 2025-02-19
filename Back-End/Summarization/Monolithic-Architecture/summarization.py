@@ -26,8 +26,8 @@ try:
         model_path='D:/Downloads/RP/Summarization/flan_t5_finetuned_model',
         embedding_model_name='all-MiniLM-L6-v2',
         dataset_paths=[
-            '../../Model-Training/bio_summary_keywords.csv',
-            '../../Model-Training/biology_information_retrieval_sample.csv'
+            '../../../Model-Training/Summarization/bio_summary_keywords.csv',
+            '../../../Model-Training/Summarization/biology_information_retrieval_sample.csv'
         ]
     )
     logger.info("RAG Model initialized successfully.")

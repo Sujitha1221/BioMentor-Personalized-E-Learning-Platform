@@ -156,20 +156,25 @@ def clean_text(text):
         raise RuntimeError("Error cleaning text.")
 
 
-
 def format_as_paragraph(text):
     """
     Format cleaned text into cohesive paragraphs.
+    Ensures there is a space after every full stop if missing.
     """
     try:
         lines = [line.strip() for line in text.splitlines() if line.strip()]
         paragraph = " ".join(lines)
         paragraph = re.sub(r'\s+', ' ', paragraph).strip()
+        
+        # Ensure there's a space after every full stop (if missing)
+        paragraph = re.sub(r'(?<!\s)\.(?!\s|$)', '. ', paragraph)
+
         logging.info("Formatted text into paragraphs successfully.")
         return paragraph
     except Exception as e:
         logging.error(f"Failed to format text as a paragraph: {e}")
         raise RuntimeError("Error formatting text.")
+
 
 # Error detection in text
 def find_errors(text):

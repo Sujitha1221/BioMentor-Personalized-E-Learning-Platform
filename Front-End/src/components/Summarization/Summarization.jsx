@@ -38,12 +38,12 @@ const Summarization = () => {
       />
 
       {/* Sections */}
-      <div ref={summarizeRef} className="mt-20">
+      <div ref={summarizeRef} className="mt-10">
         <SummarizeDocument />
       </div>
 
       {/* Add ref to Topic Summary */}
-      <div ref={topicSummaryRef} className="mt-20">
+      <div ref={topicSummaryRef} className="mt-10">
         <TopicSummary />
       </div>
     </div>
