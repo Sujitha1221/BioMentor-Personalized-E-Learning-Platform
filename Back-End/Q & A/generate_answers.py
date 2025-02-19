@@ -18,8 +18,8 @@ logging.basicConfig(
 
 # Load datasets
 logging.info("Loading datasets...")
-qa_df = pd.read_csv('cleaned_question_and_answer.csv', encoding='ISO-8859-1')
-chunked_notes_df = pd.read_csv('cleaned_Notes.csv', encoding='ISO-8859-1')
+qa_df = pd.read_csv('Notes/cleaned_question_and_answer.csv', encoding='ISO-8859-1')
+chunked_notes_df = pd.read_csv('Notes/cleaned_Notes.csv', encoding='ISO-8859-1')
 
 # Load the embedding model and FAISS index
 logging.info("Loading embedding model and FAISS index...")

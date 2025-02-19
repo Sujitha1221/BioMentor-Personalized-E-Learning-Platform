@@ -22,7 +22,7 @@ def load_and_clean_qa_dataset(file_path):
     qa_df = qa_df.drop_duplicates()
     logging.info("Q&A dataset cleaned and duplicates removed.")
     logging.debug(f"Q&A Dataset Preview:\n{qa_df.head()}")
-    qa_df.to_csv('cleaned_question_and_answer.csv', index=False)
+    qa_df.to_csv('Notes/cleaned_question_and_answer.csv', index=False)
     logging.info("Q&A dataset saved as 'cleaned_question_and_answer.csv'")
     return qa_df
 
@@ -37,7 +37,7 @@ def load_and_clean_notes_dataset(file_path):
     notes_df['Combined Text'] = notes_df['Topic'] + " - " + notes_df['Sub-topic'] + "\n" + notes_df['Text Content']
     logging.info("Notes dataset cleaned.")
     logging.debug(f"Notes Dataset Preview:\n{notes_df.head()}")
-    notes_df.to_csv('cleaned_Notes.csv', index=False)
+    notes_df.to_csv('Notes/cleaned_Notes.csv', index=False)
     logging.info("Notes dataset saved as 'cleaned_Notes.csv'")
     return notes_df
 
