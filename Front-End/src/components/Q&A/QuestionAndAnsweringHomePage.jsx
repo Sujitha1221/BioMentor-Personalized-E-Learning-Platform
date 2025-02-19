@@ -108,10 +108,11 @@ const QuestionAndAnsweringHomePage = () => {
               </div>
               <button
                 className="bg-blue-600 text-white px-6 py-3 rounded-lg mt-6 hover:bg-blue-800"
-                onClick={() => setIsModalOpen(true)}
+                onClick={() => window.location.href = "http://localhost:5173/Q&A-dashboard"}
               >
-                Open Verification Modal
+                Open Q&A Dashboard
               </button>
+
               <QuestionAndAnsweringModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
             </div>
           </div>
