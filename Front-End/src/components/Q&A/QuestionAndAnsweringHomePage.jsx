@@ -19,16 +19,7 @@ const QuestionAndAnsweringHomePage = () => {
 
   return (
     <>
-      {isLargeScreen && (
-        <motion.div
-          initial={{ opacity: 0, x: 100 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-          className="fixed bottom-10 right-10 bg-blue-600 text-white px-4 py-3 rounded-lg shadow-lg text-sm font-semibold animate-bounce"
-        >
-          📊 Scroll down to view Student Analytics
-        </motion.div>
-      )}
+
       <div className="p-4 md:p-8 bg-gray-100 min-h-screen flex flex-col items-center justify-center gap-6 md:mt-5">
         {/* Q&A Generation and evaluation */}
         <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center text-center md:text-left mt-5 md:mt-20">
@@ -58,7 +49,7 @@ const QuestionAndAnsweringHomePage = () => {
           </div>
 
           {/* Right Section: AI Assistant Card */}
-          <div className="flex justify-center order-1 md:order-2">
+          <div className="hidden md:flex justify-center order-1 md:order-2">
             <div className="bg-white p-6 md:p-8 rounded-2xl shadow-lg w-64 md:w-80 text-center relative transform hover:scale-105 transition duration-300 ease-in-out">
               <img src="https://plus.unsplash.com/premium_vector-1706709710787-05e3f59294cf?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8bWVkaWNhbHxlbnwwfHwwfHx8MA%3D%3D " alt="Profile" className="w-24 h-24 mx-auto mb-4 rounded-full border-4 border-blue-500" />
               <h3 className="text-xl font-semibold">Biology AI Assistant</h3>
@@ -80,7 +71,7 @@ const QuestionAndAnsweringHomePage = () => {
           {/* Student Analytics Section */}
           <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-2  gap-12 items-center text-center md:text-left">
             {/* Left Section: Analytics Card */}
-            <div className="flex justify-center md:mt-10">
+            <div className="hidden md:flex justify-center md:mt-10">
               <div className="bg-white p-6 md:p-8 rounded-2xl shadow-lg w-64 md:w-80 text-center relative transform hover:scale-105 transition duration-300 ease-in-out">
                 <img src="https://plus.unsplash.com/premium_vector-1682303102478-205a13e17265?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8cGVyZm9ybWFuY2V8ZW58MHx8MHx8fDA%3D"
                   alt="Student Analytics" className="w-24 h-24 mx-auto mb-4 rounded-full border-4 border-blue-500" />
@@ -154,7 +145,7 @@ const QuestionAndAnsweringHomePage = () => {
           </div>
 
           {/* Right Section: Answer History Card */}
-          <div className="flex justify-center order-1 md:order-2 md:mt-10">
+          <div className="hidden md:flex justify-center order-1 md:order-2 md:mt-10">
             <div className="bg-white p-6 md:p-8 rounded-2xl shadow-lg w-64 md:w-80 text-center relative transform hover:scale-105 transition duration-300 ease-in-out">
               <img src="https://plus.unsplash.com/premium_vector-1683140720003-a1c000682f2b?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8YW5zd2VyfGVufDB8fDB8fHww  "
                 alt="Answer History" className="w-24 h-24 mx-auto mb-4 rounded-full border-4 border-blue-500" />
