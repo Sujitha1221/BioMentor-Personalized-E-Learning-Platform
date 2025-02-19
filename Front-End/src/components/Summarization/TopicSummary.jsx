@@ -44,7 +44,7 @@ const TopicSummary = () => {
   }, []);
 
   return (
-    <section className="relative flex flex-col bg-gray-100 sm:flex-row items-center justify-between px-6 sm:px-20 py-6 bg-gray-100 max-w-7xl mx-auto">
+    <section className="relative flex flex-col bg-gray-100 sm:flex-row items-center justify-between px-6 sm:px-20 py-16 bg-gray-100 max-w-7xl mx-auto">
       {/* Left Section - Text & Button */}
       <div className="w-full sm:w-1/2 flex flex-col items-center sm:items-start text-center sm:text-left">
         <h2 className="text-3xl font-bold text-[#140342]">
