@@ -30,12 +30,29 @@ const QuestionAndAnsweringHomePage = () => {
                 </span>
               ))}
             </div>
-            <button
+            <motion.div
+                className="mt-10 flex flex-wrap justify-center gap-4 sm:gap-6"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+              >
+                <motion.button
+                  onClick={() => setIsModalOpen(true)}
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-[#140342]
+              font-semibold rounded-lg 
+              hover:bg-[#140342] hover:text-white hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Open Verification Modal
+                </motion.button>
+              </motion.div>
+            {/* <button
               className="bg-blue-600 text-white px-6 py-3 rounded-lg mt-6 hover:bg-blue-800"
               onClick={() => setIsModalOpen(true)}
             >
               Open Verification Modal
-            </button>
+            </button> */}
             <QuestionAndAnsweringModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
           </div>
 
@@ -97,12 +114,29 @@ const QuestionAndAnsweringHomePage = () => {
                   </span>
                 ))}
               </div>
-              <button
+              <motion.div
+                className="mt-10 flex flex-wrap justify-center gap-4 sm:gap-6"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+              >
+                <motion.button
+                  onClick={() => window.location.href = "http://localhost:5173/Q&A-dashboard"}
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-[#140342]
+              font-semibold rounded-lg 
+              hover:bg-[#140342] hover:text-white hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Open Q&A Dashboard
+                </motion.button>
+              </motion.div>
+              {/* <button
                 className="bg-blue-600 text-white px-6 py-3 rounded-lg mt-6 hover:bg-blue-800"
                 onClick={() => window.location.href = "http://localhost:5173/Q&A-dashboard"}
               >
                 Open Q&A Dashboard
-              </button>
+              </button> */}
 
               <QuestionAndAnsweringModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
             </div>
@@ -127,12 +161,29 @@ const QuestionAndAnsweringHomePage = () => {
                 </span>
               ))}
             </div>
-            <button
+            <motion.div
+                className="mt-10 flex flex-wrap justify-center gap-4 sm:gap-6"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+              >
+                <motion.button
+                  onClick={() => window.location.href = "http://localhost:5173/Q&A-history"}
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-[#140342]
+              font-semibold rounded-lg 
+              hover:bg-[#140342] hover:text-white hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  View Answer History
+                </motion.button>
+              </motion.div>
+            {/* <button
               className="bg-blue-600 text-white px-6 py-3 rounded-lg mt-6 hover:bg-blue-800"
               onClick={() => window.location.href = "http://localhost:5173/Q&A-history"}
             >
               View Answer History
-            </button>
+            </button> */}
             <QuestionAndAnsweringModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
           </div>
 
@@ -195,12 +246,29 @@ const QuestionAndAnsweringHomePage = () => {
                   </span>
                 ))}
               </div>
-              <button
+              <motion.div
+                className="mt-10 flex flex-wrap justify-center gap-4 sm:gap-6"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+              >
+                <motion.button
+                  onClick={() => window.location.href = "http://localhost:5173/Q&A-materials"}
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-[#140342]
+              font-semibold rounded-lg 
+              hover:bg-[#140342] hover:text-white hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Get Your Study Plan
+                </motion.button>
+              </motion.div>
+              {/* <button
                 className="bg-indigo-600 text-white px-6 py-3 rounded-lg mt-6 hover:bg-indigo-800"
                 onClick={() => window.location.href = "http://localhost:5173/Q&A-materials"}
               >
                 Get Your Study Plan
-              </button>
+              </button> */}
               <QuestionAndAnsweringModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
             </div>
           </div>
