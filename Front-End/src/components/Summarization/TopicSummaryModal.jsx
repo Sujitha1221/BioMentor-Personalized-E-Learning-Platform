@@ -11,13 +11,8 @@ import {
 import { MdOutlineClose } from "react-icons/md";
 import axios from "axios";
 import AlertMessage from "../Alert/Alert";
+import ModelLoadingScreen from "../LoadingScreen/ModelLoadingScreen";
 
-// Full-page Spinner Component
-const FullPageSpinner = () => (
-  <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
-    <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent"></div>
-  </div>
-);
 const TopicSummaryModal = ({ isOpen, onClose }) => {
   const [topic, setTopic] = useState("");
   const [wordCount, setWordCount] = useState("");
@@ -249,7 +244,7 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
       className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50"
       onClick={handleClose} // Clicking outside modal closes it
     >
-      {isLoading && <FullPageSpinner />} {/* Full-page spinner */}
+      {isLoading && <ModelLoadingScreen />} {/* Full-page spinner */}
       {alert.message && (
         <AlertMessage
           message={alert.message}
