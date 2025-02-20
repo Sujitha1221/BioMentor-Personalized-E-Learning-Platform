@@ -407,11 +407,27 @@ const UploadModal = ({ isOpen, onClose }) => {
             <input
               id="word-count"
               type="number"
-              placeholder="Enter word count"
+              placeholder="Enter word count (min: 100)"
               value={wordCount}
               required
-              onChange={(e) => setWordCount(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg text-gray-700 focus:border-[#140342] focus:ring-[#140342]"
+              min="100"
+              onChange={(e) => {
+                const value = e.target.value;
+                setWordCount(value);
+
+                // Show alert if word count is below 100
+                if (parseInt(value) < 100) {
+                  setAlert({
+                    message: "Word count must be at least 100.",
+                    type: "warning",
+                  });
+                } else {
+                  setAlert({ message: "", type: "" }); // Clear alert if valid
+                }
+              }}
+              className={`w-full p-2 border ${
+                parseInt(wordCount) < 100 ? "border-red-500" : "border-gray-300"
+              } rounded-lg text-gray-700 focus:border-[#140342] focus:ring-[#140342]`}
             />
 
             {/* Process Button */}
@@ -419,15 +435,17 @@ const UploadModal = ({ isOpen, onClose }) => {
               <motion.button
                 onClick={handleProcessSummary}
                 className={`inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-white bg-[#140342] font-semibold rounded-lg 
-  transition-transform duration-300 hover:scale-105 hover:bg-[#32265a] ${
-    !wordCount.trim() ||
-    (activeTab === "document" && !selectedFile) ||
-    (activeTab === "text" && !inputText.trim())
-      ? "opacity-50 cursor-not-allowed"
-      : ""
-  }`}
+      transition-transform duration-300 hover:scale-105 hover:bg-[#32265a] ${
+        !wordCount.trim() ||
+        parseInt(wordCount) < 100 ||
+        (activeTab === "document" && !selectedFile) ||
+        (activeTab === "text" && !inputText.trim())
+          ? "opacity-50 cursor-not-allowed"
+          : ""
+      }`}
                 disabled={
                   !wordCount.trim() ||
+                  parseInt(wordCount) < 100 ||
                   (activeTab === "document" && !selectedFile) ||
                   (activeTab === "text" && !inputText.trim())
                 }

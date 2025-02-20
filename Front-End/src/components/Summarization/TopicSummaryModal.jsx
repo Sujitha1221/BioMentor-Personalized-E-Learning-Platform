@@ -303,10 +303,27 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
           <input
             id="word-count"
             type="number"
-            placeholder="Enter word count"
+            placeholder="Enter word count (min: 100)"
             value={wordCount}
-            onChange={(e) => setWordCount(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-lg text-gray-700 focus:border-[#140342] focus:ring-[#140342]"
+            required
+            min="100"
+            onChange={(e) => {
+              const value = e.target.value;
+              setWordCount(value);
+
+              // Show alert if word count is below 100
+              if (parseInt(value) < 100) {
+                setAlert({
+                  message: "Word count must be at least 100.",
+                  type: "warning",
+                });
+              } else {
+                setAlert({ message: "", type: "" }); // Clear alert if valid
+              }
+            }}
+            className={`w-full p-2 border ${
+              parseInt(wordCount) < 100 ? "border-red-500" : "border-gray-300"
+            } rounded-lg text-gray-700 focus:border-[#140342] focus:ring-[#140342]`}
           />
 
           {/* Process Button */}
@@ -319,7 +336,9 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
           ? "opacity-50 cursor-not-allowed" // Disabled styling
           : ""
       }`}
-              disabled={!wordCount.trim() || !topic.trim()} // ✅ Corrected condition
+              disabled={
+                !wordCount.trim() || !topic.trim() || parseInt(wordCount) < 100
+              }
             >
               Process Summary
             </motion.button>
