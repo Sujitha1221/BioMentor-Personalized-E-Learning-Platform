@@ -93,26 +93,26 @@ const CompareAnswerModel = ({ onBack }) => {
           </div>
         )}
 
-        <div className="flex justify-between mt-4">
-          <button
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-white bg-[#140342] font-semibold rounded-lg 
-    transition-transform duration-300 hover:scale-105 hover:bg-[#32265a]"
-            onClick={onBack}
-            disabled={loading}
-          >
-            <ArrowLeft size={20} /> Back
-          </button>
+<div className="flex flex-wrap justify-between gap-4 mt-4 w-full">
+  <button
+    className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-white bg-[#140342] font-semibold rounded-lg 
+      transition-transform duration-300 hover:scale-105 hover:bg-[#32265a]"
+    onClick={onBack}
+    disabled={loading}
+  >
+    <ArrowLeft size={20} /> Back
+  </button>
 
-          <button
-            onClick={handleCompareAnswer}
-            disabled={loading}
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#00FF84] text-[#140342] bg-[#00FF84] font-semibold rounded-lg 
-    transition-transform duration-300 hover:scale-105 hover:bg-[#00cc70]"
-          >
-            <CheckCircle size={20} /> Compare Answer
-          </button>
+  <button
+    onClick={handleCompareAnswer}
+    disabled={loading}
+    className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#00FF84] text-[#140342] bg-[#00FF84] font-semibold rounded-lg 
+      transition-transform duration-300 hover:scale-105 hover:bg-[#00cc70]"
+  >
+    <CheckCircle size={20} /> Compare Answer
+  </button>
+</div>
 
-        </div>
       </div>
 
       <ComparisonModal
