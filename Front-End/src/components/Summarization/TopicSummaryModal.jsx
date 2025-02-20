@@ -10,6 +10,7 @@ import {
 } from "react-icons/fa";
 import { MdOutlineClose } from "react-icons/md";
 import axios from "axios";
+import AlertMessage from "../Alert/Alert";
 
 // Full-page Spinner Component
 const FullPageSpinner = () => (
@@ -31,6 +32,7 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMediaPlayerOpen, setIsMediaPlayerOpen] = useState(false);
+  const [alert, setAlert] = useState({ message: "", type: "" }); // Alert state
 
   const audioRef = useRef(null);
 
@@ -59,7 +61,10 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
     setIsSummaryGenerated(false);
     setSummary("Processing...");
     if (!topic.trim() || !wordCount.trim()) {
-      alert("Please enter a topic and word count.");
+      setAlert({
+        message: "Please enter a topic and word count.",
+        type: "warning",
+      });
       return;
     }
 
@@ -79,12 +84,19 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
       if (response.data && response.data.summary) {
         setSummary(response.data.summary);
         setIsSummaryGenerated(true);
+        setAlert({
+          message: "Summary generated successfully!",
+          type: "success",
+        });
       } else {
         throw new Error("Invalid response from the server.");
       }
     } catch (error) {
       console.error("Error fetching summary:", error);
-      alert("Failed to generate summary.");
+      setAlert({
+        message: "Failed to generate summary. Try again.",
+        type: "error",
+      });
       setSummary("Failed to generate summary.");
     } finally {
       setIsLoading(false);
@@ -109,9 +121,13 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      setAlert({
+        message: "Summary downloaded successfully!",
+        type: "success",
+      });
     } catch (error) {
       console.error("Error downloading summary:", error);
-      alert("Failed to download summary.");
+      setAlert({ message: "Failed to download summary.", type: "error" });
     }
   };
 
@@ -133,9 +149,13 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      setAlert({
+        message: "Summary Audio downloaded successfully!",
+        type: "success",
+      });
     } catch (error) {
       console.error("Error downloading audio:", error);
-      alert("Failed to download audio.");
+      setAlert({ message: "Failed to download summary audio.", type: "error" });
     }
   };
 
@@ -150,7 +170,7 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
   };
   const handleFetchAudio = async () => {
     if (!isSummaryGenerated) {
-      alert("Generate the summary first!");
+      setAlert({ message: "Generate a summary first!", type: "warning" });
       return;
     }
 
@@ -174,6 +194,7 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
       const audioURL = URL.createObjectURL(audioBlob);
       setAudioUrl(audioURL);
       setIsMediaPlayerOpen(true);
+      setAlert({ message: "Audio ready to play!", type: "success" });
 
       setTimeout(() => {
         if (audioRef.current) {
@@ -184,7 +205,7 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
       }, 300);
     } catch (error) {
       console.error("Error fetching audio:", error);
-      alert("Failed to fetch summary audio.");
+      setAlert({ message: "Failed to fetch summary audio.", type: "error" });
     }
   };
 
@@ -229,6 +250,13 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
       onClick={handleClose} // Clicking outside modal closes it
     >
       {isLoading && <FullPageSpinner />} {/* Full-page spinner */}
+      {alert.message && (
+        <AlertMessage
+          message={alert.message}
+          type={alert.type}
+          onClose={() => setAlert({ message: "", type: "" })}
+        />
+      )}
       <div
         className="bg-white rounded-2xl shadow-xl w-[800px] max-h-[90vh] p-6 transition-all max-w-full sm:p-6 relative"
         onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside modal

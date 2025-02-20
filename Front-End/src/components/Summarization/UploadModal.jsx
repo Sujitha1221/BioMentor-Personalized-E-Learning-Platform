@@ -11,6 +11,7 @@ import {
 } from "react-icons/fa";
 import { MdOutlineClose } from "react-icons/md";
 import axios from "axios";
+import AlertMessage from "../Alert/Alert";
 
 // Full-page Spinner Component
 const FullPageSpinner = () => (
@@ -35,6 +36,7 @@ const UploadModal = ({ isOpen, onClose }) => {
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMediaPlayerOpen, setIsMediaPlayerOpen] = useState(false);
+  const [alert, setAlert] = useState({ message: "", type: "" });
 
   const audioRef = useRef(null);
 
@@ -79,7 +81,7 @@ const UploadModal = ({ isOpen, onClose }) => {
     setSummary("Processing...");
 
     if (!wordCount.trim()) {
-      alert("Please enter the word count.");
+      setAlert({ message: "Please enter the word count.", type: "error" });
       setIsLoading(false);
       return;
     }
@@ -89,14 +91,17 @@ const UploadModal = ({ isOpen, onClose }) => {
 
     if (activeTab === "document") {
       if (!selectedFile) {
-        alert("Please upload a file to summarize.");
+        setAlert({
+          message: "Please upload a file to summarize.",
+          type: "error",
+        });
         setIsLoading(false);
         return;
       }
       formData.append("file", selectedFile);
     } else {
       if (!inputText.trim()) {
-        alert("Please enter text to summarize.");
+        setAlert({ message: "Please enter text to summarize.", type: "error" });
         setIsLoading(false);
         return;
       }
@@ -123,7 +128,10 @@ const UploadModal = ({ isOpen, onClose }) => {
       }
     } catch (error) {
       console.error("Error processing summary:", error);
-      alert("Failed to generate summary. Please try again.");
+      setAlert({
+        message: "Failed to generate summary. Try again.",
+        type: "error",
+      });
       setSummary("Failed to generate summary.");
     } finally {
       setIsLoading(false);
@@ -131,7 +139,10 @@ const UploadModal = ({ isOpen, onClose }) => {
   };
 
   const handleDownloadSummary = async () => {
-    if (!isSummaryGenerated) return;
+    if (!isSummaryGenerated) {
+      setAlert({ message: "Generate a summary first!", type: "error" });
+      return;
+    }
 
     try {
       const response = await axios.get(
@@ -148,9 +159,13 @@ const UploadModal = ({ isOpen, onClose }) => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      setAlert({
+        message: "Summary downloaded successfully!",
+        type: "success",
+      });
     } catch (error) {
       console.error("Error downloading summary:", error);
-      alert("Failed to download summary.");
+      setAlert({ message: "Failed to download summary.", type: "error" });
     }
   };
 
@@ -172,24 +187,26 @@ const UploadModal = ({ isOpen, onClose }) => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      setAlert({
+        message: "Summary Audio downloaded successfully!",
+        type: "success",
+      });
     } catch (error) {
       console.error("Error downloading audio:", error);
-      alert("Failed to download audio.");
+      setAlert({ message: "Failed to download audio.", type: "error" });
     }
   };
 
   const handleFetchAudio = async () => {
     if (!isSummaryGenerated) {
-      alert("Generate the summary first!");
+      setAlert({ message: "Generate a summary first!", type: "error" });
       return;
     }
 
     try {
       const response = await axios.get(
         "http://localhost:8000/download-summary-audio/",
-        {
-          responseType: "blob",
-        }
+        { responseType: "blob" }
       );
 
       if (response.status !== 200) {
@@ -197,6 +214,7 @@ const UploadModal = ({ isOpen, onClose }) => {
       }
 
       const audioBlob = new Blob([response.data], { type: "audio/mpeg" });
+
       if (audioBlob.size === 0) {
         throw new Error("Received empty audio file. Please check the backend.");
       }
@@ -210,11 +228,15 @@ const UploadModal = ({ isOpen, onClose }) => {
           audioRef.current.src = audioURL;
           audioRef.current.play();
           setIsPlaying(true);
+          setAlert({ message: "Playing audio summary!", type: "success" });
         }
       }, 300);
     } catch (error) {
       console.error("Error fetching audio:", error);
-      alert("Failed to fetch summary audio.");
+      setAlert({
+        message: "Failed to fetch summary audio. Please try again.",
+        type: "error",
+      });
     }
   };
 
@@ -257,6 +279,13 @@ const UploadModal = ({ isOpen, onClose }) => {
       onClick={handleClose} // Clicking outside modal closes it
     >
       {isLoading && <FullPageSpinner />} {/* Full-page spinner */}
+      {alert.message && (
+        <AlertMessage
+          message={alert.message}
+          type={alert.type}
+          onClose={() => setAlert({ message: "", type: "" })}
+        />
+      )}
       <div
         className="bg-white rounded-2xl shadow-xl w-[800px] max-h-[90vh] p-6 transition-all max-w-full sm:p-6 relative"
         onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside modal
