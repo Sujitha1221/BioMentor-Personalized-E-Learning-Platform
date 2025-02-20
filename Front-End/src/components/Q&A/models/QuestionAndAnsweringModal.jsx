@@ -16,8 +16,8 @@ const QuestionAndAnsweringModal = ({ isOpen, onClose }) => {
             {view === "upload"
               ? "Biology Answer Assistant"
               : view === "generate"
-              ? "Create & Structure Your Answer"
-              : "Compare Different Answers"}
+              ? "Generate Answer for A/L Biology"
+              : "Evaluate Answer for A/L Biology"}
           </h2>
           <button className="text-gray-500 hover:text-gray-700 text-xl" onClick={onClose}>
             &times;
@@ -28,8 +28,8 @@ const QuestionAndAnsweringModal = ({ isOpen, onClose }) => {
           {view === "upload"
             ? "Generate, evaluate, and improve your A-Level Biology answers."
             : view === "generate"
-            ? "Craft precise Biology answers with proper structure."
-            : "Analyze and contrast multiple Biology responses."}
+            ? "💡 Get structured & essay-type answers instantly for Sri Lankan A/L exams."
+            : "🔍 Submit your answer for accuracy checks & expert feedback."}
         </p>
 
         {view === "upload" && (
@@ -41,7 +41,7 @@ const QuestionAndAnsweringModal = ({ isOpen, onClose }) => {
               <FaFileAlt className="text-[#00FF84] text-3xl mx-auto mb-3" />
               <p className="text-[#00FF84] font-semibold text-lg">Generate Answer</p>
               <p className="text-sm text-gray-500 sm:hidden">Craft structured answers</p>
-              <p className="hidden sm:block text-sm text-gray-500">Craft precise Biology answers with proper structure</p>
+              <p className="hidden sm:block text-sm text-gray-500">Generate well-structured Biology answers</p>
             </div>
 
             <div
@@ -51,7 +51,7 @@ const QuestionAndAnsweringModal = ({ isOpen, onClose }) => {
               <FaFileAlt className="text-[#140342] text-3xl mx-auto mb-3" />
               <p className="text-[#140342] font-semibold text-lg">Compare Answers</p>
               <p className="text-sm text-gray-500 sm:hidden">Analyze responses</p>
-              <p className="hidden sm:block text-sm text-gray-500">Analyze and contrast multiple Biology responses</p>
+              <p className="hidden sm:block text-sm text-gray-500">Evaluate and improve Biology answers</p>
             </div>
           </div>
         )}

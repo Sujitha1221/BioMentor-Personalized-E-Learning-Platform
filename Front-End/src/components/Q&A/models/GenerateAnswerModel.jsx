@@ -148,10 +148,10 @@ const GenerateAnswerModel = ({ onBack }) => {
           </div>
         )}
 
-        <div className="flex justify-between mt-4">
+        <div className="flex flex-wrap justify-between gap-4 mt-4 w-full">
           <button
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-white bg-[#140342] font-semibold rounded-lg 
-    transition-transform duration-300 hover:scale-105 hover:bg-[#32265a]"
+            className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-white bg-[#140342] font-semibold rounded-lg 
+      transition-transform duration-300 hover:scale-105 hover:bg-[#32265a]"
             disabled={loading}
             onClick={onBack}
           >
@@ -160,12 +160,13 @@ const GenerateAnswerModel = ({ onBack }) => {
           <button
             onClick={handleGenerateAnswer}
             disabled={loading}
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#00FF84] text-[#140342] bg-[#00FF84] font-semibold rounded-lg 
-    transition-transform duration-300 hover:scale-105 hover:bg-[#00cc70]"
+            className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#00FF84] text-[#140342] bg-[#00FF84] font-semibold rounded-lg 
+      transition-transform duration-300 hover:scale-105 hover:bg-[#00cc70]"
           >
             <Sparkles size={20} /> Generate Answer
           </button>
         </div>
+
       </div>
     </div>
   );
