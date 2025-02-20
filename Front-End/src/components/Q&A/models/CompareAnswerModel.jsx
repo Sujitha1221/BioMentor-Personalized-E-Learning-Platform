@@ -42,6 +42,7 @@ const CompareAnswerModel = ({ onBack }) => {
 
     try {
       const response = await axios.post("http://127.0.0.1:8000/evaluate-answer", {
+        student_id: "1234",
         question,
         user_answer: answer,
         question_type: answerType,
