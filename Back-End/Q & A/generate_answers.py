@@ -2,11 +2,13 @@ import logging
 import numpy as np
 import torch
 import re
+import os
 from sentence_transformers import SentenceTransformer
 from transformers import pipeline
 import faiss
 import pandas as pd
 import torch.nn.functional as F
+from dotenv import load_dotenv
 import google.generativeai as genai
 
 # Configure logging
@@ -30,8 +32,18 @@ index = faiss.read_index('DB/faiss_index.bin')
 logging.info("Loading text generation model...")
 generator = pipeline("text-generation", model="D:/SLIIT/Research/Finetune - Structure and Essay/Merged_model")
 
+# Load environment variables from .env file
+load_dotenv()
+
+# Retrieve API key
+GENAI_API_KEY = os.getenv("GENAI_API_KEY")
+
+# Check if the API key is loaded correctly
+if not GENAI_API_KEY:
+    raise ValueError("API Key not found! Please set GENAI_API_KEY in .env file.")
+
 # Initialize Gemini API
-GENAI_API_KEY = ""
+# GENAI_API_KEY = "AIzaSyDXtkKGjt_OFVDrqB-FOQLUlRE0eZwYElA"
 genai.configure(api_key=GENAI_API_KEY)
 gemini_model = genai.GenerativeModel('gemini-pro')
 
