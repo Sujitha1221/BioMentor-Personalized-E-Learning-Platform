@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import QuestionAndAnsweringModal from "./models/QuestionAndAnsweringModal";
 import { FcBiomass } from "react-icons/fc";
 import { motion } from "framer-motion";
@@ -10,11 +10,12 @@ import PassPaperQuestionModel from "./models/PassPaperQuestionModel";
 const QuestionAndAnsweringHomePage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPassPaperModalOpen, setIsPassPaperModalOpen] = useState(false);
+  const firstSectionRef = useRef(null);
 
   return (
     <>
-      <Hero />
-      <div className="p-4 md:p-8 bg-gray-100 min-h-screen flex flex-col items-center justify-center gap-6 md:mt-5">
+      <Hero firstSectionRef={firstSectionRef} />
+      <div ref={firstSectionRef} className="p-4 md:p-8 bg-gray-100 min-h-screen flex flex-col items-center justify-center gap-6 md:mt-5">
         {/* Q&A Generation and evaluation */}
         <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center text-center md:text-left mt-5 md:mt-20">
           {/* Left Section: Text Content */}
