@@ -2,6 +2,6 @@ Summarization
 
 python -m venv venv
 venv\Scripts\activate
-pip install fastapi uvicorn faiss-cpu sentence-transformers transformers pytesseract opencv-python pdf2image PyPDF2 gtts pandas numpy python-docx python-pptx python-multipart autocorrect language-tool-python pillow tabula-py tqdm PyMuPDF colorlog easyocr
+pip install fastapi uvicorn faiss-cpu sentence-transformers transformers pytesseract opencv-python pdf2image PyPDF2 gtts pandas numpy python-docx python-pptx python-multipart autocorrect language-tool-python pillow tabula-py tqdm PyMuPDF colorlog easyocr scikit-learn joblib better_profanity textblob nltk
 uvicorn summarization:app --reload
 

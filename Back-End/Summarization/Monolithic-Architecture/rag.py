@@ -1,3 +1,4 @@
+from dangerous_keywords import DANGEROUS_KEYWORDS
 import logging
 import pandas as pd
 from sentence_transformers import SentenceTransformer
@@ -6,9 +7,19 @@ from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from autocorrect import Speller
 import language_tool_python
 import re
+from better_profanity import profanity
+import joblib
+from textblob import TextBlob
+from nltk.corpus import words, wordnet
+import nltk
+nltk.download('words')
+nltk.download('wordnet')
+ENGLISH_WORDS = set(words.words())
+
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(level=logging.INFO,
+                    format="%(asctime)s - %(levelname)s - %(message)s")
 
 
 class RAGModel:
@@ -26,9 +37,12 @@ class RAGModel:
             logging.info("RAG Model components loaded successfully.")
 
             # Load datasets and initialize FAISS index
-            self.long_texts, self.notes_content = self._load_data(dataset_paths)
-            self.faiss_index = self._initialize_faiss(self.long_texts, self.notes_content)
+            self.long_texts, self.notes_content = self._load_data(
+                dataset_paths)
+            self.faiss_index = self._initialize_faiss(
+                self.long_texts, self.notes_content)
             logging.info("FAISS index initialized successfully.")
+
         except Exception as e:
             logging.error(f"Error initializing RAG Model: {e}")
             raise
@@ -53,42 +67,116 @@ class RAGModel:
                 except pd.errors.EmptyDataError:
                     logging.error(f"Empty dataset at path: {dataset_path}")
                     continue
+
             if not long_texts and not notes_content:
                 raise ValueError("No valid data found in datasets.")
+
             logging.info("Datasets loaded successfully.")
+            return long_texts, notes_content
+
         except Exception as e:
             logging.error(f"Error loading datasets: {e}")
             raise
-        return long_texts, notes_content
 
     def _initialize_faiss(self, long_texts, notes_content):
         """
         Initialize FAISS index with embeddings from long texts and notes.
         """
         try:
-            embeddings = self.embedder.encode(long_texts + notes_content).astype('float32')
+            embeddings = self.embedder.encode(
+                long_texts + notes_content).astype('float32')
             index = faiss.IndexFlatL2(embeddings.shape[1])
             index.add(embeddings)
             logging.info("FAISS index created and populated successfully.")
             return index
+
         except Exception as e:
             logging.error(f"Error initializing FAISS index: {e}")
             raise
 
+    @staticmethod
+    def contains_inappropriate_content(query):
+        """
+        Detects inappropriate content using:
+        - Profanity detection (`better-profanity`)
+        - Keyword matching (manual list of dangerous topics)
+        - Sentiment analysis (to catch highly negative messages)
+        - Checks if the query contains valid English words
+        """
+        def is_valid_word(word):
+            """Checks if a word is a valid English or scientific term."""
+            return word in ENGLISH_WORDS or wordnet.synsets(word)
+
+        # Step 1: Check for explicit words using `better-profanity`
+        if profanity.contains_profanity(query):
+            logging.warning(f"Inappropriate language detected: {query}")
+            return "Your input contains inappropriate words. Please rephrase."
+
+        # Step 2: Check for harmful intent using keyword matching
+        for keyword in DANGEROUS_KEYWORDS:
+            if re.search(rf"\b{re.escape(keyword)}\b", query, re.IGNORECASE):
+                logging.warning(f"Query flagged for dangerous intent: {query}")
+                return "Your query is flagged as inappropriate or unsafe. Please rephrase."
+
+        # Step 3: Check for highly negative sentiment (e.g., self-harm, extreme anger)
+        sentiment_score = TextBlob(query).sentiment.polarity
+        if sentiment_score < -0.6:  # Negative sentiment threshold
+            logging.warning(f"Highly negative sentiment detected: {query}")
+            return "Your query seems inappropriate. Please rephrase."
+
+        # Step 4: Check if query contains only valid English words
+        # Extract words from query
+        query_words = re.findall(r'\b\w+\b', query.lower())
+
+        invalid_words = [
+            word for word in query_words if not is_valid_word(word)]
+        if invalid_words:
+            logging.warning(
+                f"Query contains gibberish or non-English words: {query}")
+            return "Your query contains invalid or gibberish words. Please enter a proper Biology-related question."
+
+        # If all checks pass, return False (query is safe)
+        return False
+
     def retrieve_relevant_content(self, query, k=3):
         """
         Retrieve top-k relevant content for a given query using FAISS.
+        Ensures the query does not contain inappropriate words and is biology-related.
         """
         try:
+            if self.contains_inappropriate_content(query):
+                logging.warning(
+                    f"Query contains inappropriate content: {query}")
+                return "Your input contains inappropriate words. Please rephrase."
+
+            if not hasattr(self, "embedder") or not hasattr(self, "faiss_index"):
+                logging.error(
+                    "FAISS model or embedder not initialized properly.")
+                return "Error: FAISS model is not properly initialized."
+
             query_embedding = self.embedder.encode([query]).astype('float32')
             distances, indices = self.faiss_index.search(query_embedding, k)
+
+            if not hasattr(self, "long_texts") or not hasattr(self, "notes_content"):
+                logging.error(
+                    "Data lists (long_texts or notes_content) are missing.")
+                return "Error: Data lists not found."
+
             all_content = self.long_texts + self.notes_content
-            relevant_content = [all_content[idx] for idx in indices[0] if idx < len(all_content)]
-            logging.info(f"Retrieved {len(relevant_content)} relevant content items for query: {query}")
+            relevant_content = [all_content[idx]
+                                for idx in indices[0] if idx < len(all_content)]
+
+            if not relevant_content:
+                logging.info(f"No relevant content found for query: {query}")
+                return "No relevant content found"
+
+            logging.info(
+                f"Retrieved {len(relevant_content)} relevant content items for query: {query}")
             return relevant_content
+
         except Exception as e:
             logging.error(f"Error retrieving relevant content: {e}")
-            raise
+            return "Error retrieving content"
 
     def _correct_and_format_text(self, text):
         """
@@ -100,7 +188,8 @@ class RAGModel:
 
             # Step 2: Correct grammar
             matches = self.grammar_tool.check(corrected_text)
-            corrected_text = language_tool_python.utils.correct(corrected_text, matches)
+            corrected_text = language_tool_python.utils.correct(
+                corrected_text, matches)
 
             # Step 3: Split text into sentences
             sentences = corrected_text.split(". ")
@@ -140,27 +229,6 @@ class RAGModel:
             return formatted_text
         except Exception as e:
             logging.error(f"Error correcting and formatting text: {e}")
-            raise
-
-    def store_retrieved_content(self, content, output_file):
-        """
-        Format, correct, and store the retrieved content in a file.
-        """
-        try:
-            # Process each piece of content for spelling, grammar, capitalization, and repetition
-            processed_content = [self._correct_and_format_text(text) for text in content]
-
-            # Combine all processed content into a single formatted text
-            formatted_content = "\n\n".join(processed_content)
-
-            # Write to file
-            with open(output_file, "w", encoding="utf-8") as f:
-                f.write(formatted_content)
-
-            logging.info(f"Retrieved content stored successfully in {output_file}.")
-            return output_file
-        except Exception as e:
-            logging.error(f"Error storing retrieved content: {e}")
             raise
 
     def postprocess_summary(self, summary):
@@ -232,7 +300,8 @@ class RAGModel:
             max_input_words = 390
             if len(long_text.split()) > max_input_words:
                 chunks = chunk_text(long_text, max_tokens=max_input_words)
-                summaries = [self.generate_summary_for_long_text(chunk, min_words, max_words) for chunk in chunks]
+                summaries = [self.generate_summary_for_long_text(
+                    chunk, min_words, max_words) for chunk in chunks]
                 combined_summary = " ".join(summaries)
                 return self.truncate_to_word_count(combined_summary, max_words)
 
@@ -240,7 +309,8 @@ class RAGModel:
                 f"Generate a concise, well-structured, and grammatically correct summary for the following content:\n\n"
                 f"{long_text}\n\nSummary:"
             )
-            inputs = self.tokenizer(prompt, return_tensors="pt", max_length=512, truncation=True)
+            inputs = self.tokenizer(
+                prompt, return_tensors="pt", max_length=512, truncation=True)
             summary_ids = self.model.generate(
                 inputs["input_ids"],
                 max_length=max_words * 2,
@@ -250,7 +320,8 @@ class RAGModel:
                 repetition_penalty=2.0,
                 early_stopping=True
             )
-            summary = self.tokenizer.decode(summary_ids[0], skip_special_tokens=True)
+            summary = self.tokenizer.decode(
+                summary_ids[0], skip_special_tokens=True)
             summary = self.postprocess_summary(summary)
             return self.truncate_to_word_count(summary, max_words)
         except Exception as e:

@@ -11,7 +11,8 @@ import numpy as np
 import easyocr
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(level=logging.INFO,
+                    format="%(asctime)s - %(levelname)s - %(message)s")
 
 # Initialize the spell checker
 spell = Speller(lang="en")
@@ -52,11 +53,14 @@ def extract_text_and_tables_from_pptx(pptx_path):
                 if shape.has_table:
                     table = shape.table
                     text += convert_table_to_paragraph_from_pptx(table) + "\n"
-        logging.info(f"Extracted content from PowerPoint presentation: {pptx_path}")
+        logging.info(
+            f"Extracted content from PowerPoint presentation: {pptx_path}")
         return text
     except Exception as e:
-        logging.error(f"Failed to extract content from PowerPoint presentation: {e}")
-        raise RuntimeError(f"Error processing PowerPoint presentation: {pptx_path}")
+        logging.error(
+            f"Failed to extract content from PowerPoint presentation: {e}")
+        raise RuntimeError(
+            f"Error processing PowerPoint presentation: {pptx_path}")
 
 
 def extract_text_from_txt(txt_path):
@@ -83,7 +87,8 @@ def convert_table_to_paragraph(table):
         for row in table.rows[1:]:
             row_data = [cell.text.strip() for cell in row.cells]
             if len(headers) == len(row_data):
-                sentence = ", ".join(f"{headers[i]}: {row_data[i]}" for i in range(len(headers)))
+                sentence = ", ".join(
+                    f"{headers[i]}: {row_data[i]}" for i in range(len(headers)))
                 sentences.append(sentence)
         return "\n".join(sentences)
     except Exception as e:
@@ -115,24 +120,30 @@ def clean_text(text):
     """
     try:
         # 1. Remove headings and chapter titles
-        text = re.sub(r'(?i)\b(chapter\s*\d+|section\s*\d+|introduction|table of contents)\b.*', '', text, flags=re.IGNORECASE)
+        text = re.sub(r'(?i)\b(chapter\s*\d+|section\s*\d+|introduction|table of contents)\b.*',
+                      '', text, flags=re.IGNORECASE)
         text = re.sub(r'^[A-Z\s]{3,}\n', '', text, flags=re.MULTILINE)
 
         # 2. Remove bullet points, list numbers, and standalone numbers
-        text = re.sub(r'^[\-\•\*\+\>\➢]+\s*', '', text, flags=re.MULTILINE)  # Bullet points
-        text = re.sub(r'^\d+\.\s*', '', text, flags=re.MULTILINE)  # List numbers
+        text = re.sub(r'^[\-\•\*\+\>\➢]+\s*', '', text,
+                      flags=re.MULTILINE)  # Bullet points
+        text = re.sub(r'^\d+\.\s*', '', text,
+                      flags=re.MULTILINE)  # List numbers
         text = re.sub(r'\b\d+\b', '', text)  # Standalone numbers
 
         # 3. Fix improper word splits (e.g., "m ean" -> "mean")
-        text = re.sub(r'(\w)\s+(\w)', r'\1 \2', text)  # Ensure proper spacing between letters
-        text = re.sub(r'(\w)\s{2,}(\w)', r'\1 \2', text)  # Remove extra spaces between words
+        # Ensure proper spacing between letters
+        text = re.sub(r'(\w)\s+(\w)', r'\1 \2', text)
+        # Remove extra spaces between words
+        text = re.sub(r'(\w)\s{2,}(\w)', r'\1 \2', text)
 
         # 4. Normalize spaces and line breaks
         text = re.sub(r'\s+', ' ', text).strip()
         text = re.sub(r'\n+', '\n', text).strip()
 
         # 5. Remove redundant phrases and repetitive content
-        text = re.sub(r'\b(the study of living organisms is called biology|biology is called biology)\b', 'biology', text, flags=re.IGNORECASE)
+        text = re.sub(r'\b(the study of living organisms is called biology|biology is called biology)\b',
+                      'biology', text, flags=re.IGNORECASE)
 
         # 6. Fix grammar, punctuation, and sentence structure with progress bar
         sentences = re.split(r'(?<=[.!?])\s+', text)  # Split into sentences
@@ -141,7 +152,8 @@ def clean_text(text):
         for sentence in tqdm(sentences, desc="Cleaning text sentences"):
             sentence = spell(sentence.strip())  # Fix spelling
             if len(sentence) > 1:
-                corrected_sentences.append(sentence[0].upper() + sentence[1:].lower())
+                corrected_sentences.append(
+                    sentence[0].upper() + sentence[1:].lower())
 
         cleaned_text = ' '.join(corrected_sentences).strip()
 
@@ -165,7 +177,7 @@ def format_as_paragraph(text):
         lines = [line.strip() for line in text.splitlines() if line.strip()]
         paragraph = " ".join(lines)
         paragraph = re.sub(r'\s+', ' ', paragraph).strip()
-        
+
         # Ensure there's a space after every full stop (if missing)
         paragraph = re.sub(r'(?<!\s)\.(?!\s|$)', '. ', paragraph)
 
@@ -207,7 +219,8 @@ def find_errors(text):
     # Detect formatting issues (e.g., double punctuation)
     double_punctuation = re.findall(r'[.!?,]{2,}', text)
     if double_punctuation:
-        errors.append(f"Double punctuation found: {', '.join(double_punctuation)}")
+        errors.append(
+            f"Double punctuation found: {', '.join(double_punctuation)}")
 
     # Find invalid words or placeholders (e.g., 'dis ease')
     invalid_words = re.findall(r'\bdis ease\b', text)
@@ -219,13 +232,15 @@ def find_errors(text):
         return "No errors found."
     return "\n".join(errors)
 
+
 def resolve_errors(text):
     """
     Resolve common errors in the extracted text.
     """
     try:
         # 1. Fix improperly split words (e.g., 'i s' -> 'is', 'o r' -> 'or')
-        text = re.sub(r'\b(i s|o r|i t|i t s)\b', lambda m: m.group(0).replace(" ", ""), text)
+        text = re.sub(r'\b(i s|o r|i t|i t s)\b',
+                      lambda m: m.group(0).replace(" ", ""), text)
 
         # 2. Remove repeated phrases (e.g., "the science of the science of")
         repeated_phrases = re.findall(r'\b(\w+\s+\w+)\b(?=.*\b\1\b)', text)
@@ -240,7 +255,8 @@ def resolve_errors(text):
 
         # 5. Normalize spacing and capitalization
         text = re.sub(r'\s+', ' ', text).strip()  # Normalize spaces
-        text = re.sub(r'\s+([.,!?])', r'\1', text)  # Remove spaces before punctuation
+        # Remove spaces before punctuation
+        text = re.sub(r'\s+([.,!?])', r'\1', text)
         sentences = re.split(r'(?<=[.!?])\s+', text)  # Split into sentences
         resolved_sentences = [
             sentence[0].upper() + sentence[1:] if sentence else ""
@@ -257,7 +273,8 @@ def resolve_errors(text):
     except Exception as e:
         logging.error(f"Error resolving text: {e}")
         raise RuntimeError("Error resolving text.")
-    
+
+
 def clean_table(df):
     """
     Clean and structure the table data from a DataFrame.
@@ -266,13 +283,14 @@ def clean_table(df):
         df = df.dropna(how='all')  # Drop rows with all NaN values
         df = df.dropna(axis=1, how='all')  # Drop columns with all NaN values
         df = df.reset_index(drop=True)  # Reset index after dropping
-        df.columns = [col.strip() for col in df.columns]  # Strip whitespace from column names
-        df = df[~df.apply(lambda row: row.astype(str).str.contains('©|Rights Reserved').any(), axis=1)]  # Remove noisy rows
+        # Strip whitespace from column names
+        df.columns = [col.strip() for col in df.columns]
+        df = df[~df.apply(lambda row: row.astype(str).str.contains(
+            '©|Rights Reserved').any(), axis=1)]  # Remove noisy rows
         return df
     except Exception as e:
         logging.error(f"Failed to clean table: {e}")
         raise
-
 
 
 def extract_text_from_pdf(pdf_path):
@@ -284,7 +302,8 @@ def extract_text_from_pdf(pdf_path):
         document = fitz.open(pdf_path)
         for page_number in range(len(document)):
             page = document[page_number]
-            page_text = page.get_text("text")  # Extract text with proper spacing
+            # Extract text with proper spacing
+            page_text = page.get_text("text")
             if page_text.strip():
                 text += page_text.strip() + "\n"
         document.close()
@@ -321,29 +340,36 @@ def extract_text_from_image_pdf(pdf_path):
                     xref = img[0]
                     pix = fitz.Pixmap(document, xref)
                     if pix.n < 5:  # GRAY or RGB
-                        pix_image = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                        pix_image = Image.frombytes(
+                            "RGB", [pix.width, pix.height], pix.samples)
                     else:  # CMYK: Convert to RGB
-                        pix_image = Image.frombytes("RGB", [pix.width, pix.height], pix.samples, "raw", pix.colorspace, 0, 1)
+                        pix_image = Image.frombytes(
+                            "RGB", [pix.width, pix.height], pix.samples, "raw", pix.colorspace, 0, 1)
 
                     # Convert image to array for OCR
                     img_array = np.array(pix_image)
-                    ocr_result = reader.readtext(img_array, detail=0)  # Extract text
+                    ocr_result = reader.readtext(
+                        img_array, detail=0)  # Extract text
                     page_ocr_text = " ".join(ocr_result).strip()
 
                     if page_ocr_text:
                         text += page_ocr_text + "\n"
-                        logging.info(f"Extracted text from image on page {page_number + 1}, image {img_index + 1}.")
+                        logging.info(
+                            f"Extracted text from image on page {page_number + 1}, image {img_index + 1}.")
 
         document.close()
 
         if not text.strip():
-            logging.warning(f"No extractable text or embedded data found in image-based PDF: {pdf_path}")
+            logging.warning(
+                f"No extractable text or embedded data found in image-based PDF: {pdf_path}")
         else:
-            logging.info(f"Processed image-based PDF using fitz and OCR: {pdf_path}")
+            logging.info(
+                f"Processed image-based PDF using fitz and OCR: {pdf_path}")
 
         return text.strip()
     except Exception as e:
-        logging.error(f"Failed to process image-based PDF with fitz and OCR: {e}")
+        logging.error(
+            f"Failed to process image-based PDF with fitz and OCR: {e}")
         raise RuntimeError(f"Error processing image-based PDF: {e}")
 
 
@@ -389,14 +415,15 @@ def extract_text_from_image_pdf(pdf_path):
 #     except Exception as e:
 #         logging.error(f"Failed to process PDF: {e}")
 #         raise RuntimeError(f"Error processing PDF: {e}")
-    
+
 def extract_tables_from_pdf(pdf_path):
     """
     Extract and clean tables from PDF using Tabula.
     """
     try:
         tables_text = ""
-        tables = tabula.read_pdf(pdf_path, pages="all", multiple_tables=True, silent=True)
+        tables = tabula.read_pdf(
+            pdf_path, pages="all", multiple_tables=True, silent=True)
         for table_index, table in enumerate(tables):
             cleaned_table = clean_table(table)  # Clean the table data
             if not cleaned_table.empty:
@@ -405,7 +432,8 @@ def extract_tables_from_pdf(pdf_path):
     except Exception as e:
         logging.error(f"Failed to extract tables from PDF: {e}")
         raise RuntimeError(f"Error processing tables from PDF: {pdf_path}")
-    
+
+
 def extract_content_from_pdf(pdf_path):
     """
     Extract text and tables from a PDF, using both text-based and image-based methods.
@@ -418,7 +446,8 @@ def extract_content_from_pdf(pdf_path):
 
         # If no text is found, attempt OCR for image-based PDFs
         if not extracted_text.strip():
-            logging.info("No text found in PDF. Attempting OCR on image-based PDF...")
+            logging.info(
+                "No text found in PDF. Attempting OCR on image-based PDF...")
             extracted_text = extract_text_from_image_pdf(pdf_path)
 
         # Extract tables and append to content
@@ -466,5 +495,3 @@ def extract_content(file_path):
     except Exception as e:
         logging.error(f"Failed to process file: {e}")
         raise RuntimeError(f"Error processing file: {file_path}")
-
-

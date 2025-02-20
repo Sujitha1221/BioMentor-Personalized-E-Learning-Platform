@@ -3,9 +3,11 @@ import os
 from fastapi import UploadFile
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(level=logging.INFO,
+                    format="%(asctime)s - %(levelname)s - %(message)s")
 
 UPLOAD_DIR = "uploads"
+
 
 def save_uploaded_file(file: UploadFile):
     """

@@ -3,12 +3,14 @@ import io
 from gtts import gTTS
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(level=logging.INFO,
+                    format="%(asctime)s - %(levelname)s - %(message)s")
+
 
 def text_to_speech(text, output_buffer):
     """
     Convert text to speech using gTTS and save it to an in-memory buffer.
-    
+
     Args:
         text (str): Text to convert into speech.
         output_buffer (io.BytesIO): The buffer to store the MP3 file.
@@ -28,4 +30,3 @@ def text_to_speech(text, output_buffer):
     except Exception as e:
         logging.error(f"Failed to convert text to speech: {e}", exc_info=True)
         raise RuntimeError("Error in text-to-speech conversion.")
-
