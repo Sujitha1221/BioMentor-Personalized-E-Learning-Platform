@@ -14,3 +14,4 @@ uvicorn
 fastapi
 spacy
 duckduckgo_search
+python-dotenv
