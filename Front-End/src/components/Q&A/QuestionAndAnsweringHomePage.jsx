@@ -197,7 +197,7 @@ const QuestionAndAnsweringHomePage = () => {
               </div>
               <button
                 className="bg-indigo-600 text-white px-6 py-3 rounded-lg mt-6 hover:bg-indigo-800"
-                onClick={() => setIsModalOpen(true)}
+                onClick={() => window.location.href = "http://localhost:5173/Q&A-materials"}
               >
                 Get Your Study Plan
               </button>

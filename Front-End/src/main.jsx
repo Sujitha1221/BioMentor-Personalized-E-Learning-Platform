@@ -17,7 +17,7 @@ import SignUp from './components/SignUp/SignUp.jsx';
 import QuestionAndAnsweringHomePage from './components/Q&A/QuestionAndAnsweringHomePage.jsx';
 import QuestionAndAnsweringStudentDashboard from './components/Q&A/QuestionAndAnsweringStudentDashboard.jsx'
 import QuestionAndAnsweringStudentHistory from './components/Q&A/QuestionAndAnsweringStudentHistory.jsx';
-
+import QuestionAndAnsweringStudyMaterials from './components/Q&A/QuestionAndAnsweringStudyMaterials.jsx';
 const router = createBrowserRouter([  
   {
     path: "/",
@@ -46,6 +46,11 @@ const router = createBrowserRouter([
       {
         path: '/Q&A-history',
         element: <QuestionAndAnsweringStudentHistory></QuestionAndAnsweringStudentHistory>,
+        loader: () => fetch('eventData.json')
+      },
+      {
+        path: '/Q&A-materials',
+        element: <QuestionAndAnsweringStudyMaterials></QuestionAndAnsweringStudyMaterials>,
         loader: () => fetch('eventData.json')
       },
       {
