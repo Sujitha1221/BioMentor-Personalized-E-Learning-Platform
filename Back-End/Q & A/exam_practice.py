@@ -20,7 +20,7 @@ def get_db():
         return db
     except Exception as e:
         logging.error(f"Failed to connect to MongoDB: {e}", exc_info=True)
-        raise
+        raise HTTPException(status_code=400, detail=str(e))
 
 # Global Database Connection
 db = get_db()
@@ -38,7 +38,7 @@ try:
 
 except Exception as e:
     logging.error(f"Error loading CSV file: {e}", exc_info=True)
-    df = None  # Set df to None in case of failure
+    raise HTTPException(status_code=400, detail=str(e))
 
 # Select One Random Structured & Essay Question
 def get_one_sample_question():
@@ -66,12 +66,11 @@ def get_one_sample_question():
                 "Answer": essay_question.iloc[0]["Answer"]
             }
         }
-
         return selected_questions
 
     except Exception as e:
         logging.error(f"Error selecting sample questions: {e}", exc_info=True)
-        return None
+        raise HTTPException(status_code=400, detail=str(e))
 
 # Select Questions Per Student
 def select_questions_per_student(student_id):
@@ -104,7 +103,7 @@ def get_questions_by_student_id(student_id):
         if not record:
             select_questions_per_student(student_id)
             record = collection.find_one({"Student_ID": student_id}, {"_id": 0})
-            return {"error": f"No questions found for Student ID {student_id}"}
+            # return {"error": f"No questions found for Student ID {student_id}"}
 
         # Check if the required fields exist
         if "Structured_Question" not in record or "Essay_Question" not in record:
@@ -118,7 +117,7 @@ def get_questions_by_student_id(student_id):
 
     except Exception as e:
         logging.error(f"Error fetching questions for Student ID {student_id}: {e}", exc_info=True)
-        return {"error": "Error retrieving questions"}
+        raise HTTPException(status_code=500, detail=str(e))
 
 def replace_question_for_student(student_id, question_type):
     """
@@ -137,7 +136,7 @@ def replace_question_for_student(student_id, question_type):
         record = collection.find_one({"Student_ID": student_id})
 
         if not record:
-            return {"error": f"No record found for Student ID {student_id}"}
+            raise HTTPException(status_code=404, detail=f"No questions found for Student ID {student_id}")
 
         # Select a new question and answer from the dataset
         if question_type.lower() == "structured":
@@ -171,7 +170,7 @@ def replace_question_for_student(student_id, question_type):
 
     except Exception as e:
         logging.error(f"Error replacing {question_type} question for Student ID {student_id}: {e}", exc_info=True)
-        return {"error": "Error replacing question"}
+        raise HTTPException(status_code=500, detail=str(e))
 
 def compare_with_passpaper_answer (student_id, question, user_answer, question_type):
     """
@@ -183,7 +182,7 @@ def compare_with_passpaper_answer (student_id, question, user_answer, question_t
         record = collection.find_one({"Student_ID": student_id}, {"_id": 0})
 
         if not record:
-            return {"error": f"No questions found for Student ID {student_id}"}
+            raise HTTPException(status_code=404, detail=f"No questions found for Student ID {student_id}")
 
         # Fetch the correct model answer based on the question type
         if question_type.lower() == "structured":
@@ -191,10 +190,10 @@ def compare_with_passpaper_answer (student_id, question, user_answer, question_t
         elif question_type.lower() == "essay":
             pass_paper_answer = record.get("Essay_Question", {}).get("Answer", None)
         else:
-            return {"error": f"Invalid question type: {question_type}"}
+            raise HTTPException(status_code=400, detail=f"Invalid question type: {question_type}")
 
         if not pass_paper_answer:
-            return {"error": f"Pass paper answer not found for {question_type} question."}
+            raise HTTPException(status_code=404, detail=f"Pass paper answer not found for {question_type} question.")
 
         # Evaluate the user's answer against the saved answer
         logging.info("Evaluating user's answer against the pass paper answer...")
@@ -216,7 +215,7 @@ def compare_with_passpaper_answer (student_id, question, user_answer, question_t
         }
     except Exception as e:
         logging.error(f"Error occurred while evaluating user's answer: {e}", exc_info=True)
-        return {"error": "Error evaluating answer"}
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # Run Tests
