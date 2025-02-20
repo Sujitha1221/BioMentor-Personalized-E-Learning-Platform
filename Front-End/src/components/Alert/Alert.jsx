@@ -1,5 +1,9 @@
 import React, { useEffect } from "react";
-import { FaTimesCircle, FaCheckCircle, FaExclamationCircle } from "react-icons/fa";
+import {
+  FaTimesCircle,
+  FaCheckCircle,
+  FaExclamationCircle,
+} from "react-icons/fa";
 import { MdClose } from "react-icons/md"; // Close button icon
 
 const AlertMessage = ({ message, type = "error", onClose }) => {
@@ -15,9 +19,9 @@ const AlertMessage = ({ message, type = "error", onClose }) => {
 
   // Define styles based on alert type
   const alertStyles = {
-    error: { bgColor: "bg-red-500", Icon: FaTimesCircle }, // ❌ Error
-    success: { bgColor: "bg-green-500", Icon: FaCheckCircle }, // ✅ Success
-    warning: { bgColor: "bg-yellow-400", Icon: FaExclamationCircle }, // ⚠ Warning (!)
+    error: { bgColor: "bg-red-500", Icon: FaTimesCircle },
+    success: { bgColor: "bg-green-500", Icon: FaCheckCircle },
+    warning: { bgColor: "bg-yellow-400", Icon: FaExclamationCircle },
   };
 
   const { bgColor, Icon } = alertStyles[type] || alertStyles.error; // Default to error
