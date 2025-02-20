@@ -58,6 +58,16 @@ const UploadModal = ({ isOpen, onClose }) => {
     setSelectedFile(event.target.files[0]);
   };
 
+  // Safely close modal
+  const handleClose = () => {
+    if (typeof onClose === "function") {
+      console.log("Closing modal...");
+      onClose();
+    } else {
+      console.error("onClose is not a function!");
+    }
+  };
+
   const handleCopy = () => {
     navigator.clipboard.writeText(summary);
     alert("Summary copied!");
@@ -193,9 +203,8 @@ const UploadModal = ({ isOpen, onClose }) => {
 
       const audioURL = URL.createObjectURL(audioBlob);
       setAudioUrl(audioURL);
-      setIsMediaPlayerOpen(true); // ✅ Open media player modal
+      setIsMediaPlayerOpen(true);
 
-      // ✅ Ensure audio starts playing automatically when modal opens
       setTimeout(() => {
         if (audioRef.current) {
           audioRef.current.src = audioURL;
@@ -243,9 +252,15 @@ const UploadModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50"
+      onClick={handleClose} // Clicking outside modal closes it
+    >
       {isLoading && <FullPageSpinner />} {/* Full-page spinner */}
-      <div className="bg-white rounded-2xl shadow-xl w-[800px] max-h-[90vh] p-6 transition-all max-w-full sm:p-6 relative">
+      <div
+        className="bg-white rounded-2xl shadow-xl w-[800px] max-h-[90vh] p-6 transition-all max-w-full sm:p-6 relative"
+        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside modal
+      >
         {/* Modal Header */}
         <div className="relative mb-4 px-5">
           <h2 className="text-2xl font-bold text-[#140342] text-center w-full">

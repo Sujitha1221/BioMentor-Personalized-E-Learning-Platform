@@ -1,17 +1,48 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { FaRegCopy, FaDownload, FaPlay } from "react-icons/fa";
+import {
+  FaRegCopy,
+  FaDownload,
+  FaPlay,
+  FaPause,
+  FaVolumeUp,
+  FaTimes,
+} from "react-icons/fa";
 import { MdOutlineClose } from "react-icons/md";
+import axios from "axios";
 
+// Full-page Spinner Component
+const FullPageSpinner = () => (
+  <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
+    <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent"></div>
+  </div>
+);
 const TopicSummaryModal = ({ isOpen, onClose }) => {
   const [topic, setTopic] = useState("");
   const [wordCount, setWordCount] = useState("");
   const [summary, setSummary] = useState(
     "Your summarized topic text will appear here..."
   );
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSummaryGenerated, setIsSummaryGenerated] = useState(false);
+  const [audioUrl, setAudioUrl] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [isMediaPlayerOpen, setIsMediaPlayerOpen] = useState(false);
+
+  const audioRef = useRef(null);
 
   useEffect(() => {
     if (isOpen) {
+      setTopic("");
+      setWordCount("");
+      setSummary("Your summarized text will appear here...");
+      setIsSummaryGenerated(false);
+      setIsLoading(false);
+      setAudioUrl(null);
+      setIsMediaPlayerOpen(false);
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "auto";
@@ -23,23 +54,89 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
     alert("Summary copied!");
   };
 
-  const handleDownload = () => {
-    const element = document.createElement("a");
-    const file = new Blob([summary], { type: "text/plain" });
-    element.href = URL.createObjectURL(file);
-    element.download = "topic_summary.txt";
-    document.body.appendChild(element);
-    element.click();
+  const handleProcessSummary = async () => {
+    setIsLoading(true);
+    setIsSummaryGenerated(false);
+    setSummary("Processing...");
+    if (!topic.trim() || !wordCount.trim()) {
+      alert("Please enter a topic and word count.");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("query", topic);
+      formData.append("word_count", wordCount);
+
+      const response = await axios.post(
+        "http://localhost:8000/process-query/",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+
+      if (response.data && response.data.summary) {
+        setSummary(response.data.summary);
+        setIsSummaryGenerated(true);
+      } else {
+        throw new Error("Invalid response from the server.");
+      }
+    } catch (error) {
+      console.error("Error fetching summary:", error);
+      alert("Failed to generate summary.");
+      setSummary("Failed to generate summary.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleProcessSummary = () => {
-    setSummary(
-      `Summary of topic: ${topic} with ${wordCount} words. This is the generated summary...`
-    );
+  const handleDownloadSummary = async () => {
+    if (!isSummaryGenerated) return;
+
+    try {
+      const response = await axios.get(
+        "http://localhost:8000/download-summary-text/",
+        {
+          responseType: "blob",
+        }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "summary.txt");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Error downloading summary:", error);
+      alert("Failed to download summary.");
+    }
   };
 
-  const handleDownloadAudio = () => {
-    alert("Downloading Audible Summary...");
+  const handleDownloadAudio = async () => {
+    if (!isSummaryGenerated) return;
+
+    try {
+      const response = await axios.get(
+        "http://localhost:8000/download-summary-audio/",
+        {
+          responseType: "blob",
+        }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "summary.mp3");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Error downloading audio:", error);
+      alert("Failed to download audio.");
+    }
   };
 
   // Safely close modal
@@ -51,6 +148,78 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
       console.error("onClose is not a function!");
     }
   };
+  const handleFetchAudio = async () => {
+    if (!isSummaryGenerated) {
+      alert("Generate the summary first!");
+      return;
+    }
+
+    try {
+      const response = await axios.get(
+        "http://localhost:8000/download-summary-audio/",
+        {
+          responseType: "blob",
+        }
+      );
+
+      if (response.status !== 200) {
+        throw new Error(`Server returned status ${response.status}`);
+      }
+
+      const audioBlob = new Blob([response.data], { type: "audio/mpeg" });
+      if (audioBlob.size === 0) {
+        throw new Error("Received empty audio file. Please check the backend.");
+      }
+
+      const audioURL = URL.createObjectURL(audioBlob);
+      setAudioUrl(audioURL);
+      setIsMediaPlayerOpen(true);
+
+      setTimeout(() => {
+        if (audioRef.current) {
+          audioRef.current.src = audioURL;
+          audioRef.current.play();
+          setIsPlaying(true);
+        }
+      }, 300);
+    } catch (error) {
+      console.error("Error fetching audio:", error);
+      alert("Failed to fetch summary audio.");
+    }
+  };
+
+  const togglePlayPause = () => {
+    if (!audioUrl) return;
+
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const handleTimeUpdate = () => {
+    setCurrentTime(audioRef.current.currentTime);
+  };
+
+  const handleLoadedMetadata = () => {
+    setDuration(audioRef.current.duration);
+  };
+
+  const handleSeek = (e) => {
+    const time = parseFloat(e.target.value);
+    audioRef.current.currentTime = time;
+    setCurrentTime(time);
+  };
+
+  const handleVolumeChange = (e) => {
+    const vol = parseFloat(e.target.value);
+    audioRef.current.volume = vol;
+    setVolume(vol);
+  };
+
+  if (!isOpen) return null;
 
   if (!isOpen) return null;
 
@@ -59,6 +228,7 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
       className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50"
       onClick={handleClose} // Clicking outside modal closes it
     >
+      {isLoading && <FullPageSpinner />} {/* Full-page spinner */}
       <div
         className="bg-white rounded-2xl shadow-xl w-[800px] max-h-[90vh] p-6 transition-all max-w-full sm:p-6 relative"
         onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside modal
@@ -115,10 +285,15 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
           <motion.div className="mt-4 flex justify-center">
             <motion.button
               onClick={handleProcessSummary}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-white bg-[#140342] font-semibold rounded-lg 
-              transition-transform duration-300 hover:scale-105 hover:bg-[#32265a]"
+              className={`inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-white bg-[#140342] font-semibold rounded-lg 
+      transition-transform duration-300 hover:scale-105 hover:bg-[#32265a] ${
+        !wordCount.trim() || !topic.trim()
+          ? "opacity-50 cursor-not-allowed" // Disabled styling
+          : ""
+      }`}
+              disabled={!wordCount.trim() || !topic.trim()} // ✅ Corrected condition
             >
-              Generate Summary
+              Process Summary
             </motion.button>
           </motion.div>
 
@@ -143,9 +318,12 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
           {/* Download Summary */}
           <div className="flex justify-center mt-3">
             <motion.button
-              onClick={handleDownload}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#00FF84] text-[#140342] bg-[#00FF84] font-semibold rounded-lg 
-              transition-transform duration-300 hover:scale-105 hover:bg-[#00cc70]"
+              onClick={handleDownloadSummary}
+              className={`flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#00FF84] bg-[#00FF84] text-[#140342] font-semibold rounded-lg 
+            transition-transform duration-300 hover:scale-105 hover:bg-[#00cc70] ${
+              !isSummaryGenerated ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+              disabled={!isSummaryGenerated}
             >
               <FaDownload /> Download Summary
             </motion.button>
@@ -158,22 +336,79 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
             </label>
             <div className="flex gap-4 mt-2">
               <motion.button
-                className="flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-white bg-[#140342] font-semibold rounded-lg 
-                transition-transform duration-300 hover:scale-105 hover:bg-[#32265a]"
+                onClick={handleFetchAudio}
+                className={`flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-white bg-[#140342] font-semibold rounded-lg 
+            transition-transform duration-300 hover:scale-105 hover:bg-[#32265a] ${
+              !isSummaryGenerated ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+                disabled={!isSummaryGenerated}
               >
                 <FaPlay /> Play
               </motion.button>
 
               <motion.button
                 onClick={handleDownloadAudio}
-                className="flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#00FF84] bg-[#00FF84] text-[#140342] font-semibold rounded-lg 
-                transition-transform duration-300 hover:scale-105 hover:bg-[#00cc70]"
+                className={`flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#00FF84] bg-[#00FF84] text-[#140342] font-semibold rounded-lg 
+            transition-transform duration-300 hover:scale-105 hover:bg-[#00cc70] ${
+              !isSummaryGenerated ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+                disabled={!isSummaryGenerated}
               >
                 <FaDownload /> Download Audio
               </motion.button>
             </div>
           </div>
         </div>
+        {isMediaPlayerOpen && audioUrl && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg w-96 relative">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-lg font-bold text-[#140342]">
+                  Media Player
+                </h3>
+                <button
+                  onClick={() => setIsMediaPlayerOpen(false)}
+                  className="text-gray-500 hover:text-gray-700 transition"
+                >
+                  <FaTimes size={20} />
+                </button>
+              </div>
+
+              <audio
+                ref={audioRef}
+                onTimeUpdate={handleTimeUpdate}
+                onLoadedMetadata={handleLoadedMetadata}
+              />
+
+              <div className="flex justify-center items-center gap-3 mt-3">
+                <button
+                  onClick={togglePlayPause}
+                  className="p-2 rounded-full bg-[#140342] text-white hover:bg-[#32265a] transition"
+                >
+                  {isPlaying ? <FaPause size={20} /> : <FaPlay size={20} />}
+                </button>
+                <input
+                  type="range"
+                  min="0"
+                  max={duration}
+                  value={currentTime}
+                  onChange={handleSeek}
+                  className="w-full accent-gray-800"
+                />
+                <FaVolumeUp />
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={volume}
+                  onChange={handleVolumeChange}
+                  className="w-20 accent-gray-800"
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
