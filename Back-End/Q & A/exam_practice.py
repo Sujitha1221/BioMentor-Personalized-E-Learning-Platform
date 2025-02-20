@@ -80,7 +80,7 @@ def select_questions_per_student(student_id):
     store them in MongoDB, and return the assigned questions.
     """
     # Get one structured and one essay question
-    selected_questions = get_one_sample_question()  # ✅ No need to pass df
+    selected_questions = get_one_sample_question()
     if not selected_questions:
         return None
     
@@ -102,6 +102,8 @@ def get_questions_by_student_id(student_id):
         record = collection.find_one({"Student_ID": student_id}, {"_id": 0})
 
         if not record:
+            select_questions_per_student(student_id)
+            record = collection.find_one({"Student_ID": student_id}, {"_id": 0})
             return {"error": f"No questions found for Student ID {student_id}"}
 
         # Check if the required fields exist
@@ -117,6 +119,59 @@ def get_questions_by_student_id(student_id):
     except Exception as e:
         logging.error(f"Error fetching questions for Student ID {student_id}: {e}", exc_info=True)
         return {"error": "Error retrieving questions"}
+
+def replace_question_for_student(student_id, question_type):
+    """
+    Replaces the previous structured or essay-type question for a specific student ID
+    with a new randomly selected question from the dataset and updates it in MongoDB.
+    """
+    try:
+        if df is None:
+            raise ValueError("Dataset is not loaded. Please check the CSV file.")
+
+        # Ensure the question type is valid
+        if question_type.lower() not in ["structured", "essay"]:
+            return {"error": "Invalid question type. Choose 'structured' or 'essay'."}
+
+        # Fetch the existing student record from MongoDB
+        record = collection.find_one({"Student_ID": student_id})
+
+        if not record:
+            return {"error": f"No record found for Student ID {student_id}"}
+
+        # Select a new question and answer from the dataset
+        if question_type.lower() == "structured":
+            new_question_row = df[df["Type"] == "Structure"].sample(n=1, random_state=random.randint(1, 10000))
+        else:
+            new_question_row = df[df["Type"] == "Essay"].sample(n=1, random_state=random.randint(1, 10000))
+
+        new_question = new_question_row.iloc[0]["Question"]
+        new_answer = new_question_row.iloc[0]["Answer"]
+
+        # Define the update key based on question type
+        update_field = "Structured_Question" if question_type.lower() == "structured" else "Essay_Question"
+
+        # Prepare update data
+        update_data = {
+            f"{update_field}.Question": new_question,
+            f"{update_field}.Answer": new_answer,
+            "Updated_At": datetime.utcnow()
+        }
+
+        # Update the question in MongoDB
+        collection.update_one({"Student_ID": student_id}, {"$set": update_data})
+
+        logging.info(f"{question_type.capitalize()} question replaced for Student ID {student_id}.")
+        return {
+            "message": f"{question_type.capitalize()} question successfully replaced for Student ID {student_id}.",
+            "Student_ID": student_id,
+            "Updated_Question": new_question,
+            "Updated_Answer": new_answer
+        }
+
+    except Exception as e:
+        logging.error(f"Error replacing {question_type} question for Student ID {student_id}: {e}", exc_info=True)
+        return {"error": "Error replacing question"}
 
 def compare_with_passpaper_answer (student_id, question, user_answer, question_type):
     """
@@ -148,6 +203,8 @@ def compare_with_passpaper_answer (student_id, question, user_answer, question_t
 
         # Save evaluation result
         save_evaluation(student_id, question, question_type, user_answer, pass_paper_answer, result)
+
+        replace_question_for_student(student_id, question_type)
 
         return {
             "student_id": student_id,

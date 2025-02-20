@@ -5,6 +5,7 @@ from typing import Optional
 from generate_answers import generate_structured_answer, generate_essay_answer
 from evaluate_answers import evaluate_user_answer
 from answer_evaluation_tool import get_student_analytic_details, convert_objectid
+from exam_practice import get_questions_by_student_id, compare_with_passpaper_answer
 from fastapi.middleware.cors import CORSMiddleware
 from duckduckgo_search import DDGS  
 
@@ -34,6 +35,7 @@ class QuestionRequest(BaseModel):
 
 # Define a evaluate answer request schema for the API
 class EvaluationRequest(BaseModel):
+    student_id: str
     question: str
     user_answer: str
     question_type: str 
@@ -157,6 +159,59 @@ def get_related_websites(query: str):
     except Exception as e:
         logging.error(f"Error fetching related websites: {e}", exc_info=True)
     return results
+    
+@app.get("/get-student-question/{student_id}")
+def get_student_question(student_id: str):
+    """
+    Retrieve the question assigned to a student for today.
+    """
+    logging.info(f"Fetching question for student_id: {student_id}")
+
+    try:
+        record = get_questions_by_student_id(student_id)
+        return {
+            "student_id": student_id,
+            "questions": record
+        }
+    except Exception as e:
+        logging.error(f"Error fetching question for student_id {student_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Error fetching question.")
+
+@app.post("/evaluate-passpaper-answer")
+def evaluate_student_answer(request: EvaluationRequest):
+    """
+    Evaluate a student's answer using the stored question.
+    """
+    logging.info(f"Received request to evaluate answer: {request.dict()}")
+    
+    try:
+        # Call the `evaluate_user_answer` function
+        result = compare_with_passpaper_answer(
+            student_id= request.student_id,
+            question=request.question,
+            user_answer=request.user_answer,
+            question_type=request.question_type
+        )
+
+        related_websites = get_related_websites(request.question)
+        logging.info("User answer evaluated successfully.")
+        return {
+            "status": "success",
+            "question": result["question"],
+            "question_type": result["question_type"],
+            "user_answer": result["user_answer"],
+            "model_answer": result["model_answer"],
+            "evaluation_result": result["evaluation_result"],
+            "related_websites": related_websites
+        }
+    except ValueError as e:
+        # Handle invalid question type or other validation errors
+        logging.error(f"Validation error while evaluating answer: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        # Handle unexpected errors
+        logging.error(f"Unexpected error while evaluating answer: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="An unexpected error occurred: " + str(e))
     
 @app.get("/")
 def root():
