@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import ReactLoading from "react-loading";
-import { FaTimes, FaTimesCircle, FaCopy, FaInfoCircle, FaCheck } from "react-icons/fa";
+import { FaTimes, FaCopy, FaInfoCircle, FaCheck } from "react-icons/fa";
+import { XIcon } from "lucide-react";
 
 const ComparisonModal = ({
   showModal,
@@ -40,7 +41,7 @@ const ComparisonModal = ({
           <div className="p-4 border-b flex justify-between items-center">
             <h3 className="text-xl font-bold text-gray-800">Comparison Result</h3>
             <button onClick={onClose} className="text-gray-600 hover:text-gray-900" disabled={loading}>
-              <FaTimesCircle className="text-2xl" />
+              <XIcon className="w-6 h-6" />
             </button>
           </div>
 
