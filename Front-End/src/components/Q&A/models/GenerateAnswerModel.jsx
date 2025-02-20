@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import ReactLoading from "react-loading";
 import { FaCopy, FaCheck, FaInfoCircle, FaTimes } from "react-icons/fa";
+import { ArrowLeft, Sparkles } from "lucide-react";
 
 const GenerateAnswerModel = ({ onBack }) => {
   const [question, setQuestion] = useState("");
@@ -149,18 +150,20 @@ const GenerateAnswerModel = ({ onBack }) => {
 
         <div className="flex justify-between mt-4">
           <button
-            className="bg-gray-400 text-white px-4 py-2 rounded-lg hover:bg-gray-500 transition-all"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-white bg-[#140342] font-semibold rounded-lg 
+    transition-transform duration-300 hover:scale-105 hover:bg-[#32265a]"
             disabled={loading}
             onClick={onBack}
           >
-            Back
+            <ArrowLeft size={20} /> Back
           </button>
           <button
             onClick={handleGenerateAnswer}
             disabled={loading}
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-all disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#00FF84] text-[#140342] bg-[#00FF84] font-semibold rounded-lg 
+    transition-transform duration-300 hover:scale-105 hover:bg-[#00cc70]"
           >
-            Generate Answer
+            <Sparkles size={20} /> Generate Answer
           </button>
         </div>
       </div>

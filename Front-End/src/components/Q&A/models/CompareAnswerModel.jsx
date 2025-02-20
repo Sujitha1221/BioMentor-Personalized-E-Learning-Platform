@@ -3,6 +3,7 @@ import axios from "axios";
 import ReactLoading from "react-loading";
 import ComparisonModal from "./ComparisonModal";
 import { FaTimesCircle } from "react-icons/fa";
+import { ArrowLeft, CheckCircle } from "lucide-react";
 
 const CompareAnswerModel = ({ onBack }) => {
   const [question, setQuestion] = useState("");
@@ -24,7 +25,7 @@ const CompareAnswerModel = ({ onBack }) => {
     setFeedback(null);
     setModelAnswer("");
     setRelatedWebsites([]);
-    
+
     try {
       const response = await axios.post("http://127.0.0.1:8000/evaluate-answer", {
         question,
@@ -94,19 +95,23 @@ const CompareAnswerModel = ({ onBack }) => {
 
         <div className="flex justify-between mt-4">
           <button
-            className="bg-gray-400 text-white px-4 py-2 rounded-lg hover:bg-gray-500 transition-all disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-white bg-[#140342] font-semibold rounded-lg 
+    transition-transform duration-300 hover:scale-105 hover:bg-[#32265a]"
             onClick={onBack}
             disabled={loading}
           >
-            Back
+            <ArrowLeft size={20} /> Back
           </button>
+
           <button
             onClick={handleCompareAnswer}
             disabled={loading}
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-all disabled:opacity-50 shadow-md"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#00FF84] text-[#140342] bg-[#00FF84] font-semibold rounded-lg 
+    transition-transform duration-300 hover:scale-105 hover:bg-[#00cc70]"
           >
-            Compare Answer
+            <CheckCircle size={20} /> Compare Answer
           </button>
+
         </div>
       </div>
 
