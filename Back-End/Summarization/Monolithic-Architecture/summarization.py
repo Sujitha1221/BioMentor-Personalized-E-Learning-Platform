@@ -1,7 +1,7 @@
 import logging
 import logging.config
 import yaml
-from fastapi import FastAPI, UploadFile, Form, HTTPException, BackgroundTasks, Response
+from fastapi import FastAPI, UploadFile, Form, HTTPException
 from fastapi.responses import StreamingResponse
 from rag import RAGModel
 from text_extraction_service import extract_content, clean_text, format_as_paragraph
@@ -9,6 +9,8 @@ from voice_service import text_to_speech
 from file_handler import save_uploaded_file
 import os
 import io
+from fastapi.middleware.cors import CORSMiddleware
+
 
 # Load logging configuration
 with open("logging_config.yaml", "r") as file:
@@ -18,6 +20,14 @@ with open("logging_config.yaml", "r") as file:
 logger = logging.getLogger("myapp")
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Adjust if frontend runs elsewhere
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Initialize RAG Model
 try:
