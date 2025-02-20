@@ -4,6 +4,7 @@ import ReactLoading from "react-loading";
 import { FaCopy, FaCheck, FaInfoCircle, FaTimes } from "react-icons/fa";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import ModelLoadingScreen from "../../LoadingScreen/ModelLoadingScreen";
+import AlertMessage from "../../Alert/Alert";
 
 const GenerateAnswerModel = ({ onBack }) => {
   const [question, setQuestion] = useState("");
@@ -13,10 +14,12 @@ const GenerateAnswerModel = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showLinks, setShowLinks] = useState(false);
+  const [alert, setAlert] = useState({message:"", type:""});
 
   const handleGenerateAnswer = async () => {
     if (!question) {
-      alert("Please enter a question!");
+      //alert("Please enter a question!");
+      setAlert({message:"Please enter a question!", type:"warning"});
       return;
     }
 
@@ -35,7 +38,8 @@ const GenerateAnswerModel = ({ onBack }) => {
       setRelatedWebsites(response.data.related_websites || []);
     } catch (error) {
       console.error("Error generating answer:", error);
-      alert("Failed to generate answer. Please try again.");
+      setAlert({message:"Error generating answer:", error, type:"error"});
+      //alert("Failed to generate answer. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -54,6 +58,8 @@ const GenerateAnswerModel = ({ onBack }) => {
   };
 
   return (
+    <>
+    {alert.message && <AlertMessage message={alert.message} type={alert.type} onClose={() => setAlert({ message: "", type: "" })} />}
     <div className="space-y-6">
       <div className="bg-gray-100 p-6 rounded-lg shadow-md">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Generate Answer</h3>
@@ -168,6 +174,7 @@ const GenerateAnswerModel = ({ onBack }) => {
 
       </div>
     </div>
+    </>
   );
 };
 

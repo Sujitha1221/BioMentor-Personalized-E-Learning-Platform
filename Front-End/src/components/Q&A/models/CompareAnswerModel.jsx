@@ -5,6 +5,7 @@ import ComparisonModal from "./ComparisonModal";
 import { FaTimesCircle } from "react-icons/fa";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import ModelLoadingScreen from "../../LoadingScreen/ModelLoadingScreen";
+import AlertMessage from "../../Alert/Alert";
 
 const CompareAnswerModel = ({ onBack }) => {
   const [question, setQuestion] = useState("");
@@ -15,12 +16,24 @@ const CompareAnswerModel = ({ onBack }) => {
   const [relatedWebsites, setRelatedWebsites] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [alert, setAlert] = useState({message:"", type:""});
 
   const handleCompareAnswer = async () => {
-    if (!question || !answer || !answerType) {
-      alert("Please fill out all fields before comparing.");
+    if (!question) {
+      setAlert({ message: "Please enter a question!", type: "warning" });
       return;
     }
+    
+    if (!answer) {
+      setAlert({ message: "Please enter a answer!", type: "warning" });
+      return;
+    }
+    
+    if (!answerType) {
+      setAlert({ message: "Please select an answer type!", type: "warning" });
+      return;
+    }
+    
 
     setLoading(true);
     setFeedback(null);
@@ -41,7 +54,8 @@ const CompareAnswerModel = ({ onBack }) => {
       setShowModal(true);
     } catch (error) {
       console.error("Error comparing answer:", error);
-      alert("Failed to compare answer. Please try again.");
+      //alert("Failed to compare answer. Please try again.");
+      setAlert({message:"Failed to compare answer. Please try again.", type:"error"});
     } finally {
       setLoading(false);
     }
@@ -49,6 +63,8 @@ const CompareAnswerModel = ({ onBack }) => {
 
   return (
     <div className="space-y-5">
+          {alert.message && <AlertMessage message={alert.message} type={alert.type} onClose={() => setAlert({ message: "", type: "" })} />}
+
       <div className="bg-gray-100 p-6 rounded-lg shadow-md">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Compare Answer</h3>
 
