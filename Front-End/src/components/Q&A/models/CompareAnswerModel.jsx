@@ -4,6 +4,7 @@ import ReactLoading from "react-loading";
 import ComparisonModal from "./ComparisonModal";
 import { FaTimesCircle } from "react-icons/fa";
 import { ArrowLeft, CheckCircle } from "lucide-react";
+import ModelLoadingScreen from "../../LoadingScreen/ModelLoadingScreen";
 
 const CompareAnswerModel = ({ onBack }) => {
   const [question, setQuestion] = useState("");
@@ -88,9 +89,7 @@ const CompareAnswerModel = ({ onBack }) => {
         </div>
 
         {loading && (
-          <div className="flex justify-center mt-4">
-            <ReactLoading type="spin" color="#4f46e5" height={40} width={40} />
-          </div>
+          <ModelLoadingScreen />
         )}
 
 <div className="flex flex-wrap justify-between gap-4 mt-4 w-full">

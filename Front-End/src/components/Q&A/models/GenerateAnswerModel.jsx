@@ -3,6 +3,7 @@ import axios from "axios";
 import ReactLoading from "react-loading";
 import { FaCopy, FaCheck, FaInfoCircle, FaTimes } from "react-icons/fa";
 import { ArrowLeft, Sparkles } from "lucide-react";
+import ModelLoadingScreen from "../../LoadingScreen/ModelLoadingScreen";
 
 const GenerateAnswerModel = ({ onBack }) => {
   const [question, setQuestion] = useState("");
@@ -143,9 +144,7 @@ const GenerateAnswerModel = ({ onBack }) => {
         </div>
 
         {loading && (
-          <div className="flex justify-center mt-4">
-            <ReactLoading type="spin" color="#4f46e5" height={40} width={40} />
-          </div>
+          <ModelLoadingScreen />
         )}
 
         <div className="flex flex-wrap justify-between gap-4 mt-4 w-full">
