@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { AcademicCapIcon } from "@heroicons/react/24/outline";
-
+import QA from "./QA.png"
 const Hero = ({ firstSectionRef }) => {
   // Function to scroll smoothly to the first section
   const handleScroll = () => {
@@ -12,7 +12,7 @@ const Hero = ({ firstSectionRef }) => {
     <section className="relative h-screen flex flex-col items-center justify-center text-white overflow-hidden bg-[#140342] px-4 sm:px-6">
       {/* Animated AI Learning Icon */}
       <motion.img
-        src="https://plus.unsplash.com/premium_vector-1706709710787-05e3f59294cf?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8bWVkaWNhbHxlbnwwfHwwfHx8MA%3D%3D"
+        src={QA}
         alt="AI-Powered Learning"
         className="w-60 h-40 sm:w-72 sm:h-48 mt-4 sm:mt-20 mb-2 sm:mb-6"
         animate={{ x: [0, -3, 3, -3, 3, 0], rotate: [0, -2, 2, -2, 2, 0] }}
