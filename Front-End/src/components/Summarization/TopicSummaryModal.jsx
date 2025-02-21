@@ -21,6 +21,7 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
   );
   const [isLoading, setIsLoading] = useState(false);
   const [isSummaryGenerated, setIsSummaryGenerated] = useState(false);
+  const [taskId, setTaskId] = useState(null);
   const [audioUrl, setAudioUrl] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -33,18 +34,22 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     if (isOpen) {
-      setTopic("");
-      setWordCount("");
-      setSummary("Your summarized text will appear here...");
-      setIsSummaryGenerated(false);
-      setIsLoading(false);
-      setAudioUrl(null);
-      setIsMediaPlayerOpen(false);
+      resetModal();
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "auto";
     }
   }, [isOpen]);
+
+  const resetModal = () => {
+    setTopic("");
+    setWordCount("");
+    setSummary("Your summarized text will appear here...");
+    setIsSummaryGenerated(false);
+    setIsLoading(false);
+    setTaskId(null);
+    setAudioUrl(null);
+  };
 
   const handleCopy = () => {
     navigator.clipboard.writeText(summary);
@@ -55,11 +60,13 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
     setIsLoading(true);
     setIsSummaryGenerated(false);
     setSummary("Processing...");
+
     if (!topic.trim() || !wordCount.trim()) {
       setAlert({
         message: "Please enter a topic and word count.",
         type: "warning",
       });
+      setIsLoading(false);
       return;
     }
 
@@ -71,14 +78,13 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
       const response = await axios.post(
         "http://localhost:8000/process-query/",
         formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
 
       if (response.data && response.data.summary) {
         setSummary(response.data.summary);
         setIsSummaryGenerated(true);
+        setTaskId(response.data.summary_file.split("/").pop());
         setAlert({
           message: "Summary generated successfully!",
           type: "success",
@@ -88,10 +94,16 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
       }
     } catch (error) {
       console.error("Error fetching summary:", error);
-      setAlert({
-        message: "Failed to generate summary. Try again.",
-        type: "error",
-      });
+
+      if (error.response && error.response.data && error.response.data.detail) {
+        setAlert({ message: error.response.data.detail, type: "error" });
+      } else {
+        setAlert({
+          message: "Failed to generate summary. Try again.",
+          type: "error",
+        });
+      }
+
       setSummary("Failed to generate summary.");
     } finally {
       setIsLoading(false);
@@ -99,14 +111,15 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
   };
 
   const handleDownloadSummary = async () => {
-    if (!isSummaryGenerated) return;
+    if (!taskId) {
+      setAlert({ message: "Generate a summary first!", type: "error" });
+      return;
+    }
 
     try {
       const response = await axios.get(
-        "http://localhost:8000/download-summary-text/",
-        {
-          responseType: "blob",
-        }
+        `http://localhost:8000/download-summary-text/${taskId}`,
+        { responseType: "blob" }
       );
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -127,30 +140,38 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
   };
 
   const handleDownloadAudio = async () => {
-    if (!isSummaryGenerated) return;
+    if (!taskId) {
+      setAlert({ message: "Generate a summary first!", type: "error" });
+      return;
+    }
 
     try {
       const response = await axios.get(
-        "http://localhost:8000/download-summary-audio/",
-        {
-          responseType: "blob",
-        }
+        `http://localhost:8000/download-summary-audio/${taskId}`,
+        { responseType: "blob" }
       );
 
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      if (response.status !== 200) {
+        throw new Error(`Server returned status ${response.status}`);
+      }
+
+      const url = window.URL.createObjectURL(
+        new Blob([response.data], { type: "audio/mpeg" })
+      );
       const link = document.createElement("a");
       link.href = url;
       link.setAttribute("download", "summary.mp3");
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+
       setAlert({
         message: "Summary Audio downloaded successfully!",
         type: "success",
       });
     } catch (error) {
       console.error("Error downloading audio:", error);
-      setAlert({ message: "Failed to download summary audio.", type: "error" });
+      setAlert({ message: "Failed to download audio.", type: "error" });
     }
   };
 
@@ -164,14 +185,14 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
     }
   };
   const handleFetchAudio = async () => {
-    if (!isSummaryGenerated) {
-      setAlert({ message: "Generate a summary first!", type: "warning" });
+    if (!taskId) {
+      setAlert({ message: "Generate a summary first!", type: "error" });
       return;
     }
 
     try {
       const response = await axios.get(
-        "http://localhost:8000/download-summary-audio/",
+        `http://localhost:8000/download-summary-audio/${taskId}`,
         {
           responseType: "blob",
         }
@@ -182,6 +203,7 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
       }
 
       const audioBlob = new Blob([response.data], { type: "audio/mpeg" });
+
       if (audioBlob.size === 0) {
         throw new Error("Received empty audio file. Please check the backend.");
       }
@@ -189,18 +211,21 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
       const audioURL = URL.createObjectURL(audioBlob);
       setAudioUrl(audioURL);
       setIsMediaPlayerOpen(true);
-      setAlert({ message: "Audio ready to play!", type: "success" });
 
       setTimeout(() => {
         if (audioRef.current) {
           audioRef.current.src = audioURL;
           audioRef.current.play();
           setIsPlaying(true);
+          setAlert({ message: "Playing audio summary!", type: "success" });
         }
       }, 300);
     } catch (error) {
       console.error("Error fetching audio:", error);
-      setAlert({ message: "Failed to fetch summary audio.", type: "error" });
+      setAlert({
+        message: "Failed to fetch summary audio. Please try again.",
+        type: "error",
+      });
     }
   };
 
