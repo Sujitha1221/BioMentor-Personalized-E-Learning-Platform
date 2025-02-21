@@ -11,7 +11,7 @@ import {
 import { MdOutlineClose } from "react-icons/md";
 import axios from "axios";
 import AlertMessage from "../Alert/Alert";
-import ModelLoadingScreen from "../LoadingScreen/ModelLoadingScreen";
+import ModalLoadingScreen from "../LoadingScreen/ModalLoadingScreen";
 
 const TopicSummaryModal = ({ isOpen, onClose }) => {
   const [topic, setTopic] = useState("");
@@ -269,7 +269,7 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
       className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50"
       onClick={handleClose} // Clicking outside modal closes it
     >
-      {isLoading && <ModelLoadingScreen />} {/* Full-page spinner */}
+      {isLoading && <ModalLoadingScreen />} {/* Full-page spinner */}
       {alert.message && (
         <AlertMessage
           message={alert.message}
