@@ -8,6 +8,8 @@ from file_handler import save_uploaded_file
 import os
 import io
 import hashlib
+import asyncio
+from fastapi import Request, BackgroundTasks
 from fastapi import FastAPI, UploadFile, Form, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -49,256 +51,413 @@ except Exception as e:
 
 file_store = {}  # Temporary storage for files
 
+# Track running tasks
+ongoing_tasks = {}
+
 
 @app.post("/process-document/")
-async def process_document(file: UploadFile, word_count: int = Form(...)):
+async def process_document(request: Request, background_tasks: BackgroundTasks, file: UploadFile, word_count: int = Form(...)):
     """
     Process a document to extract, summarize, and generate a voice file.
-    Returns appropriate responses based on processing status.
+    Ensures request cancellations do not keep processing.
+    Also checks for inappropriate content before processing.
     """
-    try:
-        logger.info(f"Received document: {file.filename}. Processing...")
+    task_id = hashlib.md5(file.filename.encode()).hexdigest(
+    )  # Unique identifier for each request
 
-        # Save uploaded file
-        file_path = save_uploaded_file(file)
-        logger.info(f"File saved to {file_path}. Extracting content...")
+    # If a task is already running for this file, cancel it
+    if task_id in ongoing_tasks:
+        logger.warning(
+            f"Previous request for {file.filename} is still running. Cancelling old task.")
+        ongoing_tasks[task_id].cancel()
+        del ongoing_tasks[task_id]
 
-        # Extract content
-        raw_text = extract_content(file_path)
-        if not raw_text.strip():
-            logger.warning(f"No content extracted from {file.filename}.")
+    async def process():
+        try:
+            logger.info(f"Received document: {file.filename}. Processing...")
+
+            # Save uploaded file
+            file_path = save_uploaded_file(file)
+            logger.info(f"File saved to {file_path}. Extracting content...")
+
+            # Extract content
+            raw_text = extract_content(file_path)
+            if not raw_text.strip():
+                logger.warning(f"No content extracted from {file.filename}.")
+                raise HTTPException(
+                    status_code=400, detail="No content could be extracted from the document.")
+
+            # Check if request is canceled before heavy processing
+            if await request.is_disconnected():
+                logger.warning(
+                    f"Request was canceled. Stopping processing for {file.filename}.")
+                return None
+
+            # Clean and format text
+            cleaned_text = clean_text(raw_text)
+            formatted_text = format_as_paragraph(cleaned_text)
+
+            # Check again before summarization
+            if await request.is_disconnected():
+                logger.warning(
+                    f"Request was canceled. Stopping processing for {file.filename}.")
+                return None
+
+            # Generate summary
+            logger.info(f"Generating summary for {file.filename}...")
+            summary = rag_model.generate_summary_for_long_text(
+                formatted_text, max_words=word_count)
+
+            if not summary:
+                logger.warning(
+                    f"Failed to generate summary for {file.filename}.")
+                raise HTTPException(
+                    status_code=500, detail="Summary generation failed.")
+
+            # Generate **unique** filenames
+            summary_file_path = f"summary_{task_id}.txt"
+            audio_file_path = f"summary_{task_id}.mp3"
+
+            # Save summary in memory using task_id
+            file_store[summary_file_path] = summary.encode("utf-8")
+
+            logger.info(
+                f"Summary saved as {summary_file_path}. Generating audio...")
+
+            # Check before generating audio
+            if await request.is_disconnected():
+                logger.warning(
+                    f"Request was canceled. Stopping processing for {file.filename}.")
+                return None
+
+            # Generate audio file
+            audio_file = io.BytesIO()
+            text_to_speech(summary, audio_file)
+            audio_file.seek(0)
+            file_store[audio_file_path] = audio_file.read()
+
+            logger.info(
+                f"Audio file saved as {audio_file_path}. Processing complete.")
+
+            # Cleanup after task completion
+            del ongoing_tasks[task_id]
+
+            return summary, task_id  # Return the summary and unique ID
+
+        except asyncio.CancelledError:
+            logger.warning(f"Processing for {file.filename} was canceled.")
+            del ongoing_tasks[task_id]
+            return None, None
+
+        except HTTPException as http_err:
+            del ongoing_tasks[task_id]
+            raise http_err  # Return FastAPI HTTPException directly
+
+        except Exception as e:
+            logger.error(
+                f"Error processing document {file.filename}: {e}", exc_info=True)
+            del ongoing_tasks[task_id]
             raise HTTPException(
-                status_code=400, detail="No content could be extracted from the document.")
+                status_code=500, detail="Failed to process document.")
 
-        # Clean and format text
-        cleaned_text = clean_text(raw_text)
-        formatted_text = format_as_paragraph(cleaned_text)
+    # Store and run the task in the background
+    task = asyncio.create_task(process())
+    ongoing_tasks[task_id] = task
+    background_tasks.add_task(task)
 
-        # Generate summary
-        logger.info(f"Generating summary for {file.filename}...")
-        summary = rag_model.generate_summary_for_long_text(
-            formatted_text, max_words=word_count)
+    # **Wait for the task to complete before returning the response**
+    summary, task_id = await task
 
-        if not summary:
-            logger.warning(f"Failed to generate summary for {file.filename}.")
-            raise HTTPException(
-                status_code=500, detail="Summary generation failed.")
+    if summary is None:
+        # 499 Client Closed Request
+        raise HTTPException(status_code=499, detail="Request was canceled.")
 
-        # Generate dynamic filenames
-        summary_file_path = file_path.rsplit(".", 1)[0] + "_summary.txt"
-        audio_file_path = file_path.rsplit(".", 1)[0] + ".mp3"
-
-        # Save summary in memory
-        summary_bytes = summary.encode("utf-8")
-        file_store["last_summary_file"] = summary_file_path
-        file_store["last_audio_file"] = audio_file_path
-        file_store[summary_file_path] = summary_bytes
-        logger.info(f"Summary saved as {summary_file_path}.")
-
-        # Generate audio file
-        logger.info(f"Generating audio for {file.filename}...")
-        audio_file = io.BytesIO()
-        text_to_speech(summary, audio_file)
-        audio_file.seek(0)
-        file_store[audio_file_path] = audio_file.read()
-        logger.info(f"Audio file saved as {audio_file_path}.")
-
-        # Return response with file download links
-        return {
-            "summary": summary,
-            "summary_file": "/download-summary-text/",
-            "voice_file": "/download-summary-audio/"
-        }
-
-    except HTTPException as http_err:
-        raise http_err  # Return FastAPI HTTPException directly
-
-    except Exception as e:
-        logger.error(
-            f"Error processing document {file.filename}: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500, detail="Failed to process document.")
+    return {
+        "status": "success",
+        "message": "Document processed successfully.",
+        "summary": summary,  # Returns the actual summary
+        "summary_file": f"/download-summary-text/{task_id}",
+        "voice_file": f"/download-summary-audio/{task_id}"
+    }
 
 
 @app.post("/process-query/")
-async def process_query(query: str = Form(...), word_count: int = Form(...)):
+async def process_query(request: Request, background_tasks: BackgroundTasks, query: str = Form(...), word_count: int = Form(...)):
     """
     Retrieve and summarize content based on a query and return results as an API response.
+    Ensures request cancellations do not keep processing.
+    Uses the same /download-summary-text/ and /download-summary-audio/ endpoints for downloading results.
     """
-    try:
-        logger.info(f"Processing query: {query}")
+    task_id = hashlib.sha256(query.encode()).hexdigest()[
+        :10]  # Unique identifier for each query
 
-        # Step 1: Check for inappropriate content
-        inappropriate_message = rag_model.contains_inappropriate_content(query)
-        if inappropriate_message:
-            logger.warning(f"Inappropriate content detected: {query}")
-            raise HTTPException(status_code=400, detail=inappropriate_message)
+    # If a task is already running for this query, cancel it
+    if task_id in ongoing_tasks:
+        logger.warning(
+            f"Previous request for query '{query}' is still running. Cancelling old task.")
+        ongoing_tasks[task_id].cancel()
+        del ongoing_tasks[task_id]
 
-        # Step 2: Retrieve relevant content
-        relevant_texts = rag_model.retrieve_relevant_content(query)
+    async def process():
+        try:
+            logger.info(f"Processing query: {query}")
 
-        if isinstance(relevant_texts, str) and "error" in relevant_texts.lower():
-            logger.warning(
-                f"Error retrieving relevant content: {relevant_texts}")
+            # Step 1: Check for inappropriate content
+            inappropriate_message = rag_model.contains_inappropriate_content(
+                query)
+            if inappropriate_message:
+                logger.warning(f"Inappropriate content detected: {query}")
+                raise HTTPException(
+                    status_code=400, detail=inappropriate_message)
+
+            # Check if request is disconnected before retrieving content
+            if await request.is_disconnected():
+                logger.warning(
+                    f"Request was canceled. Stopping processing for query: {query}")
+                return None, None  # Return None to indicate cancellation
+
+            # Step 2: Retrieve relevant content
+            relevant_texts = rag_model.retrieve_relevant_content(query)
+
+            if isinstance(relevant_texts, str) and "error" in relevant_texts.lower():
+                logger.warning(
+                    f"Error retrieving relevant content: {relevant_texts}")
+                raise HTTPException(
+                    status_code=500, detail="Error retrieving relevant content.")
+
+            if not relevant_texts or relevant_texts == "No relevant content found":
+                logger.warning(f"No relevant content found for query: {query}")
+                raise HTTPException(
+                    status_code=404, detail="No relevant content found for the given query.")
+
+            # Check if request is disconnected before summarization
+            if await request.is_disconnected():
+                logger.warning(
+                    f"Request was canceled. Stopping processing for query: {query}")
+                return None, None
+
+            # Step 3: Generate Summary
+            combined_text = " ".join(relevant_texts)
+            summary = rag_model.generate_summary_for_long_text(
+                combined_text, max_words=word_count)
+
+            if not summary.strip():
+                logger.warning(
+                    f"Generated summary is empty for query: {query}")
+                raise HTTPException(
+                    status_code=500, detail="Failed to generate a summary.")
+
+            # Step 4: Generate stable filenames using task_id
+            summary_file_path = f"summary_{task_id}.txt"
+            audio_file_path = f"summary_{task_id}.mp3"
+
+            # Store summary text file using task_id
+            file_store[summary_file_path] = summary.encode("utf-8")
+            logger.info(f"Query summary saved as {summary_file_path}.")
+
+            # Check if request is disconnected before generating audio
+            if await request.is_disconnected():
+                logger.warning(
+                    f"Request was canceled. Stopping processing for query: {query}")
+                return None, None
+
+            # Step 5: Convert summary to audio
+            audio_file = io.BytesIO()
+            text_to_speech(summary, audio_file)
+            audio_file.seek(0)
+            file_store[audio_file_path] = audio_file.read()
+            logger.info(f"Query audio saved as {audio_file_path}.")
+
+            # Cleanup after task completion
+            del ongoing_tasks[task_id]
+
+            return summary, task_id  # Return summary and unique task_id
+
+        except asyncio.CancelledError:
+            logger.warning(f"Processing for query '{query}' was canceled.")
+            del ongoing_tasks[task_id]
+            return None, None
+
+        except HTTPException as http_err:
+            del ongoing_tasks[task_id]
+            raise http_err  # Return FastAPI HTTPException directly
+
+        except Exception as e:
+            logger.error(
+                f"Unexpected error processing query: {e}", exc_info=True)
+            del ongoing_tasks[task_id]
             raise HTTPException(
-                status_code=500, detail="Error retrieving relevant content.")
+                status_code=500, detail="An unexpected error occurred while processing the query.")
 
-        if not relevant_texts or relevant_texts == "No relevant content found":
-            logger.warning(f"No relevant content found for query: {query}")
-            raise HTTPException(
-                status_code=404, detail="No relevant content found for the given query.")
+    # Store and run the task in the background
+    task = asyncio.create_task(process())
+    ongoing_tasks[task_id] = task
+    background_tasks.add_task(task)
 
-        # Step 3: Generate Summary
-        combined_text = " ".join(relevant_texts)
-        summary = rag_model.generate_summary_for_long_text(
-            combined_text, max_words=word_count)
+    # **Wait for the task to complete before returning the response**
+    summary, task_id = await task
 
-        if not summary.strip():
-            logger.warning(f"Generated summary is empty for query: {query}")
-            raise HTTPException(
-                status_code=500, detail="Failed to generate a summary.")
+    if summary is None:
+        # 499 Client Closed Request
+        raise HTTPException(status_code=499, detail="Request was canceled.")
 
-        # Step 4: Generate stable filenames using SHA-256 hash
-        query_hash = hashlib.sha256(query.encode()).hexdigest()[:10]
-        summary_file_path = f"query_summary_{query_hash}.txt"
-        audio_file_path = f"query_audio_{query_hash}.mp3"
-
-        # Store summary text file
-        file_store["last_summary_file"] = summary_file_path
-        file_store[summary_file_path] = summary.encode("utf-8")
-        logger.info(f"Query summary saved as {summary_file_path}.")
-
-        # Step 5: Convert summary to audio
-        audio_file = io.BytesIO()
-        text_to_speech(summary, audio_file)
-        audio_file.seek(0)
-        file_store["last_audio_file"] = audio_file_path
-        file_store[audio_file_path] = audio_file.read()
-        logger.info(f"Query audio saved as {audio_file_path}.")
-
-        # Step 6: Return API Response
-        return {
-            "status": "success",
-            "message": "Query processed successfully.",
-            "summary": summary,
-            "summary_file": f"/download-summary-text/{summary_file_path}",
-            "voice_file": f"/download-summary-audio/{audio_file_path}"
-        }
-
-    except HTTPException as http_err:
-        raise http_err  # Re-raise FastAPI errors with correct status codes
-
-    except Exception as e:
-        logger.error(f"Unexpected error processing query: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500, detail="An unexpected error occurred while processing the query.")
+    return {
+        "status": "success",
+        "message": "Query processed successfully.",
+        "summary": summary,  # Now returns the actual summary
+        "summary_file": f"/download-summary-text/{task_id}",
+        "voice_file": f"/download-summary-audio/{task_id}"
+    }
 
 
 @app.post("/summarize-text/")
-async def summarize_text(text: str = Form(...), word_count: int = Form(...)):
+async def summarize_text(request: Request, background_tasks: BackgroundTasks, text: str = Form(...), word_count: int = Form(...)):
     """
     Summarizes a long text input and provides separate endpoints to download files.
+    Ensures request cancellations are handled properly.
+    Uses the same /download-summary-text/ and /download-summary-audio/ endpoints for downloading results.
     """
-    try:
-        logger.info("Received request to summarize text.")
+    task_id = hashlib.sha256(text.encode()).hexdigest()[
+        :10]  # Unique identifier for each request
 
-        if not text.strip():
-            logger.warning("Empty text input received.")
-            raise HTTPException(
-                status_code=400, detail="Text input cannot be empty.")
-
-        # Check if the text contains inappropriate content
-        inappropriate_response = RAGModel.contains_inappropriate_content(text)
-        if inappropriate_response:
-            return {"error": inappropriate_response}
-
-        # Generate summary
-        summary = rag_model.generate_summary_for_long_text(
-            text, max_words=word_count)
-
-        if not summary.strip():
-            logger.warning("Generated summary is empty.")
-            raise HTTPException(
-                status_code=400, detail="Generated summary is empty.")
-
-        # Generate file paths
-        summary_file_path = "summary.txt"
-        audio_file_path = "summary.mp3"
-
-        # Store summary in memory
-        file_store["last_summary_file"] = summary_file_path
-        file_store["last_audio_file"] = audio_file_path
-        file_store[summary_file_path] = summary.encode("utf-8")
-
-        logger.info(
-            f"Text summary saved as {summary_file_path}. Generating audio...")
-
-        # Convert text to speech
-        audio_file = io.BytesIO()
-        text_to_speech(summary, audio_file)
-        audio_file.seek(0)
-        file_store[audio_file_path] = audio_file.read()
-
-        logger.info(
-            f"Audio file saved as {audio_file_path}. Summary processing complete.")
-
-        return {
-            "status": "success",
-            "message": "Summary generated successfully.",
-            "summary": summary,
-            "summary_file": "/download-summary-text/",
-            "voice_file": "/download-summary-audio/"
-        }
-
-    except HTTPException as http_error:
-        raise http_error  # Return FastAPI HTTPException directly
-
-    except Exception as e:
-        logger.error(f"Error summarizing text: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500, detail="Internal server error. Failed to summarize text.")
-
-
-@app.get("/download-summary-text/")
-async def download_summary_text():
-    """Endpoint to download the last generated summary text file."""
-    if "last_summary_file" not in file_store:
+    # If a task is already running for this text, cancel it
+    if task_id in ongoing_tasks:
         logger.warning(
-            "Download summary text request failed: No summary file found.")
-        raise HTTPException(status_code=404, detail="No summary file found.")
+            "Previous summarization request is still running. Cancelling old task.")
+        ongoing_tasks[task_id].cancel()
+        del ongoing_tasks[task_id]
 
-    summary_file_path = file_store["last_summary_file"]
+    async def process():
+        try:
+            logger.info("Received request to summarize text.")
+
+            if not text.strip():
+                logger.warning("Empty text input received.")
+                raise HTTPException(
+                    status_code=400, detail="Text input cannot be empty.")
+
+            # Step 1: Check for inappropriate content
+            inappropriate_response = rag_model.contains_inappropriate_content(
+                text)
+            if inappropriate_response:
+                logger.warning("Inappropriate content detected in text input.")
+                raise HTTPException(
+                    status_code=400, detail=inappropriate_response)
+
+            # Check if request is disconnected before processing
+            if await request.is_disconnected():
+                logger.warning("Request was canceled. Stopping summarization.")
+                return None, None
+
+            # Step 2: Generate summary
+            summary = rag_model.generate_summary_for_long_text(
+                text, max_words=word_count)
+
+            if not summary.strip():
+                logger.warning("Generated summary is empty.")
+                raise HTTPException(
+                    status_code=400, detail="Generated summary is empty.")
+
+            # Step 3: Generate file paths using task_id
+            summary_file_path = f"summary_{task_id}.txt"
+            audio_file_path = f"summary_{task_id}.mp3"
+
+            # Store summary text file using task_id
+            file_store[summary_file_path] = summary.encode("utf-8")
+
+            logger.info(
+                f"Text summary saved as {summary_file_path}. Generating audio...")
+
+            # Check if request is disconnected before generating audio
+            if await request.is_disconnected():
+                logger.warning(
+                    "Request was canceled. Stopping audio generation.")
+                return None, None
+
+            # Step 4: Convert text to speech
+            audio_file = io.BytesIO()
+            text_to_speech(summary, audio_file)
+            audio_file.seek(0)
+            file_store[audio_file_path] = audio_file.read()
+
+            logger.info(
+                f"Audio file saved as {audio_file_path}. Summary processing complete.")
+
+            # Cleanup after task completion
+            del ongoing_tasks[task_id]
+
+            return summary, task_id  # Return the generated summary and unique task_id
+
+        except asyncio.CancelledError:
+            logger.warning("Summarization request was canceled.")
+            del ongoing_tasks[task_id]
+            return None, None
+
+        except HTTPException as http_error:
+            del ongoing_tasks[task_id]
+            raise http_error  # Return FastAPI HTTPException directly
+
+        except Exception as e:
+            logger.error(f"Error summarizing text: {e}", exc_info=True)
+            del ongoing_tasks[task_id]
+            raise HTTPException(
+                status_code=500, detail="Internal server error. Failed to summarize text.")
+
+    # Store and run the task in the background
+    task = asyncio.create_task(process())
+    ongoing_tasks[task_id] = task
+    background_tasks.add_task(task)
+
+    # **Wait for the task to complete before returning the response**
+    summary, task_id = await task
+
+    if summary is None:
+        # 499 Client Closed Request
+        raise HTTPException(status_code=499, detail="Request was canceled.")
+
+    return {
+        "status": "success",
+        "message": "Summary generated successfully.",
+        "summary": summary,  # Now returns the actual summary
+        "summary_file": f"/download-summary-text/{task_id}",
+        "voice_file": f"/download-summary-audio/{task_id}"
+    }
+
+
+@app.get("/download-summary-text/{task_id}")
+async def download_summary_text(task_id: str):
+    """
+    Endpoint to download a summary text file based on task_id.
+    This works for all three APIs: process-document, process-query, and summarize-text.
+    """
+    summary_file_path = f"summary_{task_id}.txt"
 
     if summary_file_path not in file_store:
-        logger.warning(
-            f"Summary file {summary_file_path} not found in storage.")
+        logger.warning(f"Summary file {summary_file_path} not found.")
         raise HTTPException(status_code=404, detail="Summary file not found.")
 
     logger.info(f"Downloading summary file: {summary_file_path}")
     return StreamingResponse(io.BytesIO(file_store[summary_file_path]),
                              media_type="text/plain",
-                             headers={"Content-Disposition": f"attachment; filename={os.path.basename(summary_file_path)}"})
+                             headers={"Content-Disposition": f"attachment; filename={summary_file_path}"})
 
 
-@app.get("/download-summary-audio/")
-async def download_summary_audio():
-    """Endpoint to download the last generated summary audio file."""
-    if "last_audio_file" not in file_store:
-        logger.warning(
-            "Download summary audio request failed: No audio file found.")
-        raise HTTPException(status_code=404, detail="No audio file found.")
-
-    audio_file_path = file_store["last_audio_file"]
+@app.get("/download-summary-audio/{task_id}")
+async def download_summary_audio(task_id: str):
+    """
+    Endpoint to download a summary audio file based on task_id.
+    This works for all three APIs: process-document, process-query, and summarize-text.
+    """
+    audio_file_path = f"summary_{task_id}.mp3"
 
     if audio_file_path not in file_store:
-        logger.warning(f"Audio file {audio_file_path} not found in storage.")
+        logger.warning(f"Audio file {audio_file_path} not found.")
         raise HTTPException(status_code=404, detail="Audio file not found.")
 
     logger.info(f"Downloading audio file: {audio_file_path}")
     return StreamingResponse(io.BytesIO(file_store[audio_file_path]),
                              media_type="audio/mpeg",
-                             headers={"Content-Disposition": f"attachment; filename={os.path.basename(audio_file_path)}"})
-
+                             headers={"Content-Disposition": f"attachment; filename={audio_file_path}"})
 
 if __name__ == "__main__":
     import uvicorn
