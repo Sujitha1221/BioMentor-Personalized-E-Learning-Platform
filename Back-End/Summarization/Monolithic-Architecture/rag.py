@@ -133,7 +133,7 @@ class RAGModel:
         if invalid_words:
             logging.warning(
                 f"Query contains gibberish or non-English words: {query}")
-            return "Your query contains invalid or gibberish words. Please enter a proper Biology-related question."
+            return "Your query contains invalid or gibberish words. Please enter proper Biology-related terms."
 
         # If all checks pass, return False (query is safe)
         return False
