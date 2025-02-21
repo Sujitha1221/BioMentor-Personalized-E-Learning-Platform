@@ -14,7 +14,7 @@ const biologyFacts = [
   "The largest single-celled organism is Caulerpa taxifolia, a giant algae spanning meters.",
 ];
 
-const ModelLoadingScreen = () => {
+const ModalLoadingScreen = () => {
   const [factIndex, setFactIndex] = useState(0);
 
   useEffect(() => {
@@ -90,4 +90,4 @@ const ModelLoadingScreen = () => {
   );
 };
 
-export default ModelLoadingScreen;
+export default ModalLoadingScreen;
