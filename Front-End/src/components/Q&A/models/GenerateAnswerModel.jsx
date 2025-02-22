@@ -3,7 +3,7 @@ import axios from "axios";
 import ReactLoading from "react-loading";
 import { FaCopy, FaCheck, FaInfoCircle, FaTimes } from "react-icons/fa";
 import { ArrowLeft, Sparkles } from "lucide-react";
-import ModelLoadingScreen from "../../LoadingScreen/ModelLoadingScreen";
+import ModalLoadingScreen from "../../LoadingScreen/ModalLoadingScreen";
 import AlertMessage from "../../Alert/Alert";
 
 const GenerateAnswerModel = ({ onBack }) => {
@@ -150,9 +150,9 @@ const GenerateAnswerModel = ({ onBack }) => {
         </div>
 
         {loading && (
-          <ModelLoadingScreen />
+          <ModalLoadingScreen />
         )}
-
+``
         <div className="flex flex-wrap justify-between gap-4 mt-4 w-full">
           <button
             className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-white bg-[#140342] font-semibold rounded-lg 

@@ -4,7 +4,7 @@ import ReactLoading from "react-loading";
 import ComparisonModal from "./ComparisonModal";
 import { FaTimesCircle } from "react-icons/fa";
 import { ArrowLeft, CheckCircle } from "lucide-react";
-import ModelLoadingScreen from "../../LoadingScreen/ModelLoadingScreen";
+import ModalLoadingScreen from "../../LoadingScreen/ModalLoadingScreen";
 import AlertMessage from "../../Alert/Alert";
 
 const CompareAnswerModel = ({ onBack }) => {
@@ -106,7 +106,7 @@ const CompareAnswerModel = ({ onBack }) => {
         </div>
 
         {loading && (
-          <ModelLoadingScreen />
+          <ModalLoadingScreen />
         )}
 
 <div className="flex flex-wrap justify-between gap-4 mt-4 w-full">

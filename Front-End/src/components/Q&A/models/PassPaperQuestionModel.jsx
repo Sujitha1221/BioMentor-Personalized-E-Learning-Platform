@@ -3,7 +3,7 @@ import { Tab } from "@headlessui/react";
 import { XIcon } from "lucide-react";
 import ComparisonModal from "./ComparisonModal";
 import AlertMessage from "../../Alert/Alert";
-import ModelLoadingScreen from "../../LoadingScreen/ModelLoadingScreen";
+import ModalLoadingScreen from "../../LoadingScreen/ModalLoadingScreen";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 
 const PassPaperQuestionModel = ({ isOpen, onClose, studentId }) => {
@@ -92,7 +92,7 @@ const PassPaperQuestionModel = ({ isOpen, onClose, studentId }) => {
     <>
       {alert.message && <AlertMessage message={alert.message} type={alert.type} onClose={() => setAlert({ message: "", type: "" })} />}
       {loading && (
-        <ModelLoadingScreen />
+        <ModalLoadingScreen />
       )}
       <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
         <div className="bg-white p-6 rounded-lg shadow-xl max-w-2xl w-full relative">
