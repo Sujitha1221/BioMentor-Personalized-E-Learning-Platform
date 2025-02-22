@@ -81,16 +81,16 @@ const Header = () => {
               <ActiveLink to={"/"}>Home</ActiveLink>
             </li>
             <li>
-              <ActiveLink to={"/courses"}>MCQ</ActiveLink>
+              <ActiveLink to={"/mcq"}>MCQ</ActiveLink>
             </li>
             <li>
-              <ActiveLink to={"/events"}>Q & A</ActiveLink>
+              <ActiveLink to={"/q&a"}>Q & A</ActiveLink>
             </li>
             <li>
-              <ActiveLink to={"/blogs"}>Vocabulary</ActiveLink>
+              <ActiveLink to={"/vocabulary"}>Vocabulary</ActiveLink>
             </li>
             <li>
-              <ActiveLink to={"/contact"}>Summarize</ActiveLink>
+              <ActiveLink to={"/summarize"}>Summarize</ActiveLink>
             </li>
           </ul>
         </div>
