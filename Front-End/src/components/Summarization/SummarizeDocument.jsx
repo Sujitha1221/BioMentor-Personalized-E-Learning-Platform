@@ -3,6 +3,7 @@ import {
   DocumentArrowUpIcon,
   SpeakerWaveIcon,
   ClipboardDocumentListIcon,
+  AdjustmentsHorizontalIcon,
 } from "@heroicons/react/24/outline";
 import uploadImg from "../../assets/image/doc-summarize.jpeg";
 import { motion } from "framer-motion";
@@ -73,11 +74,6 @@ const SummarizeDocument = () => {
                 desc: "Extract key points from presentations.",
               },
               {
-                icon: <DocumentArrowUpIcon className="w-8 h-8 text-gray-500" />,
-                label: "Text Files",
-                desc: "Summarize plain text content easily.",
-              },
-              {
                 icon: (
                   <ClipboardDocumentListIcon className="w-8 h-8 text-[#140342]" />
                 ),
@@ -88,6 +84,13 @@ const SummarizeDocument = () => {
                 icon: <SpeakerWaveIcon className="w-8 h-8 text-[#00FF84]" />,
                 label: "Audible Summary",
                 desc: "Listen to summaries for hands-free learning.",
+              },
+              {
+                icon: (
+                  <AdjustmentsHorizontalIcon className="w-8 h-8 text-[#FF6347]" />
+                ),
+                label: "Customizable Word Count",
+                desc: "Adjust the number of words in your summary as needed.",
               },
             ].map(({ icon, label, desc }) => (
               <div key={label} className="flex items-start space-x-3">
