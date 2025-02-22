@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import {
   FiInfo,
   FiCheck,
@@ -97,100 +96,87 @@ const TopicSummary = () => {
   }, []);
 
   return (
-    <section className="relative flex flex-col gap-8 bg-gray-100 sm:flex-row sm:gap-x-16 items-center justify-between px-6 sm:px-20 py-16 max-w-7xl mx-auto">
-      {/* Left Section - Heading, Feature Items & Button */}
-      <div className="w-full sm:w-1/2 flex flex-col items-center sm:items-start text-center sm:text-left">
-        <h2 className="text-3xl font-bold text-[#140342]">
-          Summarize Any Biology Topic Instantly
-        </h2>
-        {/* Two-column grid for features */}
-        <div className="mt-4 grid grid-cols-2 gap-4">
-          {features.map((feature, index) => (
-            <FeatureItem
-              key={index}
-              icon={feature.icon}
-              label={feature.label}
-              desc={feature.desc}
-            />
-          ))}
-        </div>
-        <motion.div
-          className="mt-6"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <motion.button
-            onClick={() => setIsModalOpen(true)}
-            className="px-6 py-3 border-2 border-[#140342] text-[#140342] font-semibold rounded-lg hover:bg-[#140342] hover:text-white hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            Start Summarizing
-          </motion.button>
-        </motion.div>
-      </div>
+    <section className="relative bg-gray-100 px-6 sm:px-20 py-16 max-w-7xl mx-auto">
+      {/* Topic Heading Always on Top */}
+      <h2 className="text-3xl font-bold text-[#140342] text-center sm:text-left">
+        Summarize Any Biology Topic Instantly
+      </h2>
 
-      {/* Right Section - Slideshow */}
-      <div className="relative w-full sm:w-1/2 flex justify-center sm:justify-end items-center mt-10 sm:mt-0">
-        <div className="relative w-[400px] sm:w-[500px] h-auto">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={slides[currentSlide].id}
-              className="p-8 rounded-xl shadow-lg flex flex-col items-center text-center w-full"
-              style={{
-                backgroundColor: slides[currentSlide].bgColor,
-                color: slides[currentSlide].textColor,
-              }}
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -50 }}
-              transition={{ duration: 0.5 }}
-            >
-              <img
-                src={slides[currentSlide].image}
-                alt={slides[currentSlide].title}
-                className="w-72 sm:w-80 h-auto rounded-lg shadow-md"
-              />
-              <p className="text-lg font-bold mt-3">
-                {slides[currentSlide].title}
-              </p>
-            </motion.div>
-          </AnimatePresence>
-          {/* Navigation Buttons */}
-          <div className="absolute top-1/2 left-0 -translate-y-1/2 flex justify-between w-full px-4">
-            <button
-              onClick={() =>
-                setCurrentSlide((prev) =>
-                  prev === 0 ? slides.length - 1 : prev - 1
-                )
-              }
-              className="p-3 bg-white rounded-full shadow-lg text-gray-700 hover:bg-gray-200 transition"
-            >
-              <FaArrowLeft />
-            </button>
-            <button
-              onClick={() =>
-                setCurrentSlide((prev) => (prev + 1) % slides.length)
-              }
-              className="p-3 bg-white rounded-full shadow-lg text-gray-700 hover:bg-gray-200 transition"
-            >
-              <FaArrowRight />
-            </button>
+      {/* Two-Column Container */}
+      <div className="mt-8 flex flex-col sm:flex-row sm:gap-x-16 items-center justify-between">
+        {/* Slider: On mobile, this comes immediately under the heading with extra bottom margin */}
+        <div className="order-1 sm:order-2 w-full sm:w-1/2 flex justify-center items-center mt-6 mb-6 sm:mt-0 sm:mb-0">
+          <div className="relative w-[400px] sm:w-[500px] h-auto">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={slides[currentSlide].id}
+                className="p-8 rounded-xl shadow-lg flex flex-col items-center text-center w-full"
+                style={{
+                  backgroundColor: slides[currentSlide].bgColor,
+                  color: slides[currentSlide].textColor,
+                }}
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -50 }}
+                transition={{ duration: 0.5 }}
+              >
+                <img
+                  src={slides[currentSlide].image}
+                  alt={slides[currentSlide].title}
+                  className="w-72 sm:w-80 h-auto rounded-lg shadow-md"
+                />
+                <p className="text-lg font-bold mt-3">
+                  {slides[currentSlide].title}
+                </p>
+              </motion.div>
+            </AnimatePresence>
+
+            {/* Dots Indicator */}
+            <div className="flex justify-center mt-3 space-x-2">
+              {slides.map((_, index) => (
+                <div
+                  key={index}
+                  className={`h-3 w-3 rounded-full ${
+                    currentSlide === index ? "bg-[#140342]" : "bg-gray-300"
+                  }`}
+                />
+              ))}
+            </div>
           </div>
-          {/* Dots Indicator */}
-          <div className="flex justify-center mt-3 space-x-2">
-            {slides.map((_, index) => (
-              <div
+        </div>
+
+        {/* Text Section: On mobile, this comes below the slider */}
+        <div className="order-2 sm:order-1 w-full sm:w-1/2 flex flex-col items-center sm:items-start text-center sm:text-left">
+          {/* Two-column grid for features */}
+          <div className="mt-4 grid grid-cols-2 gap-4">
+            {features.map((feature, index) => (
+              <FeatureItem
                 key={index}
-                className={`h-3 w-3 rounded-full ${
-                  currentSlide === index ? "bg-[#140342]" : "bg-gray-300"
-                }`}
+                icon={feature.icon}
+                label={feature.label}
+                desc={feature.desc}
               />
             ))}
           </div>
+          {/* Centered Start Summarizing Button */}
+          <motion.div
+            className="mt-6 flex justify-center w-full"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <motion.button
+              onClick={() => setIsModalOpen(true)}
+              className="px-6 py-3 border-2 border-[#140342] text-[#140342] font-semibold rounded-lg hover:bg-[#140342] hover:text-white hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Start Summarizing
+            </motion.button>
+          </motion.div>
         </div>
       </div>
+
       {/* Topic Summary Modal */}
       <TopicSummaryModal
         isOpen={isModalOpen}
