@@ -125,7 +125,7 @@ const QuestionAndAnsweringHomePage = () => {
                 transition={{ duration: 0.5, delay: 0.4 }}
               >
                 <motion.button
-                  onClick={() => window.location.href = "http://localhost:5173/Q&A-dashboard"}
+                  onClick={() => window.location.href = "http://localhost:3000/Q&A-dashboard"}
                   className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-[#140342]
               font-semibold rounded-lg 
               hover:bg-[#140342] hover:text-white hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
@@ -137,7 +137,7 @@ const QuestionAndAnsweringHomePage = () => {
               </motion.div>
               {/* <button
                 className="bg-blue-600 text-white px-6 py-3 rounded-lg mt-6 hover:bg-blue-800"
-                onClick={() => window.location.href = "http://localhost:5173/Q&A-dashboard"}
+                onClick={() => window.location.href = "http://localhost:3000/Q&A-dashboard"}
               >
                 Open Q&A Dashboard
               </button> */}
@@ -172,7 +172,7 @@ const QuestionAndAnsweringHomePage = () => {
               transition={{ duration: 0.5, delay: 0.4 }}
             >
               <motion.button
-                onClick={() => window.location.href = "http://localhost:5173/Q&A-history"}
+                onClick={() => window.location.href = "http://localhost:3000/Q&A-history"}
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-[#140342]
               font-semibold rounded-lg 
               hover:bg-[#140342] hover:text-white hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
@@ -184,7 +184,7 @@ const QuestionAndAnsweringHomePage = () => {
             </motion.div>
             {/* <button
               className="bg-blue-600 text-white px-6 py-3 rounded-lg mt-6 hover:bg-blue-800"
-              onClick={() => window.location.href = "http://localhost:5173/Q&A-history"}
+              onClick={() => window.location.href = "http://localhost:3000/Q&A-history"}
             >
               View Answer History
             </button> */}
@@ -257,7 +257,7 @@ const QuestionAndAnsweringHomePage = () => {
                 transition={{ duration: 0.5, delay: 0.4 }}
               >
                 <motion.button
-                  onClick={() => window.location.href = "http://localhost:5173/Q&A-materials"}
+                  onClick={() => window.location.href = "http://localhost:3000/Q&A-materials"}
                   className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-[#140342]
               font-semibold rounded-lg 
               hover:bg-[#140342] hover:text-white hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
@@ -269,7 +269,7 @@ const QuestionAndAnsweringHomePage = () => {
               </motion.div>
               {/* <button
                 className="bg-indigo-600 text-white px-6 py-3 rounded-lg mt-6 hover:bg-indigo-800"
-                onClick={() => window.location.href = "http://localhost:5173/Q&A-materials"}
+                onClick={() => window.location.href = "http://localhost:3000/Q&A-materials"}
               >
                 Get Your Study Plan
               </button> */}
