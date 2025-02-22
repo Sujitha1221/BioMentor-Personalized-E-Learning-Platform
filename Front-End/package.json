@@ -15,7 +15,7 @@
     "firebase": "^10.12.2",
     "flowbite": "^2.3.0",
     "flowbite-react": "^0.9.0",
-    "framer-motion": "^12.4.3",
+    "framer-motion": "^12.4.7",
     "localforage": "^1.10.0",
     "lucide-react": "^0.475.0",
     "match-sorter": "^6.3.4",

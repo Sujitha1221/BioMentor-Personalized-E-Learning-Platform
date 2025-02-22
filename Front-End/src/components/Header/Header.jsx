@@ -1,20 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link, useLocation } from "react-router-dom"; // Import useLocation
 import ActiveLink from "../ActiveLink/ActiveLink";
 import "./Header.css";
+import { Link } from "react-router-dom";
 import { FaUserCircle } from "react-icons/fa";
+import { motion } from "framer-motion";
 import logo from "../../../src/assets/Logo.png";
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
-  const location = useLocation(); // Get current route
-
-  // Scroll to top whenever location changes
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [location.pathname]); // Runs when the pathname changes
 
   const handleToggleMenu = () => {
     setMenuOpen(!menuOpen);
@@ -43,7 +38,9 @@ const Header = () => {
         {/* Logo - Left Aligned with Text */}
         <div className="flex items-center space-x-4">
           <img src={logo} alt="Logo" className="h-16" />
-          <h1 className="text-3xl font-bold text-white">Bio Mentor</h1>
+          <motion.h1 className="text-3xl font-extrabold tracking-tight leading-tight text-transparent bg-clip-text bg-gradient-to-r from-[#00FF84] to-[rgb(100,181,246)] drop-shadow-lg px-4 sm:px-0">
+            Bio Mentor
+          </motion.h1>
         </div>
 
         {/* Menu Button for Mobile */}
@@ -84,16 +81,16 @@ const Header = () => {
               <ActiveLink to={"/"}>Home</ActiveLink>
             </li>
             <li>
-              <ActiveLink to={"/mcq"}>MCQ</ActiveLink>
+              <ActiveLink to={"/courses"}>MCQ</ActiveLink>
             </li>
             <li>
-              <ActiveLink to={"/q&a"}>Q & A</ActiveLink>
+              <ActiveLink to={"/events"}>Q & A</ActiveLink>
             </li>
             <li>
-              <ActiveLink to={"/vocabulary"}>Vocabulary</ActiveLink>
+              <ActiveLink to={"/blogs"}>Vocabulary</ActiveLink>
             </li>
             <li>
-              <ActiveLink to={"/summarize"}>Summarize</ActiveLink>
+              <ActiveLink to={"/contact"}>Summarize</ActiveLink>
             </li>
           </ul>
         </div>
