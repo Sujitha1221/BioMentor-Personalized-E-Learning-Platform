@@ -1,11 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
+import {
+  FiInfo,
+  FiCheck,
+  FiAward,
+  FiThumbsUp,
+  FiVolume2,
+  FiSliders,
+} from "react-icons/fi";
 import extractImg from "../../assets/image/extract.jpg";
 import summaryImg from "../../assets/image/summary.jpg";
 import topicImg from "../../assets/image/topic.jpeg";
 import TopicSummaryModal from "./TopicSummaryModal";
 
+// Slide data for the slideshow
 const slides = [
   {
     id: 1,
@@ -30,6 +39,51 @@ const slides = [
   },
 ];
 
+// Feature items data with larger icons
+const features = [
+  {
+    icon: <FiInfo className="text-blue-500 mr-2 w-10 h-10" />,
+    label: "Enter Topic",
+    desc: "Type in any biology topic you need help with.",
+  },
+  {
+    icon: <FiCheck className="text-green-500 mr-2 w-10 h-10" />,
+    label: "Extract Details",
+    desc: "Retrieve essential points, key concepts, and explanations from curated resources.",
+  },
+  {
+    icon: <FiAward className="text-purple-500 mr-2 w-10 h-10" />,
+    label: "Detailed Summary",
+    desc: "Receive a comprehensive summary covering all important aspects.",
+  },
+  {
+    icon: <FiThumbsUp className="text-orange-500 mr-2 w-10 h-10" />,
+    label: "Study Efficiently",
+    desc: "Boost your study sessions with concise, accurate information.",
+  },
+  {
+    icon: <FiVolume2 className="text-red-500 mr-2 w-10 h-10" />,
+    label: "Audible Summary",
+    desc: "Listen to the summary for a hands-free learning experience.",
+  },
+  {
+    icon: <FiSliders className="text-teal-500 mr-2 w-10 h-10" />,
+    label: "Customizable Length",
+    desc: "Adjust the summary length with customizable word count options.",
+  },
+];
+
+// Component for individual feature item
+const FeatureItem = ({ icon, label, desc }) => (
+  <div className="flex items-start space-x-2">
+    {icon}
+    <div>
+      <p className="font-semibold">{label}</p>
+      <p className="text-gray-600 text-sm">{desc}</p>
+    </div>
+  </div>
+);
+
 const TopicSummary = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -39,27 +93,27 @@ const TopicSummary = () => {
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 5000);
-
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <section className="relative flex flex-col bg-gray-100 sm:flex-row items-center justify-between px-6 sm:px-20 py-16 bg-gray-100 max-w-7xl mx-auto">
-      {/* Left Section - Text & Button */}
+    <section className="relative flex flex-col gap-8 bg-gray-100 sm:flex-row sm:gap-x-16 items-center justify-between px-6 sm:px-20 py-16 max-w-7xl mx-auto">
+      {/* Left Section - Heading, Feature Items & Button */}
       <div className="w-full sm:w-1/2 flex flex-col items-center sm:items-start text-center sm:text-left">
         <h2 className="text-3xl font-bold text-[#140342]">
           Summarize Any Biology Topic Instantly
         </h2>
-        <p className="text-gray-600 mt-4 text-sm leading-relaxed">
-          Enter any biology topic, and our tool will extract{" "}
-          <b>all essential points, key concepts, and explanations</b> from{" "}
-          <b>approved educational resources</b>. It ensures a{" "}
-          <b>comprehensive and detailed summary</b>, covering all important
-          aspects without missing critical information, helping you study
-          efficiently.
-        </p>
-
-        {/* Start Summarizing Button */}
+        {/* Two-column grid for features */}
+        <div className="mt-4 grid grid-cols-2 gap-4">
+          {features.map((feature, index) => (
+            <FeatureItem
+              key={index}
+              icon={feature.icon}
+              label={feature.label}
+              desc={feature.desc}
+            />
+          ))}
+        </div>
         <motion.div
           className="mt-6"
           initial={{ opacity: 0, scale: 0.9 }}
@@ -68,8 +122,7 @@ const TopicSummary = () => {
         >
           <motion.button
             onClick={() => setIsModalOpen(true)}
-            className="px-6 py-3 border-2 border-[#140342] text-[#140342] font-semibold rounded-lg 
-            hover:bg-[#140342] hover:text-white hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
+            className="px-6 py-3 border-2 border-[#140342] text-[#140342] font-semibold rounded-lg hover:bg-[#140342] hover:text-white hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -104,7 +157,6 @@ const TopicSummary = () => {
               </p>
             </motion.div>
           </AnimatePresence>
-
           {/* Navigation Buttons */}
           <div className="absolute top-1/2 left-0 -translate-y-1/2 flex justify-between w-full px-4">
             <button
@@ -126,7 +178,6 @@ const TopicSummary = () => {
               <FaArrowRight />
             </button>
           </div>
-
           {/* Dots Indicator */}
           <div className="flex justify-center mt-3 space-x-2">
             {slides.map((_, index) => (
@@ -140,8 +191,7 @@ const TopicSummary = () => {
           </div>
         </div>
       </div>
-
-      {/* Import TopicModal and Pass State */}
+      {/* Topic Summary Modal */}
       <TopicSummaryModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
