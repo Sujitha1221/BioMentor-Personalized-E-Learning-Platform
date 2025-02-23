@@ -54,7 +54,7 @@ const SummarizeDocument = () => {
             {[
               {
                 icon: (
-                  <DocumentArrowUpIcon className="w-8 h-8 text-[#00FF84]" />
+                  <DocumentArrowUpIcon className="w-8 h-8 text-green-400" />
                 ),
                 label: "PDF Files",
                 desc: "Upload your study notes in PDF format.",
@@ -81,7 +81,7 @@ const SummarizeDocument = () => {
                 desc: "Manually enter text for summarization.",
               },
               {
-                icon: <SpeakerWaveIcon className="w-8 h-8 text-[#00FF84]" />,
+                icon: <SpeakerWaveIcon className="w-8 h-8 text-rose-400" />,
                 label: "Audible Summary",
                 desc: "Listen to summaries for hands-free learning.",
               },
