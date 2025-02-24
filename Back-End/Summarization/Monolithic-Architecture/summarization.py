@@ -428,7 +428,7 @@ async def summarize_text(request: Request, background_tasks: BackgroundTasks, te
 @app.post("/generate-notes/")
 async def generate_notes(request: Request, background_tasks: BackgroundTasks, topic: str = Form(...)):
     """
-    Generate structured notes for a given topic and return a downloadable PDF.
+    Generate structured notes for a given topic using the fine-tuned Flan-T5 model with chunking.
     Ensures request cancellations and prevents duplicate tasks.
     """
     task_id = hashlib.sha256(topic.encode()).hexdigest()[
@@ -469,14 +469,11 @@ async def generate_notes(request: Request, background_tasks: BackgroundTasks, to
             # Step 3: Combine and clean the text
             combined_text = " ".join(relevant_texts)
             cleaned_text = rag_model._correct_and_format_text(combined_text)
+            logging.info("Cleaned :", cleaned_text)
 
-            # Step 4: Format the cleaned text into structured bullet points
-            structured_notes = ""
-            sentences = cleaned_text.replace("\n", " ").split(". ")
-
-            for sentence in sentences:
-                if sentence.strip():
-                    structured_notes += f"- {sentence.strip()}.\n"
+            # Step 4: Generate structured notes using chunked processing
+            structured_notes = rag_model.generate_structured_notes(
+                cleaned_text, topic)
 
             # Check if request is disconnected before generating PDF
             if await request.is_disconnected():
@@ -492,6 +489,7 @@ async def generate_notes(request: Request, background_tasks: BackgroundTasks, to
 
             # Title
             pdf.set_font("Arial", style="B", size=16)
+            pdf.cell(200, 10, f"Notes on {topic}", ln=True, align="C")
             pdf.ln(10)
 
             # Content Formatting
@@ -546,16 +544,12 @@ async def generate_notes(request: Request, background_tasks: BackgroundTasks, to
             raise HTTPException(
                 status_code=500, detail="An unexpected error occurred while generating notes.")
 
-    # Store and run the task in the background
     task = asyncio.create_task(process())
     ongoing_tasks[task_id] = task
     background_tasks.add_task(task)
 
-    # **Wait for the task to complete before returning the response**
     response = await task
-
     if response is None:
-        # 499 Client Closed Request
         raise HTTPException(status_code=499, detail="Request was canceled.")
 
     return response

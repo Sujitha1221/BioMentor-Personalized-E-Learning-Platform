@@ -23,7 +23,7 @@ logging.basicConfig(level=logging.INFO,
 
 
 class RAGModel:
-    def __init__(self, model_path, embedding_model_name, dataset_paths):
+    def __init__(self, model_path, embedding_model_name, dataset_paths, max_tokens=512):
         """
         Initialize the Retrieval-Augmented Generation (RAG) Model.
         """
@@ -34,6 +34,7 @@ class RAGModel:
             self.embedder = SentenceTransformer(embedding_model_name)
             self.spell_checker = Speller(lang="en")
             self.grammar_tool = language_tool_python.LanguageTool("en-US")
+            self.max_tokens = max_tokens
             logging.info("RAG Model components loaded successfully.")
 
             # Load datasets and initialize FAISS index
@@ -327,3 +328,85 @@ class RAGModel:
         except Exception as e:
             logging.error(f"Error generating summary: {e}")
             raise
+
+    def chunk_text(self, text: str, max_tokens: int = 512):
+        """
+        Splits text into chunks that fit within the model's token limit.
+        Ensures chunking happens at sentence boundaries (full stops).
+        """
+        import re
+
+        if max_tokens is None:
+            max_tokens = self.max_tokens  # Default to initialized max_tokens
+
+        # Split text into sentences
+        # Splits at full stops, question marks, exclamation marks
+        sentences = re.split(r'(?<=[.!?])\s+', text.strip())
+
+        chunks = []
+        current_chunk = []
+        token_count = 0
+        last_full_stop_index = -1
+
+        for i, sentence in enumerate(sentences):
+            if not sentence.strip():  # Ignore empty sentences
+                continue
+
+            # Tokenize the current sentence and check token count
+            sentence_tokens = self.tokenizer(
+                sentence, return_tensors="pt")["input_ids"]
+            sentence_token_count = len(sentence_tokens[0])
+
+            if token_count + sentence_token_count <= max_tokens:
+                current_chunk.append(sentence)
+                token_count += sentence_token_count
+                # Update last full stop index
+
+            else:
+                chunks.append(" ".join(current_chunk))
+                current_chunk = [sentence]
+                token_count = sentence_token_count
+
+        # Append the last chunk
+        if current_chunk:
+            chunks.append(" ".join(current_chunk))
+
+        logging.info(f"Total {len(chunks)} chunks created for processing.")
+
+        return chunks
+
+    def generate_structured_notes(self, text: str, topic: str) -> str:
+        """
+        Uses the fine-tuned Flan-T5 model to structure notes from raw text.
+        Processes chunked text sequentially.
+        """
+        text_chunks = self.chunk_text(text, self.max_tokens)
+        structured_notes_list = []
+
+        for i, chunk in enumerate(text_chunks):
+            logging.info(f"Processing chunk {i+1}/{len(text_chunks)}...")
+
+            prompt = f"Structure the following notes on {topic} with headings and bullet points:\n\n{chunk}"
+
+            inputs = self.tokenizer(
+                prompt, return_tensors="pt", max_length=1024, truncation=True)
+            output = self.model.generate(
+                **inputs, max_length=1024, do_sample=True, temperature=0.7, top_p=0.9)
+
+            structured_notes = self.tokenizer.decode(
+                output[0], skip_special_tokens=True)
+
+            # Log the structured output for debugging
+            logging.info(
+                f"Chunk {i+1} processed with {len(structured_notes.split())} words.")
+
+            structured_notes_list.append(structured_notes)
+
+        # Merge all structured outputs
+        full_notes = "\n".join(structured_notes_list)
+        logging.info("full otes")
+
+        logging.info(
+            f"Final structured notes length: {len(full_notes.split())} words.")
+
+        return full_notes
