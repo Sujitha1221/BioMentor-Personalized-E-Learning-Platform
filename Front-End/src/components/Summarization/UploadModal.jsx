@@ -177,10 +177,10 @@ const UploadModal = ({ isOpen, onClose }) => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      setAlert({
-        message: "Summary downloaded successfully!",
-        type: "success",
-      });
+      // setAlert({
+      //   message: "Summary downloaded successfully!",
+      //   type: "success",
+      // });
     } catch (error) {
       console.error("Error downloading summary:", error);
       setAlert({ message: "Failed to download summary.", type: "error" });

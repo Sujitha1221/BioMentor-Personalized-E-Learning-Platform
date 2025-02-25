@@ -35,7 +35,7 @@ const GenerateNotesModal = ({ isOpen, onClose }) => {
 
   const resetModal = () => {
     setTopic("");
-    setLanguage("");
+    setLanguage("english");
     setNotes("Your generated notes will appear here...");
     setIsLoading(false);
   };
@@ -45,68 +45,67 @@ const GenerateNotesModal = ({ isOpen, onClose }) => {
       setAlert({ message: "Please enter a topic.", type: "warning" });
       return;
     }
-
+  
     setIsGenerating(true);
     setIsLoading(true);
     setNotes("Generating notes... Please wait.");
-
+    setDownloadLink(null); // Reset download link before request
+  
     try {
-      // Ensure FormData is formatted correctly
+      // Prepare FormData
       const formData = new FormData();
       formData.append("topic", topic);
-
-      // Convert language selection to API expected format
+  
+      // Convert language to API expected format
       let selectedLang = "";
       if (language === "tamil") {
         selectedLang = "ta";
       } else if (language === "sinhala") {
         selectedLang = "si";
       }
-
-      // Append language only if it's not English (API expects empty for English)
+  
+      // Append language if not English
       if (selectedLang) {
         formData.append("lang", selectedLang);
       }
-
-      console.log(formData);
-
+  
       const response = await axios.post(
         "http://localhost:8000/generate-notes/",
         formData,
         {
-          headers: { "Content-Type": "multipart/form-data" }, // Ensure correct headers
+          headers: { "Content-Type": "multipart/form-data" },
         }
       );
-
+  
       if (response.data) {
         setNotes(response.data.structured_notes);
         setIsNotesGenerated(true);
-        setDownloadLink(response.data.download_link || null);
+        console.log(response.data)
+  
+        // Set download link ONLY if API provides it
+        if (response.data.download_link) {
+          setDownloadLink(response.data.download_link);
+        } else {
+          setDownloadLink(null);
+        }
+  
         setAlert({ message: "Notes generated successfully!", type: "success" });
       } else {
         throw new Error("Failed to generate notes. Please try again.");
       }
     } catch (error) {
       console.error("Error generating notes:", error);
-
-      // Handle API error message properly
-      if (error.response) {
-        const errorMsg =
-          error.response.data.detail ||
-          "An error occurred while generating notes.";
-        setAlert({ message: errorMsg, type: "error" });
-        resetModal();
-        setNotes(errorMsg);
-      } else {
-        setAlert({ message: "An unexpected error occurred.", type: "error" });
-        setNotes("An unexpected error occurred.");
-        resetModal();
-      }
+      setAlert({
+        message: error.response?.data?.detail || "An error occurred.",
+        type: "error",
+      });
+      resetModal();
+      setNotes("An unexpected error occurred.");
     } finally {
       setIsGenerating(false);
       setIsLoading(false);
     }
-  };
+  };  
 
   const handleCopy = () => {
     if (notes) {
@@ -132,10 +131,10 @@ const GenerateNotesModal = ({ isOpen, onClose }) => {
       link.click();
       document.body.removeChild(link);
 
-      setAlert({
-        message: "Notes PDF downloaded successfully!",
-        type: "success",
-      });
+      // setAlert({
+      //   message: "Notes PDF downloaded successfully!",
+      //   type: "success",
+      // });
     } catch (error) {
       console.error("Error downloading PDF:", error);
       setAlert({

@@ -90,10 +90,10 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
         setSummary(response.data.summary);
         setIsSummaryGenerated(true);
         setTaskId(response.data.summary_file.split("/").pop());
-        setAlert({
-          message: "Summary generated successfully!",
-          type: "success",
-        });
+        // setAlert({
+        //   message: "Summary generated successfully!",
+        //   type: "success",
+        // });
       } else {
         throw new Error("Invalid response from the server.");
       }
