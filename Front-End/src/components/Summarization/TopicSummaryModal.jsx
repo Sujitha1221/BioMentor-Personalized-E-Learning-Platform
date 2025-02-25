@@ -380,7 +380,7 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
             ></textarea>
             <button
               onClick={handleCopy}
-              className="absolute top-8 right-5 bg-gray-200 p-2 rounded-md transition duration-300 hover:bg-gray-400"
+              className="absolute top-2.5 right-5 bg-gray-200 p-2 rounded-md transition duration-300 hover:bg-gray-400"
               aria-label="Copy Summary"
             >
               {copied ? (
