@@ -8,6 +8,7 @@ import {
   FaPause,
   FaVolumeUp,
   FaTimes,
+  FaCheck,
 } from "react-icons/fa";
 import { MdOutlineClose } from "react-icons/md";
 import axios from "axios";
@@ -32,6 +33,7 @@ const UploadModal = ({ isOpen, onClose }) => {
   const [volume, setVolume] = useState(1);
   const [isMediaPlayerOpen, setIsMediaPlayerOpen] = useState(false);
   const [alert, setAlert] = useState({ message: "", type: "" });
+  const [copied, setCopied] = useState(false);
 
   const audioRef = useRef(null);
 
@@ -70,8 +72,11 @@ const UploadModal = ({ isOpen, onClose }) => {
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(summary);
-    alert("Summary copied!");
+    if (summary) {
+      navigator.clipboard.writeText(summary);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleProcessSummary = async () => {
@@ -489,10 +494,14 @@ const UploadModal = ({ isOpen, onClose }) => {
               ></textarea>
               <button
                 onClick={handleCopy}
-                className="absolute top-8 right-2 bg-gray-200 p-2 rounded-md transition duration-300 hover:bg-gray-400"
+                className="absolute top-8 right-5 bg-gray-200 p-2 rounded-md transition duration-300 hover:bg-gray-400"
                 aria-label="Copy Summary"
               >
-                <FaRegCopy />
+                {copied ? (
+                  <FaCheck className="text-green-600" />
+                ) : (
+                  <FaRegCopy className="text-gray-700" />
+                )}
               </button>
             </div>
 

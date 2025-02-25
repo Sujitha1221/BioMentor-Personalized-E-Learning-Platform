@@ -428,21 +428,20 @@ async def generate_notes(
     request: Request,
     background_tasks: BackgroundTasks,
     topic: str = Form(...),
-    lang: str = Form(None)  # Optional language for translation
+    lang: str = Form(None)  # Optional: "ta" (Tamil) or "si" (Sinhala)
 ):
     """
     Generate structured notes for a given topic.
-    If a language ('ta' for Tamil or 'si') is provided, the notes are translated before returning.
-    For Tamil/Sinhala, only structured notes are returned.
-    For English, a PDF is also generated and a download link is provided.
+    - If a language is provided ('ta' for Tamil, 'si' for Sinhala), the notes are translated.
+    - For English, a PDF file is generated and a download link is returned.
     """
-    task_id = hashlib.sha256(f"{topic}_{lang}".encode()).hexdigest()[
-        :10]  # Unique task identifier
 
-    # If a task is already running for this topic, cancel it
+    # Unique identifier for this task
+    task_id = hashlib.sha256(f"{topic}_{lang}".encode()).hexdigest()[:10]
+
+    # If a previous task exists for this topic, cancel it
     if task_id in ongoing_tasks:
-        logger.warning(
-            f"Previous request for '{topic}' in '{lang}' is still running. Cancelling old task.")
+        logger.warning(f"Previous request for '{topic}' in '{lang}' is still running. Cancelling old task.")
         ongoing_tasks[task_id].cancel()
         del ongoing_tasks[task_id]
 
@@ -450,74 +449,79 @@ async def generate_notes(
         try:
             logger.info(f"Generating structured notes for topic: {topic}")
 
-            # Step 1: Retrieve relevant content
+            # Step 1: Check for inappropriate content
+            inappropriate_message = rag_model.contains_inappropriate_content(topic)
+            if inappropriate_message:
+                logger.warning(f"Inappropriate topic detected: {topic}")
+                raise HTTPException(status_code=400, detail=inappropriate_message)
+
+            # Step 2: Retrieve relevant content
             relevant_texts = rag_model.retrieve_relevant_content(topic)
             if not relevant_texts or relevant_texts == "No relevant content found":
-                raise HTTPException(
-                    status_code=404, detail="No relevant content found.")
+                raise HTTPException(status_code=404, detail="No relevant content found.")
 
-            # Step 2: Clean the text
+            # Step 3: Clean and format the text
             combined_text = " ".join(relevant_texts)
             cleaned_text = rag_model._correct_and_format_text(combined_text)
 
-            # Step 3: Generate structured notes
-            structured_notes = rag_model.generate_structured_notes(
-                cleaned_text, topic)
+            # Step 4: Generate structured notes
+            structured_notes = rag_model.generate_structured_notes(cleaned_text, topic)
 
-            # Step 4: Translate if needed
+            # Step 5: Translate if necessary
             if lang in ["ta", "si"]:
                 structured_notes = await rag_model.translate_text(structured_notes, lang)
                 lang_name = "Tamil" if lang == "ta" else "Sinhala"
             else:
                 lang_name = "English"
 
-            logger.info(
-                f"Structured notes generated (first 100 chars): {structured_notes[:100]}...")
+            logger.info(f"Structured notes generated (first 100 chars): {structured_notes[:100]}...")
 
-            # ---------- CONDITIONAL PDF GENERATION (Only for English) ----------
+            # Step 6: Conditional PDF Generation (Only for English)
             if lang_name == "English":
-                # Step 5: Generate and store PDF
                 pdf_bytes = generate_pdf(structured_notes, topic)
                 pdf_filename = f"notes_{topic.replace(' ', '_')}_{lang_name}.pdf"
 
-                # Store in-memory
+                # Store in memory
                 file_store[pdf_filename] = pdf_bytes
                 logging.info(f"PDF Stored: {pdf_filename}")
 
-                # Step 6: Check if request was disconnected
+                # Step 7: Handle disconnected client
                 if await request.is_disconnected():
                     return None
 
-                # Cleanup
+                # Cleanup task
                 del ongoing_tasks[task_id]
 
-                # Return structured notes + download link
+                # Return structured notes and PDF download link
                 return JSONResponse(content={
                     "structured_notes": structured_notes,
                     "download_link": f"/download-notes/{pdf_filename}"
                 })
 
             else:
-                # For Tamil or Sinhala, do NOT generate/return PDF link
+                # For Tamil or Sinhala, do NOT generate/return PDF
                 if await request.is_disconnected():
                     return None
 
-                # Cleanup
+                # Cleanup task
                 del ongoing_tasks[task_id]
 
-                # Return only the structured notes
-                return JSONResponse(content={
-                    "structured_notes": structured_notes
-                })
+                # Return only structured notes
+                return JSONResponse(content={"structured_notes": structured_notes})
+
+        except HTTPException as http_exc:
+            """ Handle expected errors like inappropriate content or missing data """
+            del ongoing_tasks[task_id]
+            logger.error(f"HTTPException: {http_exc.detail}")
+            raise http_exc  # ✅ Preserves error messages
 
         except Exception as e:
-            logging.error(
-                f"Error generating notes for '{topic}' in '{lang}': {e}", exc_info=True)
+            """ Handle unexpected errors and return a detailed message """
+            logging.error(f"Unexpected error generating notes for '{topic}' in '{lang}': {e}", exc_info=True)
             del ongoing_tasks[task_id]
-            raise HTTPException(
-                status_code=500, detail="An unexpected error occurred.")
+            raise HTTPException(status_code=500, detail=str(e))  # ✅ Returns actual error message
 
-    # Run process in the background
+    # Run the process in the background
     task = asyncio.create_task(process())
     ongoing_tasks[task_id] = task
     background_tasks.add_task(task)

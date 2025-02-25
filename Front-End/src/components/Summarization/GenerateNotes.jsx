@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { 
-  GlobeAltIcon, 
-  BookOpenIcon, 
-  ExclamationTriangleIcon 
+import {
+  GlobeAltIcon,
+  BookOpenIcon,
+  ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import notesImage from "../../assets/image/notes.jpg"; // Replace with actual image
 import { motion } from "framer-motion";
@@ -15,7 +15,6 @@ const GenerateNotes = () => {
     <section className="relative bg-gray-100 px-6 sm:px-12 py-16">
       {/* Content Wrapper */}
       <div className="relative flex flex-col sm:flex-row items-center justify-between max-w-7xl mx-auto">
-        
         {/* Left Side - Image & Description with Gradient Background */}
         <div className="w-full sm:w-1/2 flex justify-center relative">
           <div className="relative bg-[#140342] shadow-lg rounded-lg overflow-hidden w-full max-w-lg">
@@ -24,16 +23,19 @@ const GenerateNotes = () => {
               <img
                 src={notesImage}
                 alt="Generate Notes"
-                className="w-full h-80 object-cover" 
+                className="w-full h-80 object-cover"
               />
             </div>
 
             {/* Text Section */}
             <div className="p-6 bg-[#140342] text-white">
-              <h3 className="text-lg font-semibold">Generate Notes Instantly</h3>
+              <h3 className="text-lg font-semibold">
+                Generate Notes Instantly
+              </h3>
               <p className="mt-2 text-sm">
-                Enter any <b>topic</b> to generate well-structured notes using <b>approved resources</b>.  
-                Each note is concise, covering all the essential <b>key points</b> for better understanding.
+                Enter any <b>topic</b> to generate well-structured notes using{" "}
+                <b>approved resources</b>. Each note is concise, covering all
+                the essential <b>key points</b> for better understanding.
               </p>
             </div>
           </div>
@@ -50,7 +52,8 @@ const GenerateNotes = () => {
               <div>
                 <p className="font-semibold">Approved Content</p>
                 <p className="text-gray-600 text-sm">
-                  Notes are derived from <b>trusted sources</b> to ensure reliability.
+                  Notes are derived from <b>trusted sources</b> to ensure
+                  reliability.
                 </p>
               </div>
             </div>
@@ -61,7 +64,8 @@ const GenerateNotes = () => {
               <div>
                 <p className="font-semibold">Multi-Language Support</p>
                 <p className="text-gray-600 text-sm">
-                  Notes can be <b>translated</b> into <b>Sinhala & Tamil</b> for accessibility.
+                  Notes can be <b>translated</b> into <b>Sinhala & Tamil</b> for
+                  accessibility.
                 </p>
               </div>
             </div>
@@ -82,7 +86,7 @@ const GenerateNotes = () => {
 
           {/* Generate Notes Button */}
           <motion.div
-            className="mt-10 flex justify-center"
+            className="mt-10 flex justify-start"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.4 }}
@@ -102,7 +106,12 @@ const GenerateNotes = () => {
       </div>
 
       {/* Generate Notes Modal */}
-      {isModalOpen && <GenerateNotesModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />}
+      {isModalOpen && (
+        <GenerateNotesModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+        />
+      )}
     </section>
   );
 };
