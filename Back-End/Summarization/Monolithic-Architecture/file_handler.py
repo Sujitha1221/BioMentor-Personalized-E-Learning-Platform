@@ -1,10 +1,15 @@
 import logging
 import os
 from fastapi import UploadFile
+import os
+from io import BytesIO
+from fpdf import FPDF
+
 
 # Configure logging
-logging.basicConfig(level=logging.INFO,
-                    format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 UPLOAD_DIR = "uploads"
 
@@ -26,3 +31,30 @@ def save_uploaded_file(file: UploadFile):
     except Exception as e:
         logging.error(f"Failed to save uploaded file: {e}")
         raise RuntimeError("Error in saving uploaded file.")
+
+
+def generate_pdf(structured_notes: str, topic: str) -> bytes:
+    """
+    Generate a PDF in English only using FPDF, returning the PDF data as bytes.
+
+    :param structured_notes: The textual content for the PDF.
+    :param topic: Title/topic for the PDF.
+    :return: The PDF file data in bytes.
+    """
+    pdf = FPDF()
+    pdf.add_page()
+
+    # Set a title font (bold, size 16)
+    pdf.set_font("Arial", "B", 16)
+    pdf.cell(200, 10, txt=f"Topic: {topic}", ln=True, align="L")
+
+    # Change to a normal font for content
+    pdf.set_font("Arial", size=12)
+
+    # Write multi-line text; FPDF's multi_cell wraps text automatically
+    for line in structured_notes.split("\n"):
+        pdf.multi_cell(0, 10, txt=line, align="L")
+
+    # Generate the PDF in-memory and get its bytes
+    pdf_bytes = pdf.output(dest='S').encode("latin-1")
+    return pdf_bytes

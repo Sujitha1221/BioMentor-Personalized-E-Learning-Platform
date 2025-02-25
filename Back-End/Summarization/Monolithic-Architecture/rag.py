@@ -12,14 +12,20 @@ import joblib
 from textblob import TextBlob
 from nltk.corpus import words, wordnet
 import nltk
-nltk.download('words')
-nltk.download('wordnet')
+import asyncio
+from deep_translator import GoogleTranslator
+import textwrap
+
+
+nltk.download("words")
+nltk.download("wordnet")
 ENGLISH_WORDS = set(words.words())
 
 
 # Configure logging
-logging.basicConfig(level=logging.INFO,
-                    format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 
 class RAGModel:
@@ -41,7 +47,8 @@ class RAGModel:
             self.long_texts, self.notes_content = self._load_data(
                 dataset_paths)
             self.faiss_index = self._initialize_faiss(
-                self.long_texts, self.notes_content)
+                self.long_texts, self.notes_content
+            )
             logging.info("FAISS index initialized successfully.")
 
         except Exception as e:
@@ -57,11 +64,11 @@ class RAGModel:
         try:
             for dataset_path in dataset_paths:
                 try:
-                    df = pd.read_csv(dataset_path, encoding='ISO-8859-1')
-                    if 'Long Text' in df.columns:
-                        long_texts.extend(df['Long Text'].tolist())
-                    if 'Text Content' in df.columns:
-                        notes_content.extend(df['Text Content'].tolist())
+                    df = pd.read_csv(dataset_path, encoding="ISO-8859-1")
+                    if "Long Text" in df.columns:
+                        long_texts.extend(df["Long Text"].tolist())
+                    if "Text Content" in df.columns:
+                        notes_content.extend(df["Text Content"].tolist())
                 except FileNotFoundError:
                     logging.error(f"Dataset not found: {dataset_path}")
                     continue
@@ -84,8 +91,9 @@ class RAGModel:
         Initialize FAISS index with embeddings from long texts and notes.
         """
         try:
-            embeddings = self.embedder.encode(
-                long_texts + notes_content).astype('float32')
+            embeddings = self.embedder.encode(long_texts + notes_content).astype(
+                "float32"
+            )
             index = faiss.IndexFlatL2(embeddings.shape[1])
             index.add(embeddings)
             logging.info("FAISS index created and populated successfully.")
@@ -104,6 +112,7 @@ class RAGModel:
         - Sentiment analysis (to catch highly negative messages)
         - Checks if the query contains valid English words
         """
+
         def is_valid_word(word):
             """Checks if a word is a valid English or scientific term."""
             return word in ENGLISH_WORDS or wordnet.synsets(word)
@@ -117,7 +126,9 @@ class RAGModel:
         for keyword in DANGEROUS_KEYWORDS:
             if re.search(rf"\b{re.escape(keyword)}\b", query, re.IGNORECASE):
                 logging.warning(f"Query flagged for dangerous intent: {query}")
-                return "Your query is flagged as inappropriate or unsafe. Please rephrase."
+                return (
+                    "Your query is flagged as inappropriate or unsafe. Please rephrase."
+                )
 
         # Step 3: Check for highly negative sentiment (e.g., self-harm, extreme anger)
         sentiment_score = TextBlob(query).sentiment.polarity
@@ -127,7 +138,7 @@ class RAGModel:
 
         # Step 4: Check if query contains only valid English words
         # Extract words from query
-        query_words = re.findall(r'\b\w+\b', query.lower())
+        query_words = re.findall(r"\b\w+\b", query.lower())
 
         invalid_words = [
             word for word in query_words if not is_valid_word(word)]
@@ -155,7 +166,7 @@ class RAGModel:
                     "FAISS model or embedder not initialized properly.")
                 return "Error: FAISS model is not properly initialized."
 
-            query_embedding = self.embedder.encode([query]).astype('float32')
+            query_embedding = self.embedder.encode([query]).astype("float32")
             distances, indices = self.faiss_index.search(query_embedding, k)
 
             if not hasattr(self, "long_texts") or not hasattr(self, "notes_content"):
@@ -164,15 +175,17 @@ class RAGModel:
                 return "Error: Data lists not found."
 
             all_content = self.long_texts + self.notes_content
-            relevant_content = [all_content[idx]
-                                for idx in indices[0] if idx < len(all_content)]
+            relevant_content = [
+                all_content[idx] for idx in indices[0] if idx < len(all_content)
+            ]
 
             if not relevant_content:
                 logging.info(f"No relevant content found for query: {query}")
                 return "No relevant content found"
 
             logging.info(
-                f"Retrieved {len(relevant_content)} relevant content items for query: {query}")
+                f"Retrieved {len(relevant_content)} relevant content items for query: {query}"
+            )
             return relevant_content
 
         except Exception as e:
@@ -201,7 +214,7 @@ class RAGModel:
 
             for sentence in sentences:
                 # Tokenize the sentence into words
-                words = re.split(r'\s+', sentence)
+                words = re.split(r"\s+", sentence)
 
                 # Remove consecutive duplicate words and create a filtered sentence
                 filtered_words = []
@@ -240,7 +253,7 @@ class RAGModel:
         try:
             # Step 1: Strip unnecessary spaces and split into sentences
             summary = " ".join(summary.split())  # Remove extra spaces
-            sentences = re.split(r'(?<=[.!?])\s+', summary.strip())
+            sentences = re.split(r"(?<=[.!?])\s+", summary.strip())
 
             processed_sentences = []
             for sentence in sentences:
@@ -279,8 +292,8 @@ class RAGModel:
                 truncated_text = " ".join(words[:max_words])
                 for i in range(len(truncated_text) - 1, -1, -1):
                     if truncated_text[i] in ".!?":
-                        return truncated_text[:i + 1]
-                return " ".join(words[:max_words - 1]).strip()
+                        return truncated_text[: i + 1]
+                return " ".join(words[: max_words - 1]).strip()
             return text
         except Exception as e:
             logging.error(f"Error truncating text: {e}")
@@ -291,18 +304,25 @@ class RAGModel:
         Generate a summary for a given long text.
         """
         try:
+
             def chunk_text(text, max_tokens=500):
                 """
                 Helper function to chunk text into smaller parts.
                 """
                 words = text.split()
-                return [' '.join(words[i:i + max_tokens]) for i in range(0, len(words), max_tokens)]
+                return [
+                    " ".join(words[i: i + max_tokens])
+                    for i in range(0, len(words), max_tokens)
+                ]
 
             max_input_words = 390
             if len(long_text.split()) > max_input_words:
                 chunks = chunk_text(long_text, max_tokens=max_input_words)
-                summaries = [self.generate_summary_for_long_text(
-                    chunk, min_words, max_words) for chunk in chunks]
+                summaries = [
+                    self.generate_summary_for_long_text(
+                        chunk, min_words, max_words)
+                    for chunk in chunks
+                ]
                 combined_summary = " ".join(summaries)
                 return self.truncate_to_word_count(combined_summary, max_words)
 
@@ -311,7 +331,8 @@ class RAGModel:
                 f"{long_text}\n\nSummary:"
             )
             inputs = self.tokenizer(
-                prompt, return_tensors="pt", max_length=512, truncation=True)
+                prompt, return_tensors="pt", max_length=512, truncation=True
+            )
             summary_ids = self.model.generate(
                 inputs["input_ids"],
                 max_length=max_words * 2,
@@ -319,7 +340,7 @@ class RAGModel:
                 length_penalty=1.2,
                 num_beams=4,
                 repetition_penalty=2.0,
-                early_stopping=True
+                early_stopping=True,
             )
             summary = self.tokenizer.decode(
                 summary_ids[0], skip_special_tokens=True)
@@ -341,12 +362,11 @@ class RAGModel:
 
         # Split text into sentences
         # Splits at full stops, question marks, exclamation marks
-        sentences = re.split(r'(?<=[.!?])\s+', text.strip())
+        sentences = re.split(r"(?<=[.!?])\s+", text.strip())
 
         chunks = []
         current_chunk = []
         token_count = 0
-        last_full_stop_index = -1
 
         for i, sentence in enumerate(sentences):
             if not sentence.strip():  # Ignore empty sentences
@@ -389,16 +409,20 @@ class RAGModel:
             prompt = f"Structure the following notes on {topic} with headings and bullet points:\n\n{chunk}"
 
             inputs = self.tokenizer(
-                prompt, return_tensors="pt", max_length=1024, truncation=True)
+                prompt, return_tensors="pt", max_length=1024, truncation=True
+            )
             output = self.model.generate(
-                **inputs, max_length=1024, do_sample=True, temperature=0.7, top_p=0.9)
+                **inputs, max_length=1024, do_sample=True, temperature=0.7, top_p=0.9
+            )
 
             structured_notes = self.tokenizer.decode(
-                output[0], skip_special_tokens=True)
+                output[0], skip_special_tokens=True
+            )
 
             # Log the structured output for debugging
             logging.info(
-                f"Chunk {i+1} processed with {len(structured_notes.split())} words.")
+                f"Chunk {i+1} processed with {len(structured_notes.split())} words."
+            )
 
             structured_notes_list.append(structured_notes)
 
@@ -410,3 +434,31 @@ class RAGModel:
             f"Final structured notes length: {len(full_notes.split())} words.")
 
         return full_notes
+
+    async def translate_text(self, text, lang):
+        """
+        Translate text into Tamil ('ta') or Sinhala ('si') using deep_translator (Google backend).
+        """
+        target_lang = "ta" if lang == "ta" else "si"
+
+        # Google Translate limit is 5000 characters
+        max_chars = 4500
+        translated_chunks = []
+
+        try:
+
+            text_chunks = textwrap.wrap(
+                text, width=max_chars, break_long_words=False, replace_whitespace=False)
+
+            for chunk in text_chunks:
+                translated_chunk = await asyncio.to_thread(
+                    GoogleTranslator(
+                        source="auto", target=target_lang).translate, chunk
+                )
+                translated_chunks.append(translated_chunk)
+
+            return " ".join(translated_chunks)
+
+        except Exception as e:
+            print(f"Translation failed: {e}")
+            return text  # Fallback to original text if translation fails

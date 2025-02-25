@@ -30,3 +30,5 @@ joblib
 better_profanity
 textblob
 nltk
+fpdf
+deep_translator

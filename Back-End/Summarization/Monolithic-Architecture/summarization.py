@@ -4,8 +4,7 @@ import yaml
 from rag import RAGModel
 from text_extraction_service import extract_content, clean_text, format_as_paragraph
 from voice_service import text_to_speech
-from file_handler import save_uploaded_file
-import os
+from file_handler import save_uploaded_file, generate_pdf
 import io
 import hashlib
 import asyncio
@@ -13,7 +12,6 @@ from fastapi import Request, BackgroundTasks
 from fastapi import FastAPI, UploadFile, Form, HTTPException
 from fastapi.responses import StreamingResponse, FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fpdf import FPDF
 
 
 # Load logging configuration
@@ -426,18 +424,25 @@ async def summarize_text(request: Request, background_tasks: BackgroundTasks, te
 
 
 @app.post("/generate-notes/")
-async def generate_notes(request: Request, background_tasks: BackgroundTasks, topic: str = Form(...)):
+async def generate_notes(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    topic: str = Form(...),
+    lang: str = Form(None)  # Optional language for translation
+):
     """
-    Generate structured notes for a given topic using the fine-tuned Flan-T5 model with chunking.
-    Ensures request cancellations and prevents duplicate tasks.
+    Generate structured notes for a given topic.
+    If a language ('ta' for Tamil or 'si') is provided, the notes are translated before returning.
+    For Tamil/Sinhala, only structured notes are returned.
+    For English, a PDF is also generated and a download link is provided.
     """
-    task_id = hashlib.sha256(topic.encode()).hexdigest()[
-        :10]  # Unique identifier for each request
+    task_id = hashlib.sha256(f"{topic}_{lang}".encode()).hexdigest()[
+        :10]  # Unique task identifier
 
     # If a task is already running for this topic, cancel it
     if task_id in ongoing_tasks:
         logger.warning(
-            f"Previous request for '{topic}' is still running. Cancelling old task.")
+            f"Previous request for '{topic}' in '{lang}' is still running. Cancelling old task.")
         ongoing_tasks[task_id].cancel()
         del ongoing_tasks[task_id]
 
@@ -445,105 +450,74 @@ async def generate_notes(request: Request, background_tasks: BackgroundTasks, to
         try:
             logger.info(f"Generating structured notes for topic: {topic}")
 
-            # Step 1: Check for inappropriate content
-            inappropriate_message = rag_model.contains_inappropriate_content(
-                topic)
-            if inappropriate_message:
-                logger.warning(f"Inappropriate topic detected: {topic}")
-                raise HTTPException(
-                    status_code=400, detail=inappropriate_message)
-
-            # Step 2: Retrieve relevant content
+            # Step 1: Retrieve relevant content
             relevant_texts = rag_model.retrieve_relevant_content(topic)
-
-            if isinstance(relevant_texts, str) and "error" in relevant_texts.lower():
-                logger.warning(f"Error retrieving content: {relevant_texts}")
-                raise HTTPException(
-                    status_code=500, detail="Error retrieving relevant content.")
-
             if not relevant_texts or relevant_texts == "No relevant content found":
-                logger.warning(f"No relevant content found for topic: {topic}")
                 raise HTTPException(
                     status_code=404, detail="No relevant content found.")
 
-            # Step 3: Combine and clean the text
+            # Step 2: Clean the text
             combined_text = " ".join(relevant_texts)
             cleaned_text = rag_model._correct_and_format_text(combined_text)
-            logging.info("Cleaned :", cleaned_text)
 
-            # Step 4: Generate structured notes using chunked processing
+            # Step 3: Generate structured notes
             structured_notes = rag_model.generate_structured_notes(
                 cleaned_text, topic)
 
-            # Check if request is disconnected before generating PDF
-            if await request.is_disconnected():
-                logger.warning(
-                    f"Request was canceled. Stopping processing for '{topic}'.")
-                return None
+            # Step 4: Translate if needed
+            if lang in ["ta", "si"]:
+                structured_notes = await rag_model.translate_text(structured_notes, lang)
+                lang_name = "Tamil" if lang == "ta" else "Sinhala"
+            else:
+                lang_name = "English"
 
-            # Step 5: Create a properly formatted PDF
-            pdf_filename = f"notes_{topic.replace(' ', '_')}.pdf"
-            pdf = FPDF()
-            pdf.set_auto_page_break(auto=True, margin=15)
-            pdf.add_page()
+            logger.info(
+                f"Structured notes generated (first 100 chars): {structured_notes[:100]}...")
 
-            # Title
-            pdf.set_font("Arial", style="B", size=16)
-            pdf.cell(200, 10, f"Notes on {topic}", ln=True, align="C")
-            pdf.ln(10)
+            # ---------- CONDITIONAL PDF GENERATION (Only for English) ----------
+            if lang_name == "English":
+                # Step 5: Generate and store PDF
+                pdf_bytes = generate_pdf(structured_notes, topic)
+                pdf_filename = f"notes_{topic.replace(' ', '_')}_{lang_name}.pdf"
 
-            # Content Formatting
-            pdf.set_font("Arial", size=12)
-            for line in structured_notes.split("\n"):
-                if line.strip():
-                    if line.endswith(":"):  # Headings
-                        pdf.set_font("Arial", style="B", size=14)
-                        pdf.cell(200, 8, line.encode(
-                            "latin-1", "ignore").decode("latin-1"), ln=True)
-                        pdf.ln(3)
-                    else:  # Content
-                        pdf.set_font("Arial", size=12)
-                        pdf.multi_cell(0, 8, line.encode(
-                            "latin-1", "ignore").decode("latin-1"))
-                        pdf.ln(2)
+                # Store in-memory
+                file_store[pdf_filename] = pdf_bytes
+                logging.info(f"PDF Stored: {pdf_filename}")
 
-            # Write PDF to a BytesIO object
-            pdf_stream = io.BytesIO()
-            pdf_bytes = pdf.output(dest="S").encode(
-                "latin-1")  # Get PDF as bytes
-            pdf_stream.write(pdf_bytes)
-            pdf_stream.seek(0)
+                # Step 6: Check if request was disconnected
+                if await request.is_disconnected():
+                    return None
 
-            # Store file in memory for download
-            file_store[pdf_filename] = pdf_bytes
+                # Cleanup
+                del ongoing_tasks[task_id]
 
-            logger.info(f"Generated notes PDF: {pdf_filename}")
+                # Return structured notes + download link
+                return JSONResponse(content={
+                    "structured_notes": structured_notes,
+                    "download_link": f"/download-notes/{pdf_filename}"
+                })
 
-            # Cleanup after task completion
-            del ongoing_tasks[task_id]
+            else:
+                # For Tamil or Sinhala, do NOT generate/return PDF link
+                if await request.is_disconnected():
+                    return None
 
-            # Return structured text along with a download link
-            return JSONResponse(content={
-                "structured_notes": structured_notes,
-                "download_link": f"/download-notes/{pdf_filename}"
-            })
+                # Cleanup
+                del ongoing_tasks[task_id]
 
-        except asyncio.CancelledError:
-            logger.warning(f"Notes generation for '{topic}' was canceled.")
-            del ongoing_tasks[task_id]
-            return None
-
-        except HTTPException as http_err:
-            del ongoing_tasks[task_id]
-            raise http_err
+                # Return only the structured notes
+                return JSONResponse(content={
+                    "structured_notes": structured_notes
+                })
 
         except Exception as e:
-            logger.error(
-                f"Error generating notes for '{topic}': {e}", exc_info=True)
+            logging.error(
+                f"Error generating notes for '{topic}' in '{lang}': {e}", exc_info=True)
             del ongoing_tasks[task_id]
             raise HTTPException(
-                status_code=500, detail="An unexpected error occurred while generating notes.")
+                status_code=500, detail="An unexpected error occurred.")
 
+    # Run process in the background
     task = asyncio.create_task(process())
     ongoing_tasks[task_id] = task
     background_tasks.add_task(task)
@@ -553,21 +527,6 @@ async def generate_notes(request: Request, background_tasks: BackgroundTasks, to
         raise HTTPException(status_code=499, detail="Request was canceled.")
 
     return response
-
-
-@app.get("/download-notes/{file_name}")
-async def download_notes(file_name: str):
-    """
-    Endpoint to download the generated notes PDF file.
-    """
-    if file_name not in file_store:
-        logger.warning(f"Notes file {file_name} not found.")
-        raise HTTPException(status_code=404, detail="Notes file not found.")
-
-    logger.info(f"Downloading notes file: {file_name}")
-    return StreamingResponse(io.BytesIO(file_store[file_name]),
-                             media_type="application/pdf",
-                             headers={"Content-Disposition": f"attachment; filename={file_name}"})
 
 
 @app.get("/download-summary-text/{task_id}")
@@ -604,6 +563,24 @@ async def download_summary_audio(task_id: str):
     return StreamingResponse(io.BytesIO(file_store[audio_file_path]),
                              media_type="audio/mpeg",
                              headers={"Content-Disposition": f"attachment; filename={audio_file_path}"})
+
+
+@app.get("/download-notes/{file_name}")
+async def download_notes(file_name: str):
+    """
+    Endpoint to download the generated notes PDF file.
+    """
+    if file_name not in file_store:
+        logging.warning(f"Notes file '{file_name}' NOT FOUND in `file_store`")
+        raise HTTPException(status_code=404, detail="Notes file not found.")
+
+    logging.info(f"Downloading notes file: {file_name}")
+
+    # Retrieve the PDF bytes and serve it
+    return StreamingResponse(io.BytesIO(file_store[file_name]),
+                             media_type="application/pdf",
+                             headers={"Content-Disposition": f"attachment; filename={file_name}"})
+
 
 if __name__ == "__main__":
     import uvicorn
