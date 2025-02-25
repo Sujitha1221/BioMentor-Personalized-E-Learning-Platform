@@ -1,15 +1,31 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import ActiveLink from "../ActiveLink/ActiveLink";
-import "./Header.css";
-import { Link } from "react-router-dom";
 import { FaUserCircle } from "react-icons/fa";
 import { motion } from "framer-motion";
 import logo from "../../../src/assets/Logo.png";
+import "./Header.css";
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const dropdownRef = useRef(null);
+  const navigate = useNavigate();
+  const location = useLocation(); // Get current route
+
+  // Check if user is logged in
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    setIsLoggedIn(!!token);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setIsLoggedIn(false);
+    navigate("/"); // Redirect to Home page after logout
+  };
 
   const handleToggleMenu = () => {
     setMenuOpen(!menuOpen);
@@ -32,6 +48,11 @@ const Header = () => {
     };
   }, []);
 
+  // Hide header on the "/" route
+  if (location.pathname === "/" || location.pathname === "/signup") {
+    return null;
+  }
+
   return (
     <nav className="navbar md:fixed top-0 left-0 z-10 w-full hero-bg z-20">
       <div className="w-4/5 flex flex-wrap items-center justify-between mx-auto py-4">
@@ -43,7 +64,7 @@ const Header = () => {
           </motion.h1>
         </div>
 
-        {/* Menu Button for Mobile */}
+        {/* Mobile Menu Button */}
         <button
           onClick={handleToggleMenu}
           type="button"
@@ -76,21 +97,21 @@ const Header = () => {
           } w-full md:flex md:flex-1 md:justify-center`}
           id="navbar-default"
         >
-          <ul className="font-medium flex flex-col gap-3 justify-center p-4 md:p-0 mt-4 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 items-center">
+          <ul className="font-medium text-white flex flex-col gap-3 justify-center p-4 md:p-0 mt-4 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 items-center">
             <li>
-              <ActiveLink to={"/"}>Home</ActiveLink>
+              <ActiveLink to="/home">Home</ActiveLink>
             </li>
             <li>
-              <ActiveLink to={"/courses"}>MCQ</ActiveLink>
+              <ActiveLink to="/courses">MCQ</ActiveLink>
             </li>
             <li>
-              <ActiveLink to={"/events"}>Q & A</ActiveLink>
+              <ActiveLink to="/Q&A-home">Q & A</ActiveLink>
             </li>
             <li>
-              <ActiveLink to={"/blogs"}>Vocabulary</ActiveLink>
+              <ActiveLink to="/blogs">Vocabulary</ActiveLink>
             </li>
             <li>
-              <ActiveLink to={"/contact"}>Summarize</ActiveLink>
+              <ActiveLink to="/contact">Summarize</ActiveLink>
             </li>
 
             {/* User Icon (Only in Mobile Menu) */}
@@ -124,34 +145,6 @@ const Header = () => {
               </div>
             </li>
           </ul>
-        </div>
-
-        {/* User Icon - Visible Only on Desktop */}
-        <div className="relative hidden md:block" ref={dropdownRef}>
-          <button
-            onClick={handleToggleDropdown}
-            className={`flex items-center space-x-2 focus:outline-none transition duration-200 ${
-              dropdownOpen ? "text-[rgb(100,181,246)]" : "text-white"
-            }`}
-          >
-            <FaUserCircle className="w-8 h-8" />
-          </button>
-          {dropdownOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 z-20">
-              <Link
-                to="/profile"
-                className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-              >
-                My Profile
-              </Link>
-              <Link
-                to="/logout"
-                className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-              >
-                Logout
-              </Link>
-            </div>
-          )}
         </div>
       </div>
     </nav>
