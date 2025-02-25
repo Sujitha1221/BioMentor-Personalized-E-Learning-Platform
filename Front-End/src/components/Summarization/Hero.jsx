@@ -1,9 +1,10 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { DocumentTextIcon, AcademicCapIcon } from "@heroicons/react/24/outline";
+import { RocketLaunchIcon } from "@heroicons/react/24/outline";
+
 import summarizer from "../../assets/image/download.png";
 
-const Hero = ({ scrollToSummarize, scrollToTopicSummary }) => {
+const Hero = ({ scrollToSummarize }) => {
   return (
     <section className="relative h-screen flex flex-col items-center justify-center text-white overflow-hidden bg-[#140342] px-4 sm:px-6">
       {/* Animated Logo */}
@@ -49,26 +50,15 @@ const Hero = ({ scrollToSummarize, scrollToTopicSummary }) => {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.4 }}
         >
-          {/* Button that Scrolls to Summarization Section */}
-          <motion.button
-            onClick={scrollToSummarize}
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-slate-300 hover:bg-[#140342] hover:text-[#64B5F6] text-black font-semibold rounded-lg shadow-md transition-all duration-300 group"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <DocumentTextIcon className="w-6 h-6 text-black group-hover:text-[#64B5F6] transition-all duration-300" />
-            Summarize a Document/Text
-          </motion.button>
-
           {/* Button that Scrolls to Topic Summary Section */}
           <motion.button
-            onClick={scrollToTopicSummary} // Calls function to scroll smoothly
+            onClick={scrollToSummarize} // Calls function to scroll smoothly
             className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#00FF84] text-[#00FF84] font-semibold rounded-lg hover:bg-[#00FF84] hover:text-black hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <AcademicCapIcon className="w-6 h-6 text-[#00FF84] group-hover:text-black group-hover:stroke-black transition-all duration-300" />
-            Summarize by Topic
+            <RocketLaunchIcon className="w-6 h-6 text-[#00FF84] group-hover:text-black transition-all duration-300" />
+            Start Exploring
           </motion.button>
         </motion.div>
       </div>

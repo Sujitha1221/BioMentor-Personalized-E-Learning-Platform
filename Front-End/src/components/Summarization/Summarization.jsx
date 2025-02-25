@@ -19,24 +19,10 @@ const Summarization = () => {
     }
   };
 
-  const scrollToTopicSummary = () => {
-    if (topicSummaryRef.current) {
-      const yOffset = -80;
-      const y =
-        topicSummaryRef.current.getBoundingClientRect().top +
-        window.scrollY +
-        yOffset;
-      window.scrollTo({ top: y, behavior: "smooth" });
-    }
-  };
-
   return (
     <div className="bg-gray-100">
       {/* Pass scroll function to Hero */}
-      <Hero
-        scrollToSummarize={scrollToSummarize}
-        scrollToTopicSummary={scrollToTopicSummary}
-      />
+      <Hero scrollToSummarize={scrollToSummarize} />
 
       {/* Sections */}
       <div ref={summarizeRef} className="mt-10">
