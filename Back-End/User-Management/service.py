@@ -7,7 +7,7 @@ from typing import Optional
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
-# Load environment variables (for MongoDB URI and secret key)
+# Load environment variables
 load_dotenv()
 
 # Secret key for JWT
@@ -23,20 +23,20 @@ users_collection = db.users  # Collection name
 class UserCreate(BaseModel):
     username: str
     password: str
-    email: Optional[str] = None
+    email: str  # Email is now required
 
 class UserUpdate(BaseModel):
     email: Optional[str] = None
 
 class UserLogin(BaseModel):
-    username: str
+    email: str  # Updated to use email
     password: str
 
 class UserService:
     def create_user(self, user: UserCreate):
-        # Check if user already exists
-        if users_collection.find_one({"username": user.username}):
-            return {"error": "User already exists"}
+        # Check if user already exists by email
+        if users_collection.find_one({"email": user.email}):
+            return {"error": "User already exists with this email"}
 
         # Hash password
         hashed_password = bcrypt.hashpw(user.password.encode('utf-8'), bcrypt.gensalt())
@@ -49,32 +49,32 @@ class UserService:
         })
         return {"message": "User created successfully"}
 
-    def get_user(self, username: str):
-        user = users_collection.find_one({"username": username}, {"_id": 0, "password": 0})
+    def get_user(self, email: str):
+        user = users_collection.find_one({"email": email}, {"_id": 0, "password": 0})
         return user if user else {"error": "User not found"}
 
-    def update_user(self, username: str, user_update: UserUpdate):
-        if not users_collection.find_one({"username": username}):
+    def update_user(self, email: str, user_update: UserUpdate):
+        if not users_collection.find_one({"email": email}):
             return {"error": "User not found"}
 
         users_collection.update_one(
-            {"username": username},
+            {"email": email},
             {"$set": {"email": user_update.email}}
         )
         return {"message": "User updated successfully"}
 
-    def delete_user(self, username: str):
-        result = users_collection.delete_one({"username": username})
+    def delete_user(self, email: str):
+        result = users_collection.delete_one({"email": email})
         return {"message": "User deleted successfully"} if result.deleted_count > 0 else {"error": "User not found"}
 
-    def login(self, username: str, password: str):
-        user = users_collection.find_one({"username": username})
+    def login(self, email: str, password: str):
+        user = users_collection.find_one({"email": email})
         if not user or not bcrypt.checkpw(password.encode('utf-8'), user["password"]):
             return None
 
         # Generate JWT token
         token = jwt.encode(
-            {"sub": username, "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1)},
+            {"sub": email, "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1)},
             SECRET_KEY,
             algorithm="HS256"
         )

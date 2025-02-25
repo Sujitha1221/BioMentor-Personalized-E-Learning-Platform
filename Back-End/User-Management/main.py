@@ -1,6 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from pydantic import BaseModel
-from typing import Optional
 from service import UserService, UserCreate, UserUpdate
 from fastapi.security import OAuth2PasswordBearer
 
@@ -11,8 +10,9 @@ user_service = UserService()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 
+# Define login & logout request models
 class LoginRequest(BaseModel):
-    username: str
+    email: str  # Changed from username to email
     password: str
 
 class LogoutRequest(BaseModel):
@@ -24,20 +24,20 @@ class LogoutRequest(BaseModel):
 def create_user(user: UserCreate):
     return user_service.create_user(user)
 
-@app.get("/users/{username}")
-def get_user(username: str):
-    user = user_service.get_user(username)
+@app.get("/users/{email}")
+def get_user(email: str):
+    user = user_service.get_user(email)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return user
 
-@app.put("/users/{username}")
-def update_user(username: str, user_update: UserUpdate):
-    return user_service.update_user(username, user_update)
+@app.put("/users/{email}")
+def update_user(email: str, user_update: UserUpdate):
+    return user_service.update_user(email, user_update)
 
-@app.delete("/users/{username}")
-def delete_user(username: str):
-    result = user_service.delete_user(username)
+@app.delete("/users/{email}")
+def delete_user(email: str):
+    result = user_service.delete_user(email)
     if "error" in result:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=result["error"])
     return {"message": "User deleted successfully"}
@@ -45,7 +45,7 @@ def delete_user(username: str):
 
 @app.post("/login")
 def login(user: LoginRequest):
-    token = user_service.login(user.username, user.password)
+    token = user_service.login(user.email, user.password)
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
     return {"access_token": token, "token_type": "bearer"}
