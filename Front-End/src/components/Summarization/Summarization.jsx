@@ -2,6 +2,7 @@ import React, { useRef } from "react";
 import Hero from "./Hero";
 import SummarizeDocument from "./SummarizeDocument";
 import TopicSummary from "./TopicSummary";
+import GenerateNotes from "./GenerateNotes";
 
 const Summarization = () => {
   const summarizeRef = useRef(null);
@@ -45,6 +46,10 @@ const Summarization = () => {
       {/* Add ref to Topic Summary */}
       <div ref={topicSummaryRef} className="mt-10">
         <TopicSummary />
+      </div>
+
+      <div ref={topicSummaryRef} className="mt-10">
+        <GenerateNotes />
       </div>
     </div>
   );
