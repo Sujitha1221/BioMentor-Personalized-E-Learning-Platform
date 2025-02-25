@@ -56,7 +56,7 @@ const Header = () => {
   return (
     <nav className="navbar md:fixed top-0 left-0 z-10 w-full hero-bg z-20">
       <div className="w-4/5 flex flex-wrap items-center justify-between mx-auto py-4">
-        {/* Logo */}
+        {/* Logo - Left Aligned */}
         <div className="flex items-center space-x-4">
           <img src={logo} alt="Logo" className="h-16" />
           <motion.h1 className="text-3xl font-extrabold tracking-tight leading-tight text-transparent bg-clip-text bg-gradient-to-r from-[#00FF84] to-[rgb(100,181,246)] drop-shadow-lg px-4 sm:px-0">
@@ -90,7 +90,7 @@ const Header = () => {
           </svg>
         </button>
 
-        {/* Navigation Links */}
+        {/* Navigation Menu */}
         <div
           className={`${
             menuOpen ? "block" : "hidden"
@@ -113,33 +113,38 @@ const Header = () => {
             <li>
               <ActiveLink to="/contact">Summarize</ActiveLink>
             </li>
-          </ul>
-        </div>
 
-        {/* User Icon & Dropdown */}
-        <div className="relative" ref={dropdownRef}>
-          <button
-            onClick={handleToggleDropdown}
-            className="flex items-center space-x-2 text-white focus:outline-none"
-          >
-            <FaUserCircle className="w-8 h-8" />
-          </button>
-          {dropdownOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 z-20">
-              <Link
-                to="/profile"
-                className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-              >
-                My Profile
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
-              >
-                Logout
-              </button>
-            </div>
-          )}
+            {/* User Icon (Only in Mobile Menu) */}
+            <li className="block md:hidden">
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={handleToggleDropdown}
+                  className={`flex items-center space-x-2 transition duration-200 ${
+                    dropdownOpen ? "text-[rgb(100,181,246)]" : "text-white"
+                  }`}
+                >
+                  <FaUserCircle className="w-8 h-8" />
+                  <span className="font-medium">Account</span>
+                </button>
+                {dropdownOpen && (
+                  <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 z-20">
+                    <Link
+                      to="/profile"
+                      className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                    >
+                      My Profile
+                    </Link>
+                    <Link
+                      to="/logout"
+                      className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                    >
+                      Logout
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </li>
+          </ul>
         </div>
       </div>
     </nav>
