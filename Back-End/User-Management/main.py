@@ -2,6 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from pydantic import BaseModel
 from service import UserService, UserCreate, UserUpdate
 from fastapi.security import OAuth2PasswordBearer
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
@@ -9,6 +10,14 @@ user_service = UserService()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust this to your frontend URL for better security
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)
 
 # Define login & logout request models
 class LoginRequest(BaseModel):
