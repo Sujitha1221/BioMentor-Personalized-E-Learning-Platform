@@ -6,17 +6,10 @@ import {
 } from "@heroicons/react/24/outline";
 import notesImage from "../../assets/image/notes.jpg"; // Replace with actual image
 import { motion } from "framer-motion";
+import GenerateNotesModal from "./GenerateNotesModal"; // Import the modal
 
 const GenerateNotes = () => {
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  const handleGenerateNotes = () => {
-    setIsGenerating(true);
-    setTimeout(() => {
-      alert("Notes Generated! (Replace with actual API call)");
-      setIsGenerating(false);
-    }, 2000);
-  };
+  const [isModalOpen, setIsModalOpen] = useState(false); // Modal state
 
   return (
     <section className="relative bg-gray-100 px-6 sm:px-12 py-16">
@@ -28,21 +21,19 @@ const GenerateNotes = () => {
           <div className="relative bg-[#140342] shadow-lg rounded-lg overflow-hidden w-full max-w-lg">
             {/* Image Section with diagonal cut */}
             <div className="relative">
-            <img
-  src={notesImage}
-  alt="Generate Notes"
-  className="w-full h-100 object-cover" // Changed from h-72 to h-80
-
-/>
-
+              <img
+                src={notesImage}
+                alt="Generate Notes"
+                className="w-full h-80 object-cover" 
+              />
             </div>
 
             {/* Text Section */}
             <div className="p-6 bg-[#140342] text-white">
               <h3 className="text-lg font-semibold">Generate Notes Instantly</h3>
               <p className="mt-2 text-sm">
-              Enter any <b>topic</b> to generate a well-structured notes using <b>approved resources</b>.
-              Each note is concise, covering all the essential <b>key points</b> for better understanding.
+                Enter any <b>topic</b> to generate well-structured notes using <b>approved resources</b>.  
+                Each note is concise, covering all the essential <b>key points</b> for better understanding.
               </p>
             </div>
           </div>
@@ -97,19 +88,21 @@ const GenerateNotes = () => {
             transition={{ duration: 0.5, delay: 0.4 }}
           >
             <motion.button
-              onClick={handleGenerateNotes}
-              disabled={isGenerating}
+              onClick={() => setIsModalOpen(true)} // Opens Modal
               className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-[#140342]
               font-semibold rounded-lg 
               hover:bg-[#140342] hover:text-white hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              {isGenerating ? "Generating..." : "Generate Notes"}
+              Generate Notes
             </motion.button>
           </motion.div>
         </div>
       </div>
+
+      {/* Generate Notes Modal */}
+      {isModalOpen && <GenerateNotesModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />}
     </section>
   );
 };
