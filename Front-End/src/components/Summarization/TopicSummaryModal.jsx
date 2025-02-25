@@ -107,6 +107,7 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
           message: "Failed to generate summary. Try again.",
           type: "error",
         });
+        resetModal();
       }
 
       setSummary("Failed to generate summary.");

@@ -22,6 +22,7 @@ const GenerateNotesModal = ({ isOpen, onClose }) => {
   // Prevent background scrolling when modal is open
   useEffect(() => {
     if (isOpen) {
+      resetModal();
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "auto";
@@ -31,6 +32,13 @@ const GenerateNotesModal = ({ isOpen, onClose }) => {
       document.body.style.overflow = "auto";
     };
   }, [isOpen]);
+
+  const resetModal = () => {
+    setTopic("");
+    setLanguage("");
+    setNotes("Your generated notes will appear here...");
+    setIsLoading(false);
+  };
 
   const handleGenerateNotes = async () => {
     if (!topic.trim()) {
@@ -43,7 +51,7 @@ const GenerateNotesModal = ({ isOpen, onClose }) => {
     setNotes("Generating notes... Please wait.");
 
     try {
-      // ✅ Ensure FormData is formatted correctly
+      // Ensure FormData is formatted correctly
       const formData = new FormData();
       formData.append("topic", topic);
 
@@ -87,10 +95,12 @@ const GenerateNotesModal = ({ isOpen, onClose }) => {
           error.response.data.detail ||
           "An error occurred while generating notes.";
         setAlert({ message: errorMsg, type: "error" });
+        resetModal();
         setNotes(errorMsg);
       } else {
         setAlert({ message: "An unexpected error occurred.", type: "error" });
         setNotes("An unexpected error occurred.");
+        resetModal();
       }
     } finally {
       setIsGenerating(false);

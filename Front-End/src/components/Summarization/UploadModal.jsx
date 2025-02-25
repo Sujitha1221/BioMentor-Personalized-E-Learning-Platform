@@ -141,11 +141,13 @@ const UploadModal = ({ isOpen, onClose }) => {
           message: error.response.data.detail, // Display backend error message
           type: "error",
         });
+        resetModal();
       } else {
         setAlert({
           message: "Failed to generate summary. Please try again.",
           type: "error",
         });
+        resetModal();
       }
 
       setSummary("Failed to generate summary.");
