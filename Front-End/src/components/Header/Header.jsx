@@ -33,7 +33,7 @@ const Header = () => {
   }, []);
 
   return (
-    <nav className="navbar md:fixed top-0 left-0 z-10 w-full hero-bg">
+    <nav className="navbar md:fixed top-0 left-0 z-10 w-full hero-bg z-20">
       <div className="w-4/5 flex flex-wrap items-center justify-between mx-auto py-4">
         {/* Logo - Left Aligned with Text */}
         <div className="flex items-center space-x-4">
