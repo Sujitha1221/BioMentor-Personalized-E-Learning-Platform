@@ -4,7 +4,7 @@ import {
   BookOpenIcon,
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
-import notesImage from "../../assets/image/notes.jpg"; // Replace with actual image
+import notesImage from "../../assets/image/notes.png"; // Replace with actual image
 import { motion } from "framer-motion";
 import GenerateNotesModal from "./GenerateNotesModal"; // Import the modal
 
