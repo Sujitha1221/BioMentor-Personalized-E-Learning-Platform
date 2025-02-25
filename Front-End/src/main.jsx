@@ -22,7 +22,7 @@ const router = createBrowserRouter([
     element: <Main></Main>,
     children: [
       {
-        path: '/',
+        path: '/home',
         element: <Home></Home>,
         loader: () => fetch('data.json'),
       },
@@ -49,7 +49,7 @@ const router = createBrowserRouter([
         element: <Contact></Contact>
       },
       {
-        path: '/login',
+        path: '/',
         element: <Login></Login>
       },
       {

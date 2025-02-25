@@ -1,15 +1,31 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import ActiveLink from "../ActiveLink/ActiveLink";
-import "./Header.css";
-import { Link } from "react-router-dom";
 import { FaUserCircle } from "react-icons/fa";
 import { motion } from "framer-motion";
 import logo from "../../../src/assets/Logo.png";
+import "./Header.css";
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const dropdownRef = useRef(null);
+  const navigate = useNavigate();
+  const location = useLocation(); // Get current route
+
+  // Check if user is logged in
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    setIsLoggedIn(!!token);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setIsLoggedIn(false);
+    navigate("/"); // Redirect to Home page after logout
+  };
 
   const handleToggleMenu = () => {
     setMenuOpen(!menuOpen);
@@ -32,10 +48,15 @@ const Header = () => {
     };
   }, []);
 
+  // Hide header on the "/" route
+  if (location.pathname === "/" || location.pathname === "/signup") {
+    return null;
+  }
+
   return (
     <nav className="navbar md:fixed top-0 left-0 z-10 w-full hero-bg z-20">
       <div className="w-4/5 flex flex-wrap items-center justify-between mx-auto py-4">
-        {/* Logo - Left Aligned with Text */}
+        {/* Logo */}
         <div className="flex items-center space-x-4">
           <img src={logo} alt="Logo" className="h-16" />
           <motion.h1 className="text-3xl font-extrabold tracking-tight leading-tight text-transparent bg-clip-text bg-gradient-to-r from-[#00FF84] to-[rgb(100,181,246)] drop-shadow-lg px-4 sm:px-0">
@@ -43,7 +64,7 @@ const Header = () => {
           </motion.h1>
         </div>
 
-        {/* Menu Button for Mobile */}
+        {/* Mobile Menu Button */}
         <button
           onClick={handleToggleMenu}
           type="button"
@@ -69,33 +90,33 @@ const Header = () => {
           </svg>
         </button>
 
-        {/* Navigation - Centered */}
+        {/* Navigation Links */}
         <div
           className={`${
             menuOpen ? "block" : "hidden"
           } w-full md:flex md:flex-1 md:justify-center`}
           id="navbar-default"
         >
-          <ul className="font-medium flex flex-col gap-3 justify-center p-4 md:p-0 mt-4 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 items-center">
+          <ul className="font-medium text-white flex flex-col gap-3 justify-center p-4 md:p-0 mt-4 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 items-center">
             <li>
-              <ActiveLink to={"/"}>Home</ActiveLink>
+              <ActiveLink to="/">Home</ActiveLink>
             </li>
             <li>
-              <ActiveLink to={"/courses"}>MCQ</ActiveLink>
+              <ActiveLink to="/courses">MCQ</ActiveLink>
             </li>
             <li>
-              <ActiveLink to={"/events"}>Q & A</ActiveLink>
+              <ActiveLink to="/Q&A-home">Q & A</ActiveLink>
             </li>
             <li>
-              <ActiveLink to={"/blogs"}>Vocabulary</ActiveLink>
+              <ActiveLink to="/blogs">Vocabulary</ActiveLink>
             </li>
             <li>
-              <ActiveLink to={"/contact"}>Summarize</ActiveLink>
+              <ActiveLink to="/contact">Summarize</ActiveLink>
             </li>
           </ul>
         </div>
 
-        {/* User Icon - Right Aligned with Dropdown */}
+        {/* User Icon & Dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={handleToggleDropdown}
@@ -111,12 +132,12 @@ const Header = () => {
               >
                 My Profile
               </Link>
-              <Link
-                to="/logout"
-                className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+              <button
+                onClick={handleLogout}
+                className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
               >
                 Logout
-              </Link>
+              </button>
             </div>
           )}
         </div>
