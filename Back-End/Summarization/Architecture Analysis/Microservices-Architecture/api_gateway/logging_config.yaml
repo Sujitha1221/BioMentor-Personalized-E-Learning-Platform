@@ -1,0 +1,31 @@
+version: 1
+disable_existing_loggers: False
+formatters:
+  default:
+    format: "%(log_color)s%(asctime)s - %(levelname)s - %(message)s"
+    class: colorlog.ColoredFormatter
+handlers:
+  console:
+    class: logging.StreamHandler
+    formatter: default
+    stream: ext://sys.stdout
+loggers:
+  uvicorn:
+    level: INFO
+    handlers: [console]
+    propagate: False
+  uvicorn.error:
+    level: DEBUG
+    handlers: [console]
+    propagate: False
+  uvicorn.access:
+    level: INFO
+    handlers: [console]
+    propagate: False
+  myapp:
+    level: DEBUG
+    handlers: [console]
+    propagate: False
+root:
+  level: DEBUG
+  handlers: [console]

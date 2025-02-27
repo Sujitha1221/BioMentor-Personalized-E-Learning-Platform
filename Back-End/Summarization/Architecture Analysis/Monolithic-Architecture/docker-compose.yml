@@ -1,0 +1,11 @@
+version: "3.8"
+
+services:
+  monolith_backend:
+    build: .
+    ports:
+      - "8000:8000"
+    restart: always
+    volumes:
+      - D:/Downloads/RP/Summarization/flan_t5_finetuned_model:/app/flan_t5_finetuned_model
+      - D:/Downloads/RP/Summarization/RP/Model-Training/Summarization:/app/datasets
