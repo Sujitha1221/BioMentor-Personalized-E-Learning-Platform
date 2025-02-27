@@ -373,49 +373,6 @@ def extract_text_from_image_pdf(pdf_path):
         raise RuntimeError(f"Error processing image-based PDF: {e}")
 
 
-# def extract_text_from_image_pdf(pdf_path):
-#     """
-#     Optimized version: Extract text from image-based PDFs using fitz (PyMuPDF) and only perform OCR
-#     when necessary to minimize processing time.
-#     """
-#     try:
-#         text = ""
-#         document = fitz.open(pdf_path)
-
-#         # Initialize EasyOCR Reader once
-#         reader = easyocr.Reader(["en"], gpu=False)  # Use GPU=True if available for faster OCR
-
-#         for page_number in range(len(document)):
-#             page = document[page_number]
-
-#             # Try direct text extraction first
-#             page_text = page.get_text()
-#             if page_text.strip():  # If text is found, skip OCR
-#                 text += page_text + "\n"
-#                 continue
-
-#             # If no text is found, perform OCR
-#             pix = page.get_pixmap()  # Render page as image
-#             img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-#             ocr_result = reader.readtext(np.array(img), detail=0)  # Perform OCR
-#             ocr_text = " ".join(ocr_result).strip()
-
-#             if ocr_text:
-#                 text += ocr_text + "\n"
-#                 logging.info(f"Extracted text from page {page_number + 1} using OCR.")
-
-#         document.close()
-
-#         if not text.strip():
-#             logging.warning(f"No extractable text or embedded data found in PDF: {pdf_path}")
-#         else:
-#             logging.info(f"Processed PDF successfully: {pdf_path}")
-
-#         return text.strip()
-#     except Exception as e:
-#         logging.error(f"Failed to process PDF: {e}")
-#         raise RuntimeError(f"Error processing PDF: {e}")
-
 def extract_tables_from_pdf(pdf_path):
     """
     Extract and clean tables from PDF using Tabula.
