@@ -513,13 +513,13 @@ async def generate_notes(
             """ Handle expected errors like inappropriate content or missing data """
             del ongoing_tasks[task_id]
             logger.error(f"HTTPException: {http_exc.detail}")
-            raise http_exc  # ✅ Preserves error messages
+            raise http_exc  # Preserves error messages
 
         except Exception as e:
             """ Handle unexpected errors and return a detailed message """
             logging.error(f"Unexpected error generating notes for '{topic}' in '{lang}': {e}", exc_info=True)
             del ongoing_tasks[task_id]
-            raise HTTPException(status_code=500, detail=str(e))  # ✅ Returns actual error message
+            raise HTTPException(status_code=500, detail=str(e))  # Returns actual error message
 
     # Run the process in the background
     task = asyncio.create_task(process())
