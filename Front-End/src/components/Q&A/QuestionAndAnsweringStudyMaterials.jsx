@@ -5,16 +5,21 @@ import { Disclosure } from "@headlessui/react";
 import { AiOutlineFileText, AiOutlineDown } from "react-icons/ai";
 import LoadingScreen from "../LoadingScreen/LoadingScreen";
 
-const QuestionAndAnsweringStudyMaterials = ({ studentId }) => {
+const QuestionAndAnsweringStudyMaterials = () => {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [studentId,setStudentId] = useState("")
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
+        const storedStudentId = localStorage.getItem("user");
+        if (storedStudentId) {
+            setStudentId(storedStudentId);
+        }
         const response = await axios.post("http://127.0.0.1:8000/student-analytics", {
-          student_id: "student123",
+          student_id: storedStudentId,
         });
 
         if (response.data.status === "success") {

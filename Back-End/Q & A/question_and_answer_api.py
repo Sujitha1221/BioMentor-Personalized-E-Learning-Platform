@@ -96,6 +96,7 @@ def evaluate_answer(request: EvaluationRequest):
     try:
         # Call the `evaluate_user_answer` function
         result = evaluate_user_answer(
+            student_id=request.student_id,
             question=request.question,
             user_answer=request.user_answer,
             question_type=request.question_type

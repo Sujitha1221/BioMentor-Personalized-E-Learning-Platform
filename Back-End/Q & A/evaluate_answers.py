@@ -209,7 +209,7 @@ def evaluate_answer_hybrid(user_answer, model_answer):
         },
     }
 
-def evaluate_user_answer(question, user_answer, question_type):
+def evaluate_user_answer(student_id, question, user_answer, question_type):
     """
     Evaluates the user's answer against a generated model answer based on the question type.
     """
@@ -245,7 +245,7 @@ def evaluate_user_answer(question, user_answer, question_type):
         logging.info("Evaluation completed successfully.")
         
         # Save evaluation result
-        save_evaluation("student_id", question, question_type, user_answer, model_answer, result)
+        save_evaluation(student_id, question, question_type, user_answer, model_answer, result)
 
         return {
             "question": question,

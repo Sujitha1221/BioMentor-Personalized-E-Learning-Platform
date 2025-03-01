@@ -8,9 +8,14 @@ import { AiOutlineUser, AiOutlineBarChart, AiOutlineRise, AiOutlineLineChart } f
 const QuestionAndAnsweringStudentDashboard = () => {
     const [studentData, setStudentData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [studentId,setStudentId] = useState("");
 
     useEffect(() => {
-        axios.post("http://127.0.0.1:8000/student-analytics", { student_id: "student123" })
+        const storedStudentId = localStorage.getItem("user");
+        if (storedStudentId) {
+            setStudentId(storedStudentId);
+        }
+        axios.post("http://127.0.0.1:8000/student-analytics", { student_id: storedStudentId })
             .then((response) => {
                 setStudentData(response.data.analytics);
                 setLoading(false);

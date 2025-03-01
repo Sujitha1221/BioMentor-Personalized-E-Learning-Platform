@@ -9,10 +9,16 @@ const QuestionAndAnsweringStudentHistory = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [expandedIndex, setExpandedIndex] = useState(null);
+  const [studentId,setStudentId] = useState("");
 
   useEffect(() => {
+    const storedStudentId = localStorage.getItem("user");
+    if (storedStudentId) {
+        setStudentId(storedStudentId);
+    }
+
     axios
-      .post("http://127.0.0.1:8000/student-analytics", { student_id: "student123" })
+      .post("http://127.0.0.1:8000/student-analytics", { student_id: studentId })
       .then((response) => {
         setHistory(response.data.analytics.evaluations || []);
         setLoading(false);
