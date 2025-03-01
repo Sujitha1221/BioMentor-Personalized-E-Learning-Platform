@@ -30,7 +30,7 @@ const Login = () => {
         const password = form.password.value;
 
         try {
-            const response = await axios.post("http://127.0.0.1:8000/login", {
+            const response = await axios.post("http://127.0.0.1:8001/login", {
                 email: email,
                 password: password,
             });

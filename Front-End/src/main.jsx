@@ -36,38 +36,32 @@ const router = createBrowserRouter([
     element: <SignUp />,
   },
   {
-    path: "/home", // Parent route for authenticated pages
+    path: "/", // Parent route for authenticated pages
     element: <ProtectedRoute element={<Main />} />,
     children: [
       {
         index: true,
         element: <ProtectedRoute element={<Home />} />,
-        loader: () => fetch('data.json'),
       },
       {
         path: "courses",
         element: <ProtectedRoute element={<Courses />} />,
-        loader: () => fetch('data.json'),
       },
       {
-        path: '/Q&A-home',
-        element: <QuestionAndAnsweringHomePage></QuestionAndAnsweringHomePage>,
-        loader: () => fetch('eventData.json')
+        path: "Q&A-home",
+        element: <ProtectedRoute element={<QuestionAndAnsweringHomePage />} />,
       },
       {
-        path: '/Q&A-dashboard',
-        element: <QuestionAndAnsweringStudentDashboard></QuestionAndAnsweringStudentDashboard>,
-        loader: () => fetch('eventData.json')
+        path: "Q&A-dashboard",
+        element: <ProtectedRoute element={<QuestionAndAnsweringStudentDashboard />} />,
       },
       {
-        path: '/Q&A-history',
-        element: <QuestionAndAnsweringStudentHistory></QuestionAndAnsweringStudentHistory>,
-        loader: () => fetch('eventData.json')
+        path: "Q&A-history",
+        element: <ProtectedRoute element={<QuestionAndAnsweringStudentHistory />} />,
       },
       {
-        path: '/Q&A-materials',
-        element: <QuestionAndAnsweringStudyMaterials></QuestionAndAnsweringStudyMaterials>,
-        loader: () => fetch('eventData.json')
+        path: "Q&A-materials",
+        element: <ProtectedRoute element={<QuestionAndAnsweringStudyMaterials />} />,
       },
       {
         path: "blogs",

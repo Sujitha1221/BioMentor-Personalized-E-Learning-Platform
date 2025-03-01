@@ -9,8 +9,9 @@ import PromoSection from '../PromoSection/PromoSection';
 
 const Home = () => {
     // Fetch courses after delay
-    const courses = useLoaderData();
+    const courses = useLoaderData() || [];
     const displayCourses = courses.slice(0, 8);
+
 
     return (
         <div>
