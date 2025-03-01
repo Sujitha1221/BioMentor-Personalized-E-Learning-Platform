@@ -45,7 +45,12 @@ if not GENAI_API_KEY:
 # Initialize Gemini API
 # GENAI_API_KEY = "AIzaSyDXtkKGjt_OFVDrqB-FOQLUlRE0eZwYElA"
 genai.configure(api_key=GENAI_API_KEY)
-gemini_model = genai.GenerativeModel('gemini-pro')
+
+# List available models
+models = genai.list_models()
+print("Available models:", [m.name for m in models])
+
+gemini_model = genai.GenerativeModel('gemini-1.5-pro-latest')
 
 def retrieve_similar_content(query, k=5):
     """
