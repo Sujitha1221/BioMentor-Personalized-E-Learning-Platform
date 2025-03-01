@@ -4,6 +4,7 @@ import './index.css'
 import {
   createBrowserRouter,
   RouterProvider,
+  Navigate,
 } from "react-router-dom";
 import Main from './components/Layout/Main.jsx';
 import Home from './components/Home/Home.jsx';
@@ -18,19 +19,34 @@ import QuestionAndAnsweringHomePage from './components/Q&A/QuestionAndAnsweringH
 import QuestionAndAnsweringStudentDashboard from './components/Q&A/QuestionAndAnsweringStudentDashboard.jsx'
 import QuestionAndAnsweringStudentHistory from './components/Q&A/QuestionAndAnsweringStudentHistory.jsx';
 import QuestionAndAnsweringStudyMaterials from './components/Q&A/QuestionAndAnsweringStudyMaterials.jsx';
-const router = createBrowserRouter([  
+
+// Protected Route Component
+const ProtectedRoute = ({ element }) => {
+  const isAuthenticated = localStorage.getItem("token"); // Check if logged in
+  return isAuthenticated ? element : <Navigate to="/" replace />;
+};
+
+const router = createBrowserRouter([
   {
-    path: "/",
-    element: <Main></Main>,
+    path: "/", // Login Page (Public)
+    element: <Login />,
+  },
+  {
+    path: "/signup", // Signup Page (Public)
+    element: <SignUp />,
+  },
+  {
+    path: "/home", // Parent route for authenticated pages
+    element: <ProtectedRoute element={<Main />} />,
     children: [
       {
-        path: '/',
-        element: <Home></Home>,
+        index: true,
+        element: <ProtectedRoute element={<Home />} />,
         loader: () => fetch('data.json'),
       },
       {
-        path: '/courses',
-        element: <Courses></Courses>,
+        path: "courses",
+        element: <ProtectedRoute element={<Courses />} />,
         loader: () => fetch('data.json'),
       },
       {
@@ -54,24 +70,16 @@ const router = createBrowserRouter([
         loader: () => fetch('eventData.json')
       },
       {
-        path: '/blogs',
-        element: <Blogs></Blogs>
+        path: "blogs",
+        element: <ProtectedRoute element={<Blogs />} />,
       },
       {
-        path: '/about',
-        element: <About></About>
+        path: "about",
+        element: <ProtectedRoute element={<About />} />,
       },
       {
-        path: '/contact',
-        element: <Contact></Contact>
-      },
-      {
-        path: '/login',
-        element: <Login></Login>
-      },
-      {
-        path: '/signup',
-        element: <SignUp></SignUp>
+        path: "contact",
+        element: <ProtectedRoute element={<Contact />} />,
       },
     ],
   },
@@ -81,4 +89,4 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <RouterProvider router={router} />
   </React.StrictMode>,
-)
+);
