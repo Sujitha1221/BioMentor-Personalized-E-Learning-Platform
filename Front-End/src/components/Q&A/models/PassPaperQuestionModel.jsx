@@ -6,7 +6,7 @@ import AlertMessage from "../../Alert/Alert";
 import ModalLoadingScreen from "../../LoadingScreen/ModalLoadingScreen";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 
-const PassPaperQuestionModel = ({ isOpen, onClose, studentId }) => {
+const PassPaperQuestionModel = ({ isOpen, onClose }) => {
   const [questions, setQuestions] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -14,6 +14,7 @@ const PassPaperQuestionModel = ({ isOpen, onClose, studentId }) => {
   const [showComparisonModal, setShowComparisonModal] = useState(false);
   const [evaluationResult, setEvaluationResult] = useState(null);
   const [alert, setAlert] = useState({ message: "", type: "" });
+  const [studentId,setStudentId] = useState("1234")
 
   useEffect(() => {
     if (!isOpen) return;
