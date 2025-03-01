@@ -17,6 +17,7 @@ const CompareAnswerModel = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [alert, setAlert] = useState({message:"", type:""});
+  const [studentId,setStudentId] = useState("")
 
   const handleCompareAnswer = async () => {
     if (!question) {
@@ -33,6 +34,11 @@ const CompareAnswerModel = ({ onBack }) => {
       setAlert({ message: "Please select an answer type!", type: "warning" });
       return;
     }
+
+    const studentId = localStorage.getItem("user");
+    if (studentId) {
+      setStudentId(studentId);
+    }
     
 
     setLoading(true);
@@ -42,7 +48,7 @@ const CompareAnswerModel = ({ onBack }) => {
 
     try {
       const response = await axios.post("http://127.0.0.1:8000/evaluate-answer", {
-        student_id: "1234",
+        student_id: studentId,
         question,
         user_answer: answer,
         question_type: answerType,

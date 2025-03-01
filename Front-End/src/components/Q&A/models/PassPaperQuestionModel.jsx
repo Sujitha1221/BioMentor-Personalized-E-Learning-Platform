@@ -14,10 +14,15 @@ const PassPaperQuestionModel = ({ isOpen, onClose }) => {
   const [showComparisonModal, setShowComparisonModal] = useState(false);
   const [evaluationResult, setEvaluationResult] = useState(null);
   const [alert, setAlert] = useState({ message: "", type: "" });
-  const [studentId,setStudentId] = useState("1234")
+  const [studentId,setStudentId] = useState("")
 
   useEffect(() => {
     if (!isOpen) return;
+
+    const studentId = localStorage.getItem("user");
+    if (studentId) {
+      setStudentId(studentId);
+    }
 
     // Reset states on modal open
     setQuestions(null);
