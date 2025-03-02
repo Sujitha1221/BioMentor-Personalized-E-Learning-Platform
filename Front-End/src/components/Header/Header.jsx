@@ -115,7 +115,7 @@ const Header = () => {
             </li>
 
             {/* User Icon (Only in Mobile Menu) */}
-            <li className="block md:hidden">
+            <li className="block">
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={handleToggleDropdown}
@@ -124,7 +124,7 @@ const Header = () => {
                   }`}
                 >
                   <FaUserCircle className="w-8 h-8" />
-                  <span className="font-medium">Account</span>
+                  <span className="font-medium md:hidden">Account</span>
                 </button>
                 {dropdownOpen && (
                   <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 z-20">
