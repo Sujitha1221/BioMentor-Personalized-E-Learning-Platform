@@ -6,6 +6,7 @@ import { FaTimesCircle } from "react-icons/fa";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import ModalLoadingScreen from "../../LoadingScreen/ModalLoadingScreen";
 import AlertMessage from "../../Alert/Alert";
+import { QA_URL } from "../../util/config";
 
 const CompareAnswerModel = ({ onBack }) => {
   const [question, setQuestion] = useState("");
@@ -47,7 +48,7 @@ const CompareAnswerModel = ({ onBack }) => {
     setRelatedWebsites([]);
 
     try {
-      const response = await axios.post("http://127.0.0.1:8000/evaluate-answer", {
+      const response = await axios.post(`${QA_URL}/evaluate-answer`, {
         student_id: studentId,
         question,
         user_answer: answer,

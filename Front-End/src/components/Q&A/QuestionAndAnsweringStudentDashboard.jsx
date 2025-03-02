@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Ba
 import { motion } from "framer-motion";
 import LoadingScreen from "../LoadingScreen/LoadingScreen";
 import { AiOutlineUser, AiOutlineBarChart, AiOutlineRise, AiOutlineLineChart } from "react-icons/ai";
+import { QA_URL } from "../util/config";
 
 const QuestionAndAnsweringStudentDashboard = () => {
     const [studentData, setStudentData] = useState(null);
@@ -15,7 +16,7 @@ const QuestionAndAnsweringStudentDashboard = () => {
         if (storedStudentId) {
             setStudentId(storedStudentId);
         }
-        axios.post("http://127.0.0.1:8000/student-analytics", { student_id: storedStudentId })
+        axios.post(`${QA_URL}/student-analytics`, { student_id: storedStudentId })
             .then((response) => {
                 setStudentData(response.data.analytics);
                 setLoading(false);

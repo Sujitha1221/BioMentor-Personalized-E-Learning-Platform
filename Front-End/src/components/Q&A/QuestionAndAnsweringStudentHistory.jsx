@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import LoadingScreen from "../LoadingScreen/LoadingScreen";
 import { AiOutlineSearch, AiOutlineCopy, AiFillCheckCircle, AiOutlineDown, AiOutlineUp } from "react-icons/ai";
+import { QA_URL } from "../util/config";
 
 const QuestionAndAnsweringStudentHistory = () => {
   const [history, setHistory] = useState([]);
@@ -18,7 +19,7 @@ const QuestionAndAnsweringStudentHistory = () => {
     }
 
     axios
-      .post("http://127.0.0.1:8000/student-analytics", { student_id: studentId })
+      .post(`${QA_URL}/student-analytics`, { student_id: studentId })
       .then((response) => {
         setHistory(response.data.analytics.evaluations || []);
         setLoading(false);

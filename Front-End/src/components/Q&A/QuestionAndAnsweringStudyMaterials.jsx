@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Disclosure } from "@headlessui/react";
 import { AiOutlineFileText, AiOutlineDown } from "react-icons/ai";
 import LoadingScreen from "../LoadingScreen/LoadingScreen";
+import { QA_URL } from "../util/config";
 
 const QuestionAndAnsweringStudyMaterials = () => {
   const [analytics, setAnalytics] = useState(null);
@@ -18,7 +19,7 @@ const QuestionAndAnsweringStudyMaterials = () => {
         if (storedStudentId) {
             setStudentId(storedStudentId);
         }
-        const response = await axios.post("http://127.0.0.1:8000/student-analytics", {
+        const response = await axios.post(`${QA_URL}/student-analytics`, {
           student_id: storedStudentId,
         });
 

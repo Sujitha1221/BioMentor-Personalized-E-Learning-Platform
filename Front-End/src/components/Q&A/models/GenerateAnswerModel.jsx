@@ -5,6 +5,7 @@ import { FaCopy, FaCheck, FaInfoCircle, FaTimes } from "react-icons/fa";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import ModalLoadingScreen from "../../LoadingScreen/ModalLoadingScreen";
 import AlertMessage from "../../Alert/Alert";
+import { QA_URL } from "../../util/config";
 
 const GenerateAnswerModel = ({ onBack }) => {
   const [question, setQuestion] = useState("");
@@ -29,7 +30,7 @@ const GenerateAnswerModel = ({ onBack }) => {
     setShowLinks(false);
 
     try {
-      const response = await axios.post("http://127.0.0.1:8000/generate-answer", {
+      const response = await axios.post(`${QA_URL}/generate-answer`, {
         question,
         type: questionType,
       });

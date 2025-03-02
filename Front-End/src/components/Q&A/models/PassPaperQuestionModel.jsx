@@ -5,6 +5,7 @@ import ComparisonModal from "./ComparisonModal";
 import AlertMessage from "../../Alert/Alert";
 import ModalLoadingScreen from "../../LoadingScreen/ModalLoadingScreen";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
+import { QA_URL } from "../../util/config";
 
 const PassPaperQuestionModel = ({ isOpen, onClose }) => {
   const [questions, setQuestions] = useState(null);
@@ -34,7 +35,7 @@ const PassPaperQuestionModel = ({ isOpen, onClose }) => {
 
     const fetchQuestions = async () => {
       try {
-        const response = await fetch(`http://127.0.0.1:8000/get-student-question/${studentId}`);
+        const response = await fetch(`${QA_URL}/get-student-question/${studentId}`);
         if (!response.ok) {
           throw new Error("Failed to fetch questions");
         }
@@ -59,7 +60,7 @@ const PassPaperQuestionModel = ({ isOpen, onClose }) => {
     try {
       setAlert({ message: "Submitting answer...", type: "success" });
 
-      const response = await fetch("http://127.0.0.1:8000/evaluate-passpaper-answer", {
+      const response = await fetch(`${QA_URL}/evaluate-passpaper-answer`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
