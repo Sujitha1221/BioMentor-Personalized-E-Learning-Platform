@@ -19,7 +19,7 @@ const QuestionAndAnsweringStudentHistory = () => {
     }
 
     axios
-      .post(`${QA_URL}/student-analytics`, { student_id: studentId })
+      .post(`${QA_URL}/student-analytics`, { student_id: storedStudentId })
       .then((response) => {
         setHistory(response.data.analytics.evaluations || []);
         setLoading(false);
