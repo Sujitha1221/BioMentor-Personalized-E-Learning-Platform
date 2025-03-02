@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { LOGIN_URL } from "../util/config";
 
 const biologyElements = ["🧬", "🌱", "🔬", "🦠", "🧪", "🌿", "🧠"];
 
@@ -38,7 +39,7 @@ const SignUp = () => {
         }
 
         try {
-            const response = await axios.post("http://127.0.0.1:8001/users/", {
+            const response = await axios.post(`${LOGIN_URL}/users/`, {
                 username,
                 email,
                 password,
