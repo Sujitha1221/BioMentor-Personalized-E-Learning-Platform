@@ -11,7 +11,6 @@ python-pptx
 python-multipart
 autocorrect 
 language-tool-python
-fitz 
 pillow 
 tabula-py
 tqdm
