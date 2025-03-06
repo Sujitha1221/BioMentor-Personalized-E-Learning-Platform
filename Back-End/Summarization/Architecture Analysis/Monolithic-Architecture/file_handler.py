@@ -2,8 +2,6 @@ import logging
 import os
 from fastapi import UploadFile
 import os
-from io import BytesIO
-from fpdf import FPDF
 
 
 # Configure logging
@@ -11,8 +9,7 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-UPLOAD_DIR = "uploads"
-
+UPLOAD_DIR = "/app/uploads" 
 
 def save_uploaded_file(file: UploadFile):
     """

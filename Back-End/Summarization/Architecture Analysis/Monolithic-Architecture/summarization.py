@@ -4,13 +4,13 @@ import yaml
 from rag import RAGModel
 from text_extraction_service import extract_content, clean_text, format_as_paragraph
 from voice_service import text_to_speech
-from file_handler import save_uploaded_file, generate_pdf
+from file_handler import save_uploaded_file
 import io
 import hashlib
 import asyncio
 from fastapi import Request, BackgroundTasks
 from fastapi import FastAPI, UploadFile, Form, HTTPException
-from fastapi.responses import StreamingResponse, FileResponse, JSONResponse
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -199,14 +199,6 @@ async def process_query(request: Request, background_tasks: BackgroundTasks, que
         try:
             logger.info(f"Processing query: {query}")
 
-            # Step 1: Check for inappropriate content
-            inappropriate_message = rag_model.contains_inappropriate_content(
-                query)
-            if inappropriate_message:
-                logger.warning(f"Inappropriate content detected: {query}")
-                raise HTTPException(
-                    status_code=400, detail=inappropriate_message)
-
             # Check if request is disconnected before retrieving content
             if await request.is_disconnected():
                 logger.warning(
@@ -333,14 +325,6 @@ async def summarize_text(request: Request, background_tasks: BackgroundTasks, te
                 raise HTTPException(
                     status_code=400, detail="Text input cannot be empty.")
 
-            # Step 1: Check for inappropriate content
-            inappropriate_response = rag_model.contains_inappropriate_content(
-                text)
-            if inappropriate_response:
-                logger.warning("Inappropriate content detected in text input.")
-                raise HTTPException(
-                    status_code=400, detail=inappropriate_response)
-
             # Check if request is disconnected before processing
             if await request.is_disconnected():
                 logger.warning("Request was canceled. Stopping summarization.")
@@ -460,4 +444,4 @@ async def download_summary_audio(task_id: str):
 if __name__ == "__main__":
     import uvicorn
     logger.info("Starting FastAPI server...")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8070)

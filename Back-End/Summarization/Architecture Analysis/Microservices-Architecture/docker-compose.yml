@@ -1,4 +1,3 @@
-version: "3.8"
 services:
   api_gateway:
     build: ./api_gateway
@@ -8,12 +7,16 @@ services:
       - voice_service
       - file_service
     ports:
-      - "8000:8000"
+      - "8080:8080" 
+    volumes:
+      - ./uploads:/app/uploads  
 
   text_extraction_service:
     build: ./text_extraction_service
     ports:
       - "8001:8001"
+    volumes:
+      - ./uploads:/app/uploads 
 
   summarization_service:
     build: ./summarization_service
@@ -32,3 +35,7 @@ services:
     build: ./file_service
     ports:
       - "8004:8004"
+    volumes:
+      - ./uploads:/app/uploads 
+
+

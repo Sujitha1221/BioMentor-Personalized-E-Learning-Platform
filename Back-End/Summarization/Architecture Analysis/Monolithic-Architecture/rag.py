@@ -1,4 +1,3 @@
-from dangerous_keywords import DANGEROUS_KEYWORDS
 import logging
 import pandas as pd
 from sentence_transformers import SentenceTransformer
@@ -7,19 +6,6 @@ from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from autocorrect import Speller
 import language_tool_python
 import re
-from better_profanity import profanity
-import joblib
-from textblob import TextBlob
-from nltk.corpus import words, wordnet
-import nltk
-import asyncio
-from deep_translator import GoogleTranslator
-import textwrap
-
-
-nltk.download("words")
-nltk.download("wordnet")
-ENGLISH_WORDS = set(words.words())
 
 
 # Configure logging
@@ -103,52 +89,6 @@ class RAGModel:
             logging.error(f"Error initializing FAISS index: {e}")
             raise
 
-    @staticmethod
-    def contains_inappropriate_content(query):
-        """
-        Detects inappropriate content using:
-        - Profanity detection (`better-profanity`)
-        - Keyword matching (manual list of dangerous topics)
-        - Sentiment analysis (to catch highly negative messages)
-        - Checks if the query contains valid English words
-        """
-
-        def is_valid_word(word):
-            """Checks if a word is a valid English or scientific term."""
-            return word in ENGLISH_WORDS or wordnet.synsets(word)
-
-        # Step 1: Check for explicit words using `better-profanity`
-        if profanity.contains_profanity(query):
-            logging.warning(f"Inappropriate language detected: {query}")
-            return "Your input contains inappropriate words. Please rephrase."
-
-        # Step 2: Check for harmful intent using keyword matching
-        for keyword in DANGEROUS_KEYWORDS:
-            if re.search(rf"\b{re.escape(keyword)}\b", query, re.IGNORECASE):
-                logging.warning(f"Query flagged for dangerous intent: {query}")
-                return (
-                    "Your query is flagged as inappropriate or unsafe. Please rephrase."
-                )
-
-        # Step 3: Check for highly negative sentiment (e.g., self-harm, extreme anger)
-        sentiment_score = TextBlob(query).sentiment.polarity
-        if sentiment_score < -0.6:  # Negative sentiment threshold
-            logging.warning(f"Highly negative sentiment detected: {query}")
-            return "Your query seems inappropriate. Please rephrase."
-
-        # Step 4: Check if query contains only valid English words
-        # Extract words from query
-        query_words = re.findall(r"\b\w+\b", query.lower())
-
-        invalid_words = [
-            word for word in query_words if not is_valid_word(word)]
-        if invalid_words:
-            logging.warning(
-                f"Query contains gibberish or non-English words: {query}")
-            return "Your query contains invalid or gibberish words. Please enter proper Biology-related terms."
-
-        # If all checks pass, return False (query is safe)
-        return False
 
     def retrieve_relevant_content(self, query, k=3):
         """
@@ -156,10 +96,6 @@ class RAGModel:
         Ensures the query does not contain inappropriate words and is biology-related.
         """
         try:
-            if self.contains_inappropriate_content(query):
-                logging.warning(
-                    f"Query contains inappropriate content: {query}")
-                return "Your input contains inappropriate words. Please rephrase."
 
             if not hasattr(self, "embedder") or not hasattr(self, "faiss_index"):
                 logging.error(

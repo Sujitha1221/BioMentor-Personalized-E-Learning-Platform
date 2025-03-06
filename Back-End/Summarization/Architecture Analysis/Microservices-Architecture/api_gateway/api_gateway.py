@@ -38,6 +38,7 @@ file_store = {}  # Temporary storage for files
 # Keep track of ongoing tasks so we can cancel old ones
 ongoing_tasks = {}
 
+
 @app.post("/process-document/")
 async def process_document(
     request: Request,
@@ -74,7 +75,7 @@ async def process_document(
                 upload_resp = requests.post(
                     f"{FILE_SERVICE}/upload/",
                     files={"file": (file.filename, file_bytes)},
-                    timeout=30,
+
                 )
                 if upload_resp.status_code != 200:
                     logger.error("File upload to FILE_SERVICE failed.")
@@ -85,7 +86,8 @@ async def process_document(
                 logger.info(f"File uploaded successfully: {file_path}")
             except Exception as e:
                 logger.error(f"Error uploading file: {e}", exc_info=True)
-                raise HTTPException(status_code=500, detail="File upload failed.")
+                raise HTTPException(
+                    status_code=500, detail="File upload failed.")
 
             if await request.is_disconnected():
                 logger.warning("Request was canceled by the client.")
@@ -99,7 +101,6 @@ async def process_document(
                 extract_resp = requests.post(
                     f"{TEXT_EXTRACTION_SERVICE}/extract/",
                     json={"file_path": file_path},
-                    timeout=30,
                 )
                 if extract_resp.status_code != 200:
                     raise HTTPException(
@@ -114,7 +115,8 @@ async def process_document(
                 logger.info("Text extracted successfully.")
             except Exception as e:
                 logger.error(f"Error extracting text: {e}", exc_info=True)
-                raise HTTPException(status_code=500, detail="Text extraction failed.")
+                raise HTTPException(
+                    status_code=500, detail="Text extraction failed.")
 
             if await request.is_disconnected():
                 logger.warning("Request was canceled by the client.")
@@ -128,7 +130,7 @@ async def process_document(
                 summarize_resp = requests.post(
                     f"{SUMMARIZATION_SERVICE}/summarize/",
                     json={"text": extracted_text, "word_count": word_count},
-                    timeout=60,
+
                 )
                 if summarize_resp.status_code != 200:
                     raise HTTPException(
@@ -142,7 +144,8 @@ async def process_document(
                 logger.info("Text summarized successfully.")
             except Exception as e:
                 logger.error(f"Error summarizing text: {e}", exc_info=True)
-                raise HTTPException(status_code=500, detail="Summarization failed.")
+                raise HTTPException(
+                    status_code=500, detail="Summarization failed.")
 
             if await request.is_disconnected():
                 logger.warning("Request was canceled by the client.")
@@ -154,19 +157,18 @@ async def process_document(
             logger.info("Generating audio from summary...")
             try:
                 audio_resp = requests.post(
-                    f"{VOICE_SERVICE}/generate-audio/",
-                    json={"text": summary},
-                    timeout=60,
+                    f"{VOICE_SERVICE}/synthesize/",
+                    json={"text": summary, "file_path": f"audio_{task_id}.mp3"},
                 )
                 if audio_resp.status_code != 200:
                     raise HTTPException(
                         status_code=500, detail="Audio generation failed."
                     )
-                audio_file_path = audio_resp.json().get("audio_file_path", "")
                 logger.info("Audio generated successfully.")
             except Exception as e:
                 logger.error(f"Error generating audio: {e}", exc_info=True)
-                raise HTTPException(status_code=500, detail="Audio generation failed.")
+                raise HTTPException(
+                    status_code=500, detail="Audio generation failed.")
 
             return summary, task_id
 
@@ -177,7 +179,8 @@ async def process_document(
             raise http_err
         except Exception as e:
             logger.error(f"Unexpected error: {e}", exc_info=True)
-            raise HTTPException(status_code=500, detail="Failed to process document.")
+            raise HTTPException(
+                status_code=500, detail="Failed to process document.")
         finally:
             if task_id in ongoing_tasks:
                 del ongoing_tasks[task_id]
@@ -196,6 +199,7 @@ async def process_document(
         "summary_file": f"/download-summary-text/{task_id}",
         "voice_file": f"/download-summary-audio/{task_id}",
     }
+
 
 @app.post("/process-query/")
 async def process_query(
@@ -225,7 +229,8 @@ async def process_query(
             logger.info(f"Processing query: {query}")
 
             if await request.is_disconnected():
-                logger.warning(f"Request canceled by the client for query: {query}")
+                logger.warning(
+                    f"Request canceled by the client for query: {query}")
                 return None, None
 
             # Retrieve relevant content using the Summarization Service's /retrieve endpoint.
@@ -234,7 +239,6 @@ async def process_query(
                 retrieve_resp = requests.post(
                     f"{SUMMARIZATION_SERVICE}/retrieve/",
                     json={"query": query},
-                    timeout=30,
                 )
                 if retrieve_resp.status_code != 200:
                     raise HTTPException(
@@ -252,7 +256,8 @@ async def process_query(
                 )
 
             if await request.is_disconnected():
-                logger.warning(f"Request canceled by the client for query: {query}")
+                logger.warning(
+                    f"Request canceled by the client for query: {query}")
                 return None, None
 
             # Summarize the retrieved content using the Summarization Service.
@@ -262,10 +267,11 @@ async def process_query(
                 summarize_resp = requests.post(
                     f"{SUMMARIZATION_SERVICE}/summarize/",
                     json={"text": combined_text, "word_count": word_count},
-                    timeout=60,
+
                 )
                 if summarize_resp.status_code != 200:
-                    raise HTTPException(status_code=500, detail="Summarization failed.")
+                    raise HTTPException(
+                        status_code=500, detail="Summarization failed.")
                 summary = summarize_resp.json().get("summary", "").strip()
                 if not summary:
                     raise HTTPException(
@@ -274,20 +280,22 @@ async def process_query(
                 logger.info("Summarization complete.")
             except Exception as e:
                 logger.error(f"Error summarizing text: {e}", exc_info=True)
-                raise HTTPException(status_code=500, detail="Summarization failed.")
+                raise HTTPException(
+                    status_code=500, detail="Summarization failed.")
 
             if await request.is_disconnected():
-                logger.warning(f"Request canceled by the client for query: {query}")
+                logger.warning(
+                    f"Request canceled by the client for query: {query}")
                 return None, None
 
             # Generate audio from the summary using the Voice Service.
             try:
                 logger.info("Generating audio from summary text...")
                 audio_resp = requests.post(
-                    f"{VOICE_SERVICE}/generate-audio/",
-                    json={"text": summary},
-                    timeout=60,
+                    f"{VOICE_SERVICE}/synthesize/",
+                    json={"text": summary, "file_path": f"audio_{task_id}.mp3"},
                 )
+
                 if audio_resp.status_code != 200:
                     raise HTTPException(
                         status_code=500, detail="Audio generation failed."
@@ -298,7 +306,8 @@ async def process_query(
                 logger.info("Audio generated successfully.")
             except Exception as e:
                 logger.error(f"Error generating audio: {e}", exc_info=True)
-                raise HTTPException(status_code=500, detail="Audio generation failed.")
+                raise HTTPException(
+                    status_code=500, detail="Audio generation failed.")
 
             if task_id in ongoing_tasks:
                 del ongoing_tasks[task_id]
@@ -314,7 +323,8 @@ async def process_query(
                 del ongoing_tasks[task_id]
             raise http_err
         except Exception as e:
-            logger.error(f"Unexpected error processing query: {e}", exc_info=True)
+            logger.error(
+                f"Unexpected error processing query: {e}", exc_info=True)
             if task_id in ongoing_tasks:
                 del ongoing_tasks[task_id]
             raise HTTPException(
@@ -336,6 +346,7 @@ async def process_query(
         "voice_file": f"/download-summary-audio/{t_id}",
     }
 
+
 @app.post("/summarize-text/")
 async def summarize_text(
     request: Request,
@@ -350,7 +361,8 @@ async def summarize_text(
     task_id = hashlib.sha256(text.encode()).hexdigest()[:10]
 
     if task_id in ongoing_tasks:
-        logger.warning("Previous summarization request is still running. Cancelling old task.")
+        logger.warning(
+            "Previous summarization request is still running. Cancelling old task.")
         ongoing_tasks[task_id].cancel()
         del ongoing_tasks[task_id]
 
@@ -360,7 +372,8 @@ async def summarize_text(
 
             if not text.strip():
                 logger.warning("Empty text input received.")
-                raise HTTPException(status_code=400, detail="Text input cannot be empty.")
+                raise HTTPException(
+                    status_code=400, detail="Text input cannot be empty.")
 
             if await request.is_disconnected():
                 logger.warning("Request was canceled. Stopping summarization.")
@@ -372,37 +385,42 @@ async def summarize_text(
                 summary_resp = requests.post(
                     f"{SUMMARIZATION_SERVICE}/summarize/",
                     json={"text": text, "word_count": word_count},
-                    timeout=60,
                 )
                 if summary_resp.status_code != 200:
-                    raise HTTPException(status_code=500, detail="Summarization failed.")
+                    raise HTTPException(
+                        status_code=500, detail="Summarization failed.")
                 summary = summary_resp.json().get("summary", "").strip()
                 if not summary:
-                    raise HTTPException(status_code=500, detail="Generated summary is empty.")
+                    raise HTTPException(
+                        status_code=500, detail="Generated summary is empty.")
                 logger.info("Summary generation complete.")
             except Exception as e:
                 logger.error("Error during summarization.", exc_info=True)
-                raise HTTPException(status_code=500, detail="Summarization failed.")
+                raise HTTPException(
+                    status_code=500, detail="Summarization failed.")
 
             if await request.is_disconnected():
-                logger.warning("Request was canceled. Stopping audio generation.")
+                logger.warning(
+                    "Request was canceled. Stopping audio generation.")
                 return None, None
 
             # Generate audio using the Voice Service.
             try:
                 logger.info("Generating audio from summary...")
                 audio_resp = requests.post(
-                    f"{VOICE_SERVICE}/generate-audio/",
-                    json={"text": summary},
-                    timeout=60,
+                    f"{VOICE_SERVICE}/synthesize/",
+                    json={"text": summary, "file_path": f"audio_{task_id}.mp3"},
                 )
+
                 if audio_resp.status_code != 200:
-                    raise HTTPException(status_code=500, detail="Audio generation failed.")
+                    raise HTTPException(
+                        status_code=500, detail="Audio generation failed.")
                 _ = audio_resp.json().get("audio_file_path", "")
                 logger.info("Audio generation complete.")
             except Exception as e:
                 logger.error("Error during audio generation.", exc_info=True)
-                raise HTTPException(status_code=500, detail="Audio generation failed.")
+                raise HTTPException(
+                    status_code=500, detail="Audio generation failed.")
 
             summary_file_path = f"summary_{task_id}.txt"
             audio_file_key = f"summary_{task_id}.mp3"
@@ -423,10 +441,12 @@ async def summarize_text(
                 del ongoing_tasks[task_id]
             raise http_error
         except Exception as e:
-            logger.error("Unexpected error during summarization.", exc_info=True)
+            logger.error(
+                "Unexpected error during summarization.", exc_info=True)
             if task_id in ongoing_tasks:
                 del ongoing_tasks[task_id]
-            raise HTTPException(status_code=500, detail="Internal server error. Failed to summarize text.")
+            raise HTTPException(
+                status_code=500, detail="Internal server error. Failed to summarize text.")
 
     task = asyncio.create_task(process())
     ongoing_tasks[task_id] = task
@@ -442,6 +462,7 @@ async def summarize_text(
         "voice_file": f"/download-summary-audio/{t_id}",
     }
 
+
 @app.get("/download-summary-audio/{task_id}")
 async def download_summary_audio(task_id: str):
     """
@@ -449,23 +470,26 @@ async def download_summary_audio(task_id: str):
     Retrieves the file from the FILE_SERVICE.
     """
     audio_filename = f"summary_{task_id}.mp3"
-    logger.info(f"Requesting summary audio from FILE_SERVICE: {audio_filename}")
+    logger.info(
+        f"Requesting summary audio from FILE_SERVICE: {audio_filename}")
     try:
         response = requests.get(
             f"{FILE_SERVICE}/download",
             params={"filename": audio_filename},
             stream=True,
-            timeout=30
         )
     except requests.RequestException as e:
         logger.error(f"Error contacting FILE_SERVICE: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to contact File Service.")
+        raise HTTPException(
+            status_code=500, detail="Failed to contact File Service.")
 
     if response.status_code == 404:
-        logger.warning(f"Audio file {audio_filename} not found in File Service.")
+        logger.warning(
+            f"Audio file {audio_filename} not found in File Service.")
         raise HTTPException(status_code=404, detail="Audio file not found.")
     elif response.status_code != 200:
-        logger.error(f"File Service returned error code {response.status_code}")
+        logger.error(
+            f"File Service returned error code {response.status_code}")
         raise HTTPException(
             status_code=500, detail="Error retrieving file from File Service."
         )
@@ -477,6 +501,7 @@ async def download_summary_audio(task_id: str):
         headers={"Content-Disposition": f'attachment; filename="{audio_filename}"'},
     )
 
+
 @app.get("/download-summary-text/{task_id}")
 async def download_summary_text(task_id: str):
     """
@@ -484,23 +509,26 @@ async def download_summary_text(task_id: str):
     Retrieves the file from the FILE_SERVICE.
     """
     summary_filename = f"summary_{task_id}.txt"
-    logger.info(f"Requesting summary text from FILE_SERVICE: {summary_filename}")
+    logger.info(
+        f"Requesting summary text from FILE_SERVICE: {summary_filename}")
     try:
         response = requests.get(
             f"{FILE_SERVICE}/download",
             params={"filename": summary_filename},
             stream=True,
-            timeout=30
         )
     except requests.RequestException as e:
         logger.error(f"Error contacting FILE_SERVICE: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to contact File Service.")
+        raise HTTPException(
+            status_code=500, detail="Failed to contact File Service.")
 
     if response.status_code == 404:
-        logger.warning(f"Summary file {summary_filename} not found in File Service.")
+        logger.warning(
+            f"Summary file {summary_filename} not found in File Service.")
         raise HTTPException(status_code=404, detail="Summary file not found.")
     elif response.status_code != 200:
-        logger.error(f"File Service returned error code {response.status_code}")
+        logger.error(
+            f"File Service returned error code {response.status_code}")
         raise HTTPException(
             status_code=500, detail="Error retrieving file from File Service."
         )
@@ -515,4 +543,4 @@ async def download_summary_text(task_id: str):
 if __name__ == "__main__":
     import uvicorn
     logger.info("Starting API Gateway...")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8080)

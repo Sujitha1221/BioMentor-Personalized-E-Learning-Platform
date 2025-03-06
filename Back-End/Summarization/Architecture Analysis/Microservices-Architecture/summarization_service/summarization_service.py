@@ -38,11 +38,6 @@ async def summarize_text(request: SummarizationRequest):
     try:
         logging.info("Received summarization request.")
 
-        # Check for inappropriate content before generating a summary.
-        inappropriate_message = rag_model.contains_inappropriate_content(request.text)
-        if inappropriate_message:
-            logging.warning("Inappropriate content detected in input text.")
-            raise HTTPException(status_code=400, detail=inappropriate_message)
 
         summary = rag_model.generate_summary_for_long_text(request.text, max_words=request.word_count)
         logging.info("Summarization successful.")
@@ -61,11 +56,6 @@ async def retrieve_content(request: QueryRequest):
     try:
         logging.info(f"Processing retrieval request for query: {request.query}")
 
-        # Check for inappropriate content in the query.
-        inappropriate_message = rag_model.contains_inappropriate_content(request.query)
-        if inappropriate_message:
-            logging.warning("Inappropriate content detected in query.")
-            raise HTTPException(status_code=400, detail=inappropriate_message)
 
         relevant_texts = rag_model.retrieve_relevant_content(request.query)
         if not relevant_texts:

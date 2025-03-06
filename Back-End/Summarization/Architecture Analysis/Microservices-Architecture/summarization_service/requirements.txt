@@ -9,8 +9,5 @@ fastapi
 uvicorn 
 pydantic
 colorlog
-better_profanity
-textblob
-nltk
 
 
