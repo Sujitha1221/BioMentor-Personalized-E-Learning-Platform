@@ -1,0 +1,43 @@
+.navbar{
+    color: white;
+    width: 100% !important;
+    /* border-bottom: 1px solid gray; */
+}
+
+.navbar a{
+    /* padding: 5px; */
+    border-radius: 8px;
+}
+
+.navbar a:hover{
+    color: #00FF84;
+}
+
+.navbar hr{
+    display: none;
+    border: 1px solid white;
+}
+.hr{
+    display: block !important;
+    margin-top: 10px;
+    width: 80%;
+    margin: 0 auto;
+}
+.button-signUp{
+    background-color: aliceblue;
+    color: black;
+    padding: 3px 8px;
+    border-radius: 8px;
+    margin-left: 20px;
+    border: 2px solid aliceblue;
+}
+
+.button-signUp:hover{
+    
+    background-color: transparent;
+    color: aliceblue;
+}
+
+.button-signUp a:hover{
+    background-color: transparent;
+}

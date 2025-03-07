@@ -1,0 +1,7 @@
+
+
+.category:hover{
+    background-color: #140342 !important;
+    color: white;
+    cursor: pointer;
+}

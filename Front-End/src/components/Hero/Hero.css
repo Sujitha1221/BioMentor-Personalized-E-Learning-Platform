@@ -1,0 +1,18 @@
+.hero-bg{
+    background-color: #140342;
+}
+
+.button-join:hover{
+    color: #6440FB;
+    background-color: transparent;
+}
+
+.button-course{
+    color: #00FF84;
+    background-color: transparent;
+    border: 1px solid #00FF84;
+}
+.button-course:hover{
+    background-color: #00FF84;
+    color: black;
+}

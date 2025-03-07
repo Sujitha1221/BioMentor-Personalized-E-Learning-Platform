@@ -1,0 +1,9 @@
+# General Python ignores
+__pycache__/
+*.py[cod]
+*.so
+*.dll
+*.dylib
+*.pyd
+venv
+.env
