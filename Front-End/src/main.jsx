@@ -66,10 +66,10 @@ const router = createBrowserRouter([
         path: "Q&A-materials",
         element: <ProtectedRoute element={<QuestionAndAnsweringStudyMaterials />} />,
       },
-      // {
-      //   path: "summarize",
-      //   element: <ProtectedRoute element={<Summarization />} />,
-      // },
+      {
+        path: "summarize",
+        element: <ProtectedRoute element={<Summarization />} />,
+      },
       {
         path: "blogs",
         element: <ProtectedRoute element={<Blogs />} />,

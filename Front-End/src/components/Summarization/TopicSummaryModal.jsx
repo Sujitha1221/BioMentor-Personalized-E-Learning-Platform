@@ -13,6 +13,7 @@ import { MdOutlineClose } from "react-icons/md";
 import axios from "axios";
 import AlertMessage from "../Alert/Alert";
 import ModalLoadingScreen from "../LoadingScreen/ModalLoadingScreen";
+import { SUMMARIZE_URL } from "../util/config";
 
 const TopicSummaryModal = ({ isOpen, onClose }) => {
   const [topic, setTopic] = useState("");
@@ -81,7 +82,7 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
       formData.append("word_count", wordCount);
 
       const response = await axios.post(
-        "http://localhost:8000/process-query/",
+        `${SUMMARIZE_URL}/process-query/`,
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
@@ -124,7 +125,7 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
 
     try {
       const response = await axios.get(
-        `http://localhost:8000/download-summary-text/${taskId}`,
+        `${SUMMARIZE_URL}/download-summary-text/${taskId}`,
         { responseType: "blob" }
       );
 
@@ -153,7 +154,7 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
 
     try {
       const response = await axios.get(
-        `http://localhost:8000/download-summary-audio/${taskId}`,
+        `${SUMMARIZE_URL}/download-summary-audio/${taskId}`,
         { responseType: "blob" }
       );
 
@@ -198,7 +199,7 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
 
     try {
       const response = await axios.get(
-        `http://localhost:8000/download-summary-audio/${taskId}`,
+        `${SUMMARIZE_URL}/download-summary-audio/${taskId}`,
         {
           responseType: "blob",
         }

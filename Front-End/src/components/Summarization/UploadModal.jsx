@@ -14,6 +14,7 @@ import { MdOutlineClose } from "react-icons/md";
 import axios from "axios";
 import AlertMessage from "../Alert/Alert";
 import ModalLoadingScreen from "../LoadingScreen/ModalLoadingScreen";
+import { SUMMARIZE_URL } from "../util/config";
 
 const UploadModal = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState("document");
@@ -118,8 +119,8 @@ const UploadModal = ({ isOpen, onClose }) => {
     try {
       const endpoint =
         activeTab === "document"
-          ? "http://localhost:8000/process-document/"
-          : "http://localhost:8000/summarize-text/";
+          ? `${SUMMARIZE_URL}/process-document/`
+          : `${SUMMARIZE_URL}/summarize-text/`;
 
       const response = await axios.post(endpoint, formData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -164,7 +165,7 @@ const UploadModal = ({ isOpen, onClose }) => {
 
     try {
       const response = await axios.get(
-        `http://localhost:8000/download-summary-text/${taskId}`,
+        `${SUMMARIZE_URL}/download-summary-text/${taskId}`,
         {
           responseType: "blob",
         }
@@ -195,7 +196,7 @@ const UploadModal = ({ isOpen, onClose }) => {
 
     try {
       const response = await axios.get(
-        `http://localhost:8000/download-summary-audio/${taskId}`,
+        `${SUMMARIZE_URL}/download-summary-audio/${taskId}`,
         {
           responseType: "blob",
         }
@@ -233,7 +234,7 @@ const UploadModal = ({ isOpen, onClose }) => {
 
     try {
       const response = await axios.get(
-        `http://localhost:8000/download-summary-audio/${taskId}`,
+        `${SUMMARIZE_URL}/download-summary-audio/${taskId}`,
         {
           responseType: "blob",
         }

@@ -5,6 +5,7 @@ import { MdOutlineClose } from "react-icons/md";
 import axios from "axios";
 import ModalLoadingScreen from "../LoadingScreen/ModalLoadingScreen";
 import AlertMessage from "../Alert/Alert"; // Import Alert Component
+import { SUMMARIZE_URL } from "../util/config";
 
 const GenerateNotesModal = ({ isOpen, onClose }) => {
   const [topic, setTopic] = useState("");
@@ -70,7 +71,7 @@ const GenerateNotesModal = ({ isOpen, onClose }) => {
       }
   
       const response = await axios.post(
-        "http://localhost:8000/generate-notes/",
+        `${SUMMARIZE_URL}/generate-notes/`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -119,7 +120,7 @@ const GenerateNotesModal = ({ isOpen, onClose }) => {
     if (!downloadLink) return;
 
     try {
-      const response = await axios.get(`http://localhost:8000${downloadLink}`, {
+      const response = await axios.get(`${SUMMARIZE_URL}${downloadLink}`, {
         responseType: "blob",
       });
 
