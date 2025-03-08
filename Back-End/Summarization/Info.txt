@@ -1,0 +1,8 @@
+Summarization
+
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+pip install fastapi uvicorn faiss-cpu sentence-transformers transformers gtts pandas numpy python-docx python-pptx python-multipart autocorrect language-tool-python fitz pillow tabula-py tqdm PyMuPDF colorlog easyocr joblib better_profanity textblob nltk fpdf deep_translator
+uvicorn summarization:app --reload --port 8002
+
