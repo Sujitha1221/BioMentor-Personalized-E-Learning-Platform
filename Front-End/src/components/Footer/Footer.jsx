@@ -2,6 +2,11 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 const Footer = () => {
+      // Hide header on the "/" route
+  if (location.pathname === "/" || location.pathname === "/signup") {
+    return null;
+  }
+  
     return (
         <footer className="bottom-0 left-0 z-20 w-full hero-bg py-4">
             <div className="mx-auto w-full max-w-screen-xl">
@@ -22,10 +27,10 @@ const Footer = () => {
                                 <Link to="/about" className="hover:underline">MCQ</Link>
                             </li>
                             <li className="mb-2">
-                                <Link to="/courses" className="hover:underline">Q & A</Link>
+                                <Link to="/Q&A-home" className="hover:underline">Q & A</Link>
                             </li>
                             <li className="mb-2">
-                                <Link to="/events" className="hover:underline">Vocabulary</Link>
+                                <Link to="/home" className="hover:underline">Vocabulary</Link>
                             </li>
                             <li className="mb-2">
                                 <Link to="/blogs" className="hover:underline">Summarize</Link>

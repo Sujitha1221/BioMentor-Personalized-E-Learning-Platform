@@ -7,12 +7,12 @@ const Event = ({ event }) => {
 
     return (
         <div className="max-w-sm bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden">
-            <Link to={`/events`} className="block overflow-hidden relative group">
+            <Link to={`/Q&A-home`} className="block overflow-hidden relative group">
                 <img className="rounded-t-lg w-full h-48 object-cover transition-transform duration-500 ease-in-out transform group-hover:scale-110" src={banner} alt={title} />
                 <div className="absolute inset-0 bg-indigo-800 bg-opacity-0 group-hover:bg-opacity-60 transition duration-500 ease-in-out"></div>
             </Link>
             <div className="p-4">
-                <Link to={`/events`}>
+                <Link to={`/Q&A-home`}>
                     <h5 className="text-xl font-bold tracking-tight text-gray-900">{title}</h5>
                 </Link>
                 <div className="mt-2 mb-4 text-gray-700">

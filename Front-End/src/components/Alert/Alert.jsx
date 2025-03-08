@@ -39,4 +39,4 @@ const AlertMessage = ({ message, type = "error", onClose }) => {
   );
 };
 
-export default AlertMessage;
+export default AlertMessage;

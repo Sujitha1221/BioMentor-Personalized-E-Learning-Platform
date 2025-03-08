@@ -1,0 +1,17 @@
+pymongo
+matplotlib
+google-generativeai
+transformers
+sentence-transformers
+spacy
+scikit-learn
+rapidfuzz
+language-tool-python
+pandas
+faiss-cpu
+flask
+uvicorn
+fastapi
+spacy
+duckduckgo_search
+python-dotenv
