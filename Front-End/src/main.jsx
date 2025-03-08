@@ -19,6 +19,8 @@ import QuestionAndAnsweringHomePage from './components/Q&A/QuestionAndAnsweringH
 import QuestionAndAnsweringStudentDashboard from './components/Q&A/QuestionAndAnsweringStudentDashboard.jsx'
 import QuestionAndAnsweringStudentHistory from './components/Q&A/QuestionAndAnsweringStudentHistory.jsx';
 import QuestionAndAnsweringStudyMaterials from './components/Q&A/QuestionAndAnsweringStudyMaterials.jsx';
+import Summarization from "./components/Summarization/Summarization.jsx";
+
 
 // Protected Route Component
 const ProtectedRoute = ({ element }) => {
@@ -64,6 +66,10 @@ const router = createBrowserRouter([
         path: "Q&A-materials",
         element: <ProtectedRoute element={<QuestionAndAnsweringStudyMaterials />} />,
       },
+      // {
+      //   path: "summarize",
+      //   element: <ProtectedRoute element={<Summarization />} />,
+      // },
       {
         path: "blogs",
         element: <ProtectedRoute element={<Blogs />} />,
@@ -76,6 +82,7 @@ const router = createBrowserRouter([
         path: "contact",
         element: <ProtectedRoute element={<Contact />} />,
       },
+
     ],
   },
 ]);
