@@ -187,12 +187,12 @@ const GenerateNotesModal = ({ isOpen, onClose }) => {
           htmlFor="topic-input"
           className="block font-semibold text-[#140342]"
         >
-          Enter Topic
+          Enter Topic / Keyword
         </label>
         <input
           id="topic-input"
           type="text"
-          placeholder="Enter a topic (e.g., Photosynthesis)"
+          placeholder="Enter a topic or keyword (e.g., Photosynthesis)"
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
           className="w-full p-2 border border-gray-300 rounded-lg text-gray-700 focus:border-[#140342] focus:ring-[#140342]"
