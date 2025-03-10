@@ -111,7 +111,7 @@ const Header = () => {
               <ActiveLink to="/blogs">Vocabulary</ActiveLink>
             </li>
             <li>
-              <ActiveLink to="/contact">Summarize</ActiveLink>
+              <ActiveLink to="/summarize">Summarize</ActiveLink>
             </li>
 
             {/* User Icon (Only in Mobile Menu) */}
