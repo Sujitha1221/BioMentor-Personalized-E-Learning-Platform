@@ -20,6 +20,10 @@ class Question(BaseModel):
     options: Dict[str, str]  # Example: {"A": "Option 1", "B": "Option 2"}
     correct_answer: str
     difficulty: str
+    b: float  # Difficulty parameter (IRT)
+    a: float  # Discrimination parameter (IRT)
+    c: float  # Guessing parameter (IRT)
+
 
 # Pydantic model for Quiz
 class Quiz(BaseModel):
