@@ -102,7 +102,7 @@ const Header = () => {
               <ActiveLink to="/home">Home</ActiveLink>
             </li>
             <li>
-              <ActiveLink to="/courses">MCQ</ActiveLink>
+              <ActiveLink to="/MCQ-home">MCQ</ActiveLink>
             </li>
             <li>
               <ActiveLink to={"/Q&A-home"}>Q & A</ActiveLink>
