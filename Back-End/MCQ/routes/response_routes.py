@@ -4,12 +4,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import io
 import base64
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from database.database import responses_collection, quizzes_collection, users_collection
 from bson import ObjectId
 from pydantic import BaseModel
 from typing import List
 from pymongo.errors import PyMongoError
+from utils.user_mgmt_methods import get_current_user
+import traceback
 
 router = APIRouter()
 
@@ -21,7 +23,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 class QuizResponse(BaseModel):
     question_text: str
     selected_answer: str
-    time_taken: int  # ✅ Change this to an integer (was previously str)
+    time_taken: float  # ✅ Change this to an integer (was previously str)
 
 # 🔥 Pydantic Model for Submitting Quiz
 class SubmitQuizRequest(BaseModel):
@@ -79,9 +81,9 @@ def update_user_performance(user_id, responses):
         raise ValueError(f"User {user_id} not found in the database.") 
 
     performance = user_data.get("performance", {
-        "easy_correct": 0, "easy_total": 0, "easy_time": 0, "easy_incorrect": 0,
-        "medium_correct": 0, "medium_total": 0, "medium_time": 0, "medium_incorrect": 0,
-        "hard_correct": 0, "hard_total": 0, "hard_time": 0, "hard_incorrect": 0,
+        "easy_correct": 0, "easy_total": 0, "easy_time": 0, 
+        "medium_correct": 0, "medium_total": 0, "medium_time": 0, 
+        "hard_correct": 0, "hard_total": 0, "hard_time": 0, 
         "history": []
     })
 
@@ -93,8 +95,6 @@ def update_user_performance(user_id, responses):
         performance[f"{difficulty}_total"] += 1
         if is_correct:
             performance[f"{difficulty}_correct"] += 1
-        else:
-            performance[f"{difficulty}_incorrect"] += 1  # ✅ Track incorrect responses
         performance[f"{difficulty}_time"] += time_taken
 
     # ✅ Store last 5 quizzes only
@@ -127,7 +127,7 @@ def update_user_performance(user_id, responses):
         raise RuntimeError(f"Database error while updating user performance: {e}")
 
 @router.post("/submit_quiz/")
-def submit_quiz(data: SubmitQuizRequest):
+def submit_quiz(data: SubmitQuizRequest,current_user: str = Depends(get_current_user)):
     """
     API to store user's quiz responses in MongoDB and update their performance dynamically.
     """
@@ -135,26 +135,48 @@ def submit_quiz(data: SubmitQuizRequest):
         user_id = data.user_id
         quiz_id = data.quiz_id
         responses = data.responses  
+        
+        logging.info(f"📩 Received quiz submission: User {user_id}, Quiz {quiz_id}, Responses Count: {len(responses)}")
 
         existing_user = users_collection.find_one({"_id": ObjectId(user_id)})
         if not existing_user:
+            logging.error(f"❌ User {user_id} not found in the database.")
             raise HTTPException(status_code=404, detail="User not found. Please register before generating a quiz.")
-
+        
+        if current_user != user_id:
+            logging.error(f"🚫 Unauthorized access attempt by {current_user}")
+            raise HTTPException(status_code=403, detail="Unauthorized access")
+    
         # Fetch quiz to validate responses
         quiz = quizzes_collection.find_one({"quiz_id": quiz_id})
         if not quiz:
+            logging.error(f"❌ Quiz {quiz_id} not found in the database.")
             raise HTTPException(status_code=404, detail="Quiz not found.")
         
         # ✅ Check that the quiz was created for this user
         if str(quiz.get("user_id")) != str(user_id):
             raise HTTPException(status_code=403, detail="This quiz was not created for the provided user.")
         
-        # ✅ Check if this quiz was already submitted
-        previous_submission = responses_collection.find_one({"user_id": user_id, "quiz_id": quiz_id})
-
-        is_first_attempt = previous_submission is None  # True if first attempt, False if repeat
-        
+        logging.info(f"📋 Validating responses for User {user_id} on Quiz {quiz_id}")
         submitted_at = time.time()
+        # ✅ Find previous attempts correctly
+        previous_attempts = responses_collection.count_documents({"user_id": user_id, "quiz_id": quiz_id})
+        attempt_number = 1 if previous_attempts == 0 else previous_attempts + 1  # ✅ Initialize correctly
+
+        logging.info(f"🔁 User {user_id} is submitting attempt {attempt_number} for quiz {quiz_id}.")
+        
+        correct_count = 0  # Track correct answers
+        total_time = 0      # Track total quiz time
+        total_questions = len(quiz["questions"])
+
+        response_data = {
+            "user_id": user_id,
+            "quiz_id": quiz_id,
+            "submitted_at": submitted_at,
+            "attempt_number": attempt_number,  # ✅ Track attempt number correctly
+            "responses": [],
+            "summary": {},
+        }
 
         # ✅ Ensure all questions are answered
         expected_questions = {q["question_text"] for q in quiz["questions"]}
@@ -172,61 +194,68 @@ def submit_quiz(data: SubmitQuizRequest):
             ))
 
             logging.warning(f"⚠ User {user_id} skipped {len(missing_questions)} questions. Logged as incorrect.")
-            
-        # ✅ Prepare response document
-        response_data = {
-            "user_id": user_id,
-            "quiz_id": quiz_id,
-            "submitted_at": submitted_at,
-            "responses": [],
-            "is_first_attempt": is_first_attempt  # ✅ Track first attempts
-        }
-
-        seen_questions = set()  # Track seen questions
 
         for response in responses:
-            question_text = response.question_text
-            selected_answer = response.selected_answer
-            time_taken = response.time_taken
+            try:
+                question_text = response.question_text
+                selected_answer = response.selected_answer
+                time_taken = response.time_taken
 
-            # Find the correct question
-            question = next((q for q in quiz["questions"] if q["question_text"] == question_text), None)
-            if not question:
-                raise HTTPException(status_code=404, detail=f"Question '{question_text}' not found in the quiz.")
+                question = next((q for q in quiz["questions"] if q["question_text"] == question_text), None)
+                if not question:
+                    raise HTTPException(status_code=404, detail=f"Question '{question_text}' not found in the quiz.")
 
-            is_correct = selected_answer == question["correct_answer"]
-
-            response_data["responses"].append({
-                "question_text": question_text,
-                "selected_answer": selected_answer,
-                "correct_answer": question["correct_answer"],
-                "is_correct": is_correct,
-                "time_taken": time_taken,
-                "difficulty": question["difficulty"]
-            })
-
-            # Store seen questions
-            seen_questions.add(question_text)
-
+                is_correct = selected_answer == question["correct_answer"]
+                if is_correct:
+                    correct_count += 1
+                total_time += time_taken
+                
+                response_data["responses"].append({
+                    "question_text": question_text,
+                    "selected_answer": selected_answer,
+                    "correct_answer": question["correct_answer"],
+                    "is_correct": is_correct,
+                    "time_taken": time_taken,
+                    "difficulty": question["difficulty"],
+                    "options": {
+                        "A": question.get("option1", ""),
+                        "B": question.get("option2", ""),
+                        "C": question.get("option3", ""),
+                        "D": question.get("option4", ""),
+                        "E": question.get("option5", "")
+                    }
+                })
+            except Exception as e:
+                logging.error(f"❌ Error processing response {response}: {traceback.format_exc()}")
+                raise HTTPException(status_code=500, detail=str(e))
+            
+        # ✅ Calculate Quiz Summary
+        accuracy = round((correct_count / total_questions) * 100, 2)
+        avg_time_per_question = round(total_time / total_questions, 2)
+        
+        response_data["summary"] = {
+            "total_questions": total_questions,
+            "correct_answers": correct_count,
+            "incorrect_answers": total_questions - correct_count,
+            "accuracy": accuracy,
+            "total_time": total_time,
+            "avg_time_per_question": avg_time_per_question
+        }
+        
+        logging.info(f"📤 Storing quiz response in the database...")
         # ✅ Insert response data into database
         inserted_response = responses_collection.insert_one(response_data)
 
         # ✅ Only update performance on the first attempt
-        if is_first_attempt:
+        if attempt_number == 1:
             update_user_performance(user_id, response_data["responses"])
             
         # ✅ Convert ObjectId to string for API response
         response_data["_id"] = str(inserted_response.inserted_id)
 
         logging.info(f"✅ Quiz submitted: All responses saved for User {user_id}.")
-
-        return {
-            "message": "Quiz submitted successfully",
-            "user_id": user_id,
-            "quiz_id": quiz_id,
-            "submitted_at": submitted_at,
-            "responses": response_data["responses"]
-        }
+        logging.info(f"✅ Returning quiz results: {response_data}")
+        return response_data
 
     except Exception as e:
         logging.error(f"🔥 Error submitting quiz: {str(e)}")
