@@ -2,9 +2,10 @@ import uuid
 import logging
 import time
 from bson import ObjectId
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from utils.user_mgmt_methods import get_current_user
 from database.database import quizzes_collection, users_collection
-from utils.quiz_generation_methods import get_seen_questions, filter_similar_questions, get_irt_based_difficulty_distribution
+from utils.quiz_generation_methods import get_seen_questions, filter_similar_questions, get_irt_based_difficulty_distribution, is_similar_to_same_quiz_questions, is_similar_to_past_quiz_questions
 from utils.generate_question import generate_mcq_based_on_performance
 
 router = APIRouter()
@@ -13,7 +14,7 @@ router = APIRouter()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 @router.get("/generate_adaptive_mcqs/{user_id}/{question_count}")
-def generate_next_quiz(user_id: str, question_count: int):
+def generate_next_quiz(user_id: str, question_count: int, current_user: str = Depends(get_current_user)):
     """
     Generate a new adaptive quiz based on user's previous performance.
     Instead of selecting from a pre-existing database, new questions are generated dynamically.
@@ -22,10 +23,16 @@ def generate_next_quiz(user_id: str, question_count: int):
         existing_user = users_collection.find_one({"_id": ObjectId(user_id)})
         if not existing_user:
             raise HTTPException(status_code=404, detail="User not found. Please register before generating a quiz.")
+        
+        if current_user != user_id:
+            raise HTTPException(status_code=403, detail="Unauthorized access")
 
+        logging.info(f"📝 Generating adaptive quiz for user {user_id}...")
+    
         # ✅ Fetch user's past performance
         difficulty_distribution = get_irt_based_difficulty_distribution(user_id, question_count)
-        seen_questions = get_seen_questions(user_id)
+        seen_questions = get_seen_questions(user_id)  # ✅ Fetch previous questions using "question_text"
+        current_quiz_questions = set()
         mcqs = []
 
         for difficulty, count in difficulty_distribution.items():
@@ -49,26 +56,52 @@ def generate_next_quiz(user_id: str, question_count: int):
                     
                     continue  # Retry another question
                 
+                # ✅ Convert to "question_text" format for consistency
+                mcq_text = mcq["question"]
+
+                # ✅ Check for duplicate questions from past quizzes
+                if mcq_text in seen_questions:
+                    logging.warning(f"🚫 Duplicate detected in past quizzes: {mcq_text}, retrying...")
+                    failed_attempts += 1
+                    continue
+                
+                # ✅ Check if question is already generated in the same quiz
+                if mcq_text in current_quiz_questions:
+                    logging.warning(f"🚫 Duplicate detected within the same quiz: {mcq_text}, retrying...")
+                    failed_attempts += 1
+                    continue
+                
+                if is_similar_to_same_quiz_questions(mcq_text, current_quiz_questions, threshold=0.75):
+                    logging.warning(f"⚠ Too similar to an existing quiz question: {mcq_text}, retrying...")
+                    failed_attempts += 1
+                    continue  
+                
+                # ✅ Ensure new question is NOT too similar to any past quiz question
+                if is_similar_to_past_quiz_questions(mcq_text, user_id, threshold=0.75):
+                    logging.warning(f"⚠ Too similar to a past quiz question: {mcq_text}, retrying...")
+                    failed_attempts += 1
+                    continue  
+                
                 # ✅ Ensure question is unique
-                if mcq and mcq["question"] not in seen_questions:
+                if mcq and mcq_text not in seen_questions:
                     formatted_mcq = {
-                    "question_text": mcq.get("question", "N/A"),  
-                    "option1": mcq.get("options", {}).get("A", "N/A"),
-                    "option2": mcq.get("options", {}).get("B", "N/A"),
-                    "option3": mcq.get("options", {}).get("C", "N/A"),
-                    "option4": mcq.get("options", {}).get("D", "N/A"),
-                    "option5": mcq.get("options", {}).get("E", "N/A"),
-                    "correct_answer": mcq.get("correct_answer", "N/A"),
-                    "difficulty": difficulty
-                }
+                        "question_text": mcq_text,  # ✅ Save as "question_text" for database consistency
+                        "option1": mcq.get("options", {}).get("A", "N/A"),
+                        "option2": mcq.get("options", {}).get("B", "N/A"),
+                        "option3": mcq.get("options", {}).get("C", "N/A"),
+                        "option4": mcq.get("options", {}).get("D", "N/A"),
+                        "option5": mcq.get("options", {}).get("E", "N/A"),
+                        "correct_answer": mcq.get("correct_answer", "N/A"),
+                        "difficulty": difficulty
+                    }
                     mcqs.append(formatted_mcq)
-                    seen_questions.add(mcq["question"])
+                    seen_questions.add(mcq_text)  # ✅ Add to seen_questions
+                    current_quiz_questions.add(mcq_text)  # ✅ Add to current quiz
                     generated += 1
                     
         # ✅ Ensure questions are unique (Filter out similar ones)
         unique_mcqs = filter_similar_questions([mcq["question_text"] for mcq in mcqs], seen_questions)
         mcqs = [mcq for mcq in mcqs if mcq["question_text"] in unique_mcqs]
-
 
         # ✅ Ensure we have the correct number of questions
         if len(mcqs) < question_count:

@@ -2,9 +2,11 @@ import uuid
 import logging
 import time
 from bson import ObjectId
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from utils.user_mgmt_methods import get_current_user
 from database.database import quizzes_collection, users_collection
 from utils.generate_question import generate_mcq
+from utils.quiz_generation_methods import is_similar_to_same_quiz_questions
 
 router = APIRouter()
 
@@ -15,16 +17,21 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 DIFFICULTY_DISTRIBUTION = {"easy": 5, "medium": 5, "hard": 5}
 
 @router.get("/generate_mcqs/{user_id}")
-def generate_quiz(user_id: str):
+def generate_quiz(user_id: str, current_user: str = Depends(get_current_user)):
     """Generates exactly 15 MCQs (5 Easy, 5 Medium, 5 Hard), stores in DB, and returns to user."""
     try:
         existing_user = users_collection.find_one({"_id": ObjectId(user_id)})
         if not existing_user:
             raise HTTPException(status_code=404, detail="User not found. Please register before generating a quiz.")
-
+        
+        if current_user != user_id:
+            raise HTTPException(status_code=403, detail="Unauthorized access")
+    
         logging.info(f"📝 Generating quiz for user {user_id}...")
         quiz_id = str(uuid.uuid4())  # Unique quiz session ID
         mcqs = []
+        
+        current_quiz_questions = set()
 
         for difficulty, count in DIFFICULTY_DISTRIBUTION.items():
             generated = 0  
@@ -46,6 +53,17 @@ def generate_quiz(user_id: str):
                         break  # Move to the next difficulty level
                     
                     continue  # Retry another question
+                
+                # ✅ Check if question is already generated in the same quiz
+                if mcq["question"] in current_quiz_questions:
+                    logging.warning(f"🚫 Duplicate detected within the same quiz: {mcq['question']}, retrying...")
+                    failed_attempts += 1
+                    continue
+                
+                if is_similar_to_same_quiz_questions(mcq["question"], current_quiz_questions, threshold=0.75):
+                    logging.warning(f"⚠ Too similar to an existing quiz question: {mcq['question']}, retrying...")
+                    failed_attempts += 1
+                    continue  
 
                 # ✅ Successfully generated a question, add to the list
                 formatted_mcq = {
@@ -58,6 +76,7 @@ def generate_quiz(user_id: str):
                     "correct_answer": mcq.get("correct_answer", "N/A"),
                     "difficulty": difficulty
                 }
+                current_quiz_questions.add(mcq["question"])
                 mcqs.append(formatted_mcq)
                 generated += 1  # ✅ Increase count only if a valid MCQ is added
 
