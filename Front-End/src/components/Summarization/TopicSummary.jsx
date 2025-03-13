@@ -43,7 +43,7 @@ const features = [
   {
     icon: <FiInfo className="text-blue-500 mr-2 w-10 h-10" />,
     label: "Enter Topic",
-    desc: "Type in any biology topic you need help with.",
+    desc: "Type in any biology topic or keyword you need help with.",
   },
   {
     icon: <FiCheck className="text-green-500 mr-2 w-10 h-10" />,

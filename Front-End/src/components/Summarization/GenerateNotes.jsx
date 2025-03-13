@@ -33,7 +33,7 @@ const GenerateNotes = () => {
                 Generate Notes Instantly
               </h3>
               <p className="mt-2 text-sm">
-                Enter any <b>topic</b> to generate well-structured notes using{" "}
+                Enter any <b>topic or keyword</b> to generate well-structured notes using{" "}
                 <b>approved resources</b>. Each note is concise, covering all
                 the essential <b>key points</b> for better understanding.
               </p>

@@ -127,14 +127,14 @@ class RAGModel:
             if re.search(rf"\b{re.escape(keyword)}\b", query, re.IGNORECASE):
                 logging.warning(f"Query flagged for dangerous intent: {query}")
                 return (
-                    "Your query is flagged as inappropriate or unsafe. Please rephrase."
+                    "Your topic/keyword is flagged as inappropriate or unsafe. Please rephrase."
                 )
 
         # Step 3: Check for highly negative sentiment (e.g., self-harm, extreme anger)
         sentiment_score = TextBlob(query).sentiment.polarity
         if sentiment_score < -0.6:  # Negative sentiment threshold
             logging.warning(f"Highly negative sentiment detected: {query}")
-            return "Your query seems inappropriate. Please rephrase."
+            return "Your topic/keyword seems inappropriate. Please rephrase."
 
         # Step 4: Check if query contains only valid English words
         # Extract words from query
