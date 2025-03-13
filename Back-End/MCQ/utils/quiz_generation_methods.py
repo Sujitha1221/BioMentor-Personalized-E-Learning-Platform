@@ -102,6 +102,46 @@ def is_question_too_similar(new_question, threshold=0.8):
     
     return cosine_sim > 0.85  # Adjust threshold as needed
 
+def is_similar_to_same_quiz_questions(new_question, generated_questions, threshold=0.75):
+    """Check if the generated question is similar to any question already generated in the same quiz."""
+    
+    if not generated_questions:
+        return False  # ✅ If no questions exist, return False (not similar)
+    
+    new_vector = embedding_model.encode([new_question]).astype(np.float32)
+    existing_vectors = embedding_model.encode(list(generated_questions)).astype(np.float32)
+
+    # 🔹 Compute cosine similarity with all previous questions in the same quiz
+    similarity_scores = cosine_similarity(new_vector, existing_vectors)[0]
+    
+    # ✅ Return True if **any** question in the same quiz is too similar
+    if any(sim >= threshold for sim in similarity_scores):
+        logging.warning(f"🚫 Too Similar to Same Quiz Questions: {new_question} (Max Cosine Sim: {max(similarity_scores)})")
+        return True  
+
+    return False
+
+def is_similar_to_past_quiz_questions(new_question, user_id, threshold=0.75):
+    """Check if the generated question is similar to any question from past quizzes of the same user."""
+    
+    seen_questions = get_seen_questions(user_id)
+    
+    if not seen_questions:
+        return False  # ✅ If no past questions exist, return False (not similar)
+
+    new_vector = embedding_model.encode([new_question]).astype(np.float32)
+    past_vectors = embedding_model.encode(list(seen_questions)).astype(np.float32)
+
+    # 🔹 Compute cosine similarity with all past questions
+    similarity_scores = cosine_similarity(new_vector, past_vectors)[0]
+
+    # ✅ Return True if **any** past question is too similar
+    if any(sim >= threshold for sim in similarity_scores):
+        logging.warning(f"🚫 Too Similar to Past Quiz Questions: {new_question} (Max Cosine Sim: {max(similarity_scores)})")
+        return True  
+
+    return False
+
 # Method to get IRT-based difficulty distribution for a user
 def get_irt_based_difficulty_distribution(user_id, total_questions):
     """Dynamically adjusts quiz difficulty based on user performance trend."""
@@ -127,7 +167,7 @@ def get_irt_based_difficulty_distribution(user_id, total_questions):
         easy_ratio, medium_ratio, hard_ratio = 0.5, avg_difficulty, 0.2
     else:
         easy_ratio, medium_ratio, hard_ratio = 0.3, avg_difficulty, 0.3
-    
+    logging.info(f"📊 IRT Difficulty Ratios: Easy={round(easy_ratio * total_questions)}, Medium={round(medium_ratio * total_questions)}, Hard={total_questions - (round(easy_ratio * total_questions) + round(medium_ratio * total_questions))}")
     return {
         "easy": round(easy_ratio * total_questions),
         "medium": round(medium_ratio * total_questions),
@@ -140,17 +180,23 @@ def get_seen_questions(user_id):
     
     seen_questions = set()
     
-    # 🔹 Fetch only question text from past quizzes
-    past_quizzes = quizzes_collection.find(
-        {"user_id": ObjectId(user_id)},
-        {"questions.question_text": 1, "_id": 0}
-    )
+    # 🔹 Fetch past quizzes from the database
+    past_quizzes = list(quizzes_collection.find(
+        {"user_id": user_id},
+        {"questions.question_text": 1, "_id": 0}  
+    ))
+
+    logging.info(f"🔍 Found {len(past_quizzes)} past quizzes for user {user_id}")
 
     for quiz in past_quizzes:
-        for question in quiz.get("questions", []):
-            seen_questions.add(question["question_text"])
+        if "questions" in quiz:
+            for question in quiz["questions"]:
+                if "question_text" in question:  # ✅ Ensure field exists
+                    seen_questions.add(question["question_text"])
 
+    # logging.info(f"🔍 Fetched {len(seen_questions)} unique questions from past quizzes: {seen_questions}")
     return seen_questions
+
 
 # Method to filter out similar questions from the seen questions
 def filter_similar_questions(new_questions, seen_questions, threshold=0.8):

@@ -6,6 +6,7 @@ import pandas as pd
 from sentence_transformers import SentenceTransformer
 from utils.quiz_generation_methods import assign_difficulty_parameter, assign_discrimination_parameter, is_question_too_similar, retrieve_context_questions
 from routes.response_routes import estimate_student_ability
+from utils.quiz_generation_methods import is_similar_to_same_quiz_questions, is_similar_to_past_quiz_questions
 
 # Load Sentence Transformer model
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
@@ -16,14 +17,15 @@ embeddings_matrix = np.load("dataset/question_embeddings.npy")
 dataset = pd.read_csv("dataset/question_dataset_with_clusters.csv")
 
 # Google Colab API Endpoint
-COLAB_API_URL = "https://fc8d-34-125-70-103.ngrok-free.app/generate_mcq"
+COLAB_API_URL = "https://16e2-34-143-200-100.ngrok-free.app/generate_mcq"
 
 # Method to generate MCQs with unique context
 def generate_mcq(difficulty, user_id, max_retries=3):  # 🔥 Reduced retries to 3
     """Generates an MCQ while ensuring uniqueness via FAISS and diverse context retrieval."""
     retries = 0
+    generated_questions = set()
     logging.info(f"🎯 Attempting to generate an MCQ for difficulty: {difficulty}")
-
+    
     while retries < max_retries:
         try:
             # ✅ Check if dataset is empty before sampling
@@ -112,6 +114,24 @@ def generate_mcq(difficulty, user_id, max_retries=3):  # 🔥 Reduced retries to
                 logging.warning(f"⚠ Malformed MCQ detected: {question_data}. Retrying...")
                 retries += 1
                 continue
+            
+            # ✅ Ensure question is NOT a duplicate within the same quiz
+            if question_text in generated_questions:
+                logging.warning(f"🚫 Skipping duplicate question in the same quiz: {question_text}")
+                retries += 1
+                continue 
+            
+            # ✅ Ensure question is NOT too similar to any generated question in the same quiz
+            if is_similar_to_same_quiz_questions(question_text, generated_questions, threshold=0.75):
+                logging.warning(f"⚠ Similar to existing quiz question: {question_text}, retrying...")
+                retries += 1
+                continue  
+            
+            if "Generate a" in question_text or "is a **hard** level MCQ" in question_text:
+                logging.warning(f"⚠ Invalid MCQ question detected: {question_text}. Retrying...")
+                retries += 1
+                continue  # Regenerate the question
+
 
             # ✅ Ensure answer choices are unique
             options = question_data.get("options", {})
@@ -121,10 +141,22 @@ def generate_mcq(difficulty, user_id, max_retries=3):  # 🔥 Reduced retries to
                 retries += 1
                 continue 
             
+            # Check if all options are provided and non-empty
+            if len(options) < 5 or any(not opt.strip() for opt in options.values()):
+                logging.warning(f"⚠ Some answer choices are missing or empty: {options}. Retrying...")
+                retries += 1
+                continue  # Try generating a new question
+            
             if len(set(options.values())) < 5:  # 🔥 Check for duplicate answers
                 logging.warning(f"⚠ Duplicate answer choices detected: {options}")
                 retries += 1
                 continue  
+            
+            if "<Insert Correct Answer Here>" in options.values():
+                logging.warning(f"⚠ Placeholder detected in options: {options}. Retrying...")
+                retries += 1
+                continue  # Regenerate the question
+
 
             # ✅ Ensure correct answer exists and is valid
             correct_answer = question_data.get("correct_answer", "").strip()
@@ -150,6 +182,8 @@ def generate_mcq(difficulty, user_id, max_retries=3):  # 🔥 Reduced retries to
             # ✅ Store in FAISS
             new_vector = embedding_model.encode([question_text]).astype(np.float32)
             index.add(new_vector)
+            
+            generated_questions.add(question_text)
 
             logging.info(f"✅ Successfully generated MCQ: {question_text}")
             return question_data
@@ -165,8 +199,10 @@ def generate_mcq(difficulty, user_id, max_retries=3):  # 🔥 Reduced retries to
 def generate_mcq_based_on_performance(user_id, difficulty, max_retries=5):
     """Generates a new MCQ dynamically based on user's past performance and assigns IRT parameters using ability level."""
     retries = 0
+    generated_questions = set()
     logging.info(f"🎯 Attempting to generate an MCQ for difficulty: {difficulty}")
-
+        
+    
     while retries < max_retries:
         # ✅ Fetch user ability
         theta = estimate_student_ability(user_id) or 0.0  # Default if None
@@ -258,6 +294,35 @@ def generate_mcq_based_on_performance(user_id, difficulty, max_retries=5):
                 logging.warning(f"⚠ Malformed MCQ detected: {question_data}. Retrying...")
                 retries += 1
                 continue
+            
+            # ✅ Ensure question is NOT a duplicate within the same quiz
+            if question_text in generated_questions:
+                logging.warning(f"🚫 Skipping duplicate question in the same quiz: {question_text}")
+                retries += 1
+                continue 
+            
+            # ✅ Ensure question is NOT too similar to any generated question in the same quiz
+            if is_similar_to_same_quiz_questions(question_text, generated_questions, threshold=0.75):
+                logging.warning(f"⚠ Similar to existing quiz question: {question_text}, retrying...")
+                retries += 1
+                continue  
+            
+            # ✅ Ensure question is NOT too similar to past quiz questions
+            if is_similar_to_past_quiz_questions(question_text, user_id, threshold=0.75):
+                logging.warning(f"⚠ Similar to past quiz question: {question_text}, retrying...")
+                retries += 1
+                continue  
+            
+            # ✅ Ensure question is unique (Avoid FAISS similarity failures)
+            if is_question_too_similar(question_text):
+                logging.warning(f"⚠ Too Similar: {question_text}")
+                retries += 1
+                continue  
+            
+            if "Generate a" in question_text or "is a **hard** level MCQ" in question_text:
+                logging.warning(f"⚠ Invalid MCQ question detected: {question_text}. Retrying...")
+                retries += 1
+                continue  # Regenerate the question
 
             # ✅ Ensure answer choices are unique
             options = question_data.get("options", {})
@@ -267,10 +332,21 @@ def generate_mcq_based_on_performance(user_id, difficulty, max_retries=5):
                 retries += 1
                 continue 
             
+            # Check if all options are provided and non-empty
+            if len(options) < 5 or any(not opt.strip() for opt in options.values()):
+                logging.warning(f"⚠ Some answer choices are missing or empty: {options}. Retrying...")
+                retries += 1
+                continue  # Try generating a new question            
+            
             if len(set(options.values())) < 5:  # 🔥 Check for duplicate answers
                 logging.warning(f"⚠ Duplicate answer choices detected: {options}")
                 retries += 1
                 continue  
+                
+            if "<Insert Correct Answer Here>" in options.values():
+                logging.warning(f"⚠ Placeholder detected in options: {options}. Retrying...")
+                retries += 1
+                continue  # Regenerate the question        
 
             # ✅ Ensure correct answer is valid
             correct_answer = question_data.get("correct_answer", "").strip()
@@ -279,12 +355,6 @@ def generate_mcq_based_on_performance(user_id, difficulty, max_retries=5):
                 logging.warning(f"⚠ Correct answer mismatch: {correct_answer} not in {options}")
                 retries += 1
                 continue
-
-            # ✅ Ensure question is unique (Avoid FAISS similarity failures)
-            if is_question_too_similar(question_text):
-                logging.warning(f"⚠ Too Similar: {question_text}")
-                retries += 1
-                continue  
 
             # ✅ Add difficulty to each question
             question_data["difficulty"] = difficulty
@@ -297,6 +367,8 @@ def generate_mcq_based_on_performance(user_id, difficulty, max_retries=5):
             # ✅ Store in FAISS
             new_vector = embedding_model.encode([question_text]).astype(np.float32)
             index.add(new_vector)
+            
+            generated_questions.add(question_text)
         
             logging.info(f"✅ Successfully generated MCQ: {question_data['question']}")
             return question_data
