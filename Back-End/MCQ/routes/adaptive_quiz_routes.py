@@ -5,7 +5,7 @@ from bson import ObjectId
 from fastapi import APIRouter, HTTPException, Depends
 from utils.user_mgmt_methods import get_current_user
 from database.database import quizzes_collection, users_collection
-from utils.quiz_generation_methods import get_seen_questions, filter_similar_questions, get_irt_based_difficulty_distribution, is_similar_to_same_quiz_questions, is_similar_to_past_quiz_questions
+from utils.quiz_generation_methods import get_seen_questions, get_irt_based_difficulty_distribution, is_similar_to_past_quiz_questions, is_similar_to_same_quiz_questions
 from utils.generate_question import generate_mcq_based_on_performance
 
 router = APIRouter()
@@ -99,9 +99,6 @@ def generate_next_quiz(user_id: str, question_count: int, current_user: str = De
                     current_quiz_questions.add(mcq_text)  # ✅ Add to current quiz
                     generated += 1
                     
-        # ✅ Ensure questions are unique (Filter out similar ones)
-        unique_mcqs = filter_similar_questions([mcq["question_text"] for mcq in mcqs], seen_questions)
-        mcqs = [mcq for mcq in mcqs if mcq["question_text"] in unique_mcqs]
 
         # ✅ Ensure we have the correct number of questions
         if len(mcqs) < question_count:

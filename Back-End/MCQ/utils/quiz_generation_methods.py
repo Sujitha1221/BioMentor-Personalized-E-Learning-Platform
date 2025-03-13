@@ -198,27 +198,3 @@ def get_seen_questions(user_id):
     return seen_questions
 
 
-# Method to filter out similar questions from the seen questions
-def filter_similar_questions(new_questions, seen_questions, threshold=0.8):
-    """Remove questions that are too similar to seen questions using FAISS similarity."""
-    unique_questions = []
-    
-    for question in new_questions:
-        is_similar = False
-        new_vector = embedding_model.encode([question]).astype(np.float32)
-
-        for seen_question in seen_questions:
-            seen_vector = embedding_model.encode([seen_question]).astype(np.float32)
-            
-            # Compute cosine similarity
-            similarity_score = cosine_similarity(new_vector, [seen_vector])[0][0]
-
-            if similarity_score > threshold:  # If similarity is too high, reject
-                is_similar = True
-                break
-        
-        if not is_similar:
-            unique_questions.append(question)
-
-    return unique_questions
-

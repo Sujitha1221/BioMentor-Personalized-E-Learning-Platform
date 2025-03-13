@@ -4,9 +4,8 @@ import faiss
 import numpy as np
 import pandas as pd
 from sentence_transformers import SentenceTransformer
-from utils.quiz_generation_methods import assign_difficulty_parameter, assign_discrimination_parameter, is_question_too_similar, retrieve_context_questions
+from utils.quiz_generation_methods import assign_difficulty_parameter, assign_discrimination_parameter, retrieve_context_questions,is_similar_to_same_quiz_questions, is_similar_to_past_quiz_questions, is_question_too_similar
 from routes.response_routes import estimate_student_ability
-from utils.quiz_generation_methods import is_similar_to_same_quiz_questions, is_similar_to_past_quiz_questions
 
 # Load Sentence Transformer model
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
@@ -17,7 +16,7 @@ embeddings_matrix = np.load("dataset/question_embeddings.npy")
 dataset = pd.read_csv("dataset/question_dataset_with_clusters.csv")
 
 # Google Colab API Endpoint
-COLAB_API_URL = "https://16e2-34-143-200-100.ngrok-free.app/generate_mcq"
+COLAB_API_URL = "https://90be-104-196-155-111.ngrok-free.app/generate_mcq"
 
 # Method to generate MCQs with unique context
 def generate_mcq(difficulty, user_id, max_retries=3):  # 🔥 Reduced retries to 3
@@ -318,11 +317,6 @@ def generate_mcq_based_on_performance(user_id, difficulty, max_retries=5):
                 logging.warning(f"⚠ Too Similar: {question_text}")
                 retries += 1
                 continue  
-            
-            if "Generate a" in question_text or "is a **hard** level MCQ" in question_text:
-                logging.warning(f"⚠ Invalid MCQ question detected: {question_text}. Retrying...")
-                retries += 1
-                continue  # Regenerate the question
 
             # ✅ Ensure answer choices are unique
             options = question_data.get("options", {})
@@ -367,7 +361,6 @@ def generate_mcq_based_on_performance(user_id, difficulty, max_retries=5):
             # ✅ Store in FAISS
             new_vector = embedding_model.encode([question_text]).astype(np.float32)
             index.add(new_vector)
-            
             generated_questions.add(question_text)
         
             logging.info(f"✅ Successfully generated MCQ: {question_data['question']}")
