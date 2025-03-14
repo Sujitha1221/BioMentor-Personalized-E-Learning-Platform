@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from fastapi import APIRouter, HTTPException,Response
+from fastapi import APIRouter, HTTPException,Response, Request
 from pydantic import BaseModel, EmailStr, Field
 from passlib.context import CryptContext
 from database.database import users_collection, quizzes_collection
@@ -31,6 +31,7 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+# Create User Route
 @router.post("/register")
 def register_user(user: UserRegister):
     hashed_password = pwd_context.hash(user.password)
@@ -77,9 +78,8 @@ def login_user(user: UserLogin, response: Response):
         "user_id": str(existing_user["_id"]),
         "username": existing_user["username"]
     }
-    
-from fastapi import Request
 
+# refresh token route
 @router.post("/refresh")
 def refresh_token(request: Request):
     refresh_token = request.cookies.get("refresh_token")
@@ -94,6 +94,7 @@ def refresh_token(request: Request):
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
 
+# Check if the user has any previous quizzes
 @router.get("/users/{user_id}/has_previous_quiz")
 def check_user_quiz_history(user_id: str):
     """
