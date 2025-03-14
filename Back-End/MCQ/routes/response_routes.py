@@ -284,35 +284,111 @@ def generate_performance_chart(user_id: str):
     img.seek(0)
     return base64.b64encode(img.getvalue()).decode()
 
-@router.get("/quiz_attempts/{user_id}/{quiz_id}")
-def get_quiz_attempts(user_id: str, quiz_id: str):
+# ✅ New API Route to Fetch User Quiz History
+@router.get("/user_quiz_history/{user_id}")
+def get_user_quiz_history(user_id: str,current_user: str = Depends(get_current_user)):
     """
-    Retrieve all attempts for a specific quiz by a user.
+    Retrieve all quizzes a user has attempted along with each attempt.
+    """
+    try:
+        # Step 1: Ensure the user exists
+        existing_user = users_collection.find_one({"_id": ObjectId(user_id)})
+        if not existing_user:
+            raise HTTPException(status_code=404, detail="User not found.")
+        
+        if current_user != user_id:
+            logging.error(f"🚫 Unauthorized access attempt by {current_user}")
+            raise HTTPException(status_code=403, detail="Unauthorized access")
+    
+        # Step 2: Fetch all quiz attempts made by the user
+        quiz_attempts = list(responses_collection.find({"user_id": user_id}))
+
+        if not quiz_attempts:
+            return {"message": "No quiz attempts found."}
+
+        # Step 3: Structure the quiz history data correctly
+        quiz_history = {}
+        for attempt in quiz_attempts:
+            quiz_id = attempt["quiz_id"]
+            if quiz_id not in quiz_history:
+                quiz_history[quiz_id] = {
+                    "quiz_id": quiz_id,
+                    "attempts": []
+                }
+            
+            quiz_history[quiz_id]["attempts"].append({
+                "response_id": str(attempt["_id"]),  # ✅ Convert MongoDB _id to string
+                "submitted_at": attempt["submitted_at"],
+                "attempt_number": attempt["attempt_number"],
+                "summary": attempt["summary"]
+            })
+
+        return {"quiz_history": list(quiz_history.values())}
+
+    except Exception as e:
+        logging.error(f"🔥 Error fetching quiz history: {str(e)}")
+        raise HTTPException(status_code=500, detail="An error occurred while retrieving quiz history.")
+
+# ✅ New API Route to Fetch Attempt Results
+@router.get("/quiz_attempt_results/{user_id}/{quiz_id}/{attempt_number}")
+def get_quiz_attempt_results(user_id: str, quiz_id: str, attempt_number: int,current_user: str = Depends(get_current_user)):
+    """
+    Retrieve a specific quiz attempt's results, including full question details from quizzes_collection.
     """
     try:
         existing_user = users_collection.find_one({"_id": ObjectId(user_id)})
         if not existing_user:
-            raise HTTPException(status_code=404, detail="User not found.")
-
-        quiz_attempts = list(responses_collection.find({"user_id": user_id, "quiz_id": quiz_id}))
-
-        if not quiz_attempts:
-            raise HTTPException(status_code=404, detail="No attempts found for this quiz.")
-
-        return {
+            logging.error(f"❌ User {user_id} not found in the database.")
+            raise HTTPException(status_code=404, detail="User not found. Please register before generating a quiz.")
+        
+        if current_user != user_id:
+            logging.error(f"🚫 Unauthorized access attempt by {current_user}")
+            raise HTTPException(status_code=403, detail="Unauthorized access")
+    
+        # Step 1: Retrieve the attempt from responses_collection
+        attempt = responses_collection.find_one({
+            "user_id": user_id,
             "quiz_id": quiz_id,
-            "attempts": [
-                {
-                    "attempt_id": str(attempt["_id"]),
-                    "submitted_at": attempt["submitted_at"],
-                    "is_first_attempt": attempt["is_first_attempt"],
-                    "responses": attempt["responses"]
+            "attempt_number": attempt_number
+        })
+
+        if not attempt:
+            raise HTTPException(status_code=404, detail="Attempt not found.")
+
+        # Step 2: Retrieve the full quiz details from quizzes_collection
+        quiz = quizzes_collection.find_one({"quiz_id": quiz_id})
+
+        if not quiz:
+            raise HTTPException(status_code=404, detail="Quiz not found.")
+
+        # Step 3: Create a dictionary mapping question_text -> full question details
+        question_lookup = {q["question_text"]: q for q in quiz["questions"]}
+
+        # Step 4: Merge full question details into attempt responses
+        enriched_responses = []
+        for response in attempt["responses"]:
+            question_text = response["question_text"]
+
+            if question_text in question_lookup:
+                full_question = question_lookup[question_text]
+                response["options"] = {
+                    "A": full_question.get("option1", ""),
+                    "B": full_question.get("option2", ""),
+                    "C": full_question.get("option3", ""),
+                    "D": full_question.get("option4", ""),
+                    "E": full_question.get("option5", "")
                 }
-                for attempt in quiz_attempts
-            ]
-        }
+                response["difficulty"] = full_question["difficulty"]
+                response["correct_answer"] = full_question["correct_answer"]
+
+            enriched_responses.append(response)
+
+        # Step 5: Update attempt data with enriched responses
+        attempt["responses"] = enriched_responses
+        attempt["_id"] = str(attempt["_id"])  # Convert ObjectId to string
+
+        return attempt
 
     except Exception as e:
-        logging.error(f"🔥 Error fetching quiz attempts: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
+        logging.error(f"🔥 Error fetching attempt results: {str(e)}")
+        raise HTTPException(status_code=500, detail="An error occurred while retrieving attempt results.")

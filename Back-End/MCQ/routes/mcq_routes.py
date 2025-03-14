@@ -109,3 +109,23 @@ def generate_quiz(user_id: str, current_user: str = Depends(get_current_user)):
             "total_questions": len(mcqs),
             "mcqs": mcqs  # ✅ Return the questions that were successfully generated
         }
+
+@router.get("/get_quiz/{quiz_id}")
+def get_quiz(quiz_id: str):
+    """
+    Fetch a quiz along with all its questions from quizzes_collection.
+    """
+    try:
+        quiz = quizzes_collection.find_one({"quiz_id": quiz_id})
+
+        if not quiz:
+            raise HTTPException(status_code=404, detail="Quiz not found.")
+
+        # Convert ObjectId to string if needed
+        quiz["_id"] = str(quiz["_id"])
+
+        return quiz
+
+    except Exception as e:
+        logging.error(f"🔥 Error fetching quiz: {str(e)}")
+        raise HTTPException(status_code=500, detail="An error occurred while retrieving the quiz.")
