@@ -20,7 +20,7 @@ const Flashcard = ({ term, hint, onFlashcardSubmitted }) => {
       >
         {/* Front Side - Initially showing the hint */}
         <div
-          className={`absolute w-full h-full bg-white shadow-lg rounded-lg p-4 flex flex-col justify-center items-center backface-hidden`}
+          className={`absolute w-full h-full bg-white shadow-[0_0_10px_0_rgba(0,0,0,0.5)] rounded-lg p-4 flex flex-col justify-center items-center backface-hidden`}
         >
           <p className="text-gray-600 text-lg mb-4 text-center">{hint}</p>
           <form onSubmit={handleSubmit} className="flex flex-col gap-2 w-full">

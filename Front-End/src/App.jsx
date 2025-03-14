@@ -1,5 +1,6 @@
 import React from 'react';
-import FlashcardDeck from './components/FlashcardDeck';
+import FlashcardDeck from './components/FlashCardDeck';
+
 
 const App = () => {
   return (
