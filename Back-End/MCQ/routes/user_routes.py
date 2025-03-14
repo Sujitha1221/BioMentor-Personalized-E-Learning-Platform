@@ -15,7 +15,7 @@ load_dotenv() # Load environment variables
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # JWT Secret & Algorithm
-SECRET_KEY = os.getenv("SECRET_KEY", "biomentor2k25")
+SECRET_KEY = "E-learningplatform2k25" 
 ALGORITHM = "HS256"
 
 # User Registration Model
@@ -74,6 +74,7 @@ def login_user(user: UserLogin, response: Response):
     return {
         "message": "Login successful",
         "access_token": access_token,
+        "refresh_token": refresh_token,
         "token_type": "bearer",
         "user_id": str(existing_user["_id"]),
         "username": existing_user["username"]
@@ -81,15 +82,17 @@ def login_user(user: UserLogin, response: Response):
 
 # refresh token route
 @router.post("/refresh")
-def refresh_token(request: Request):
-    refresh_token = request.cookies.get("refresh_token")
+def refresh_token(data: dict):
+    refresh_token = data.get("refresh_token")  # Read from request body
+
     if not refresh_token:
-        raise HTTPException(status_code=401, detail="No refresh token found")
+        raise HTTPException(status_code=401, detail="No refresh token provided")
 
     try:
         payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: str = payload.get("sub")
         new_access_token = create_access_token(data={"sub": user_id})
+        
         return {"access_token": new_access_token, "token_type": "bearer"}
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
