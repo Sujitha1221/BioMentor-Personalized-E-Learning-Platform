@@ -16,7 +16,7 @@ embeddings_matrix = np.load("dataset/question_embeddings.npy")
 dataset = pd.read_csv("dataset/question_dataset_with_clusters.csv")
 
 # Google Colab API Endpoint
-COLAB_API_URL = "https://90be-104-196-155-111.ngrok-free.app/generate_mcq"
+COLAB_API_URL = "https://852a-35-185-179-50.ngrok-free.app/generate_mcq"
 
 # Method to generate MCQs with unique context
 def generate_mcq(difficulty, user_id, max_retries=3):  # 🔥 Reduced retries to 3

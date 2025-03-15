@@ -30,31 +30,37 @@ class SubmitQuizRequest(BaseModel):
     user_id: str
     quiz_id: str
     responses: List[QuizResponse]  # ✅ Expect a list of QuizResponse objects
-    
-import numpy as np
 
 def estimate_student_ability(user_id):
     """Estimates student ability dynamically using correctness & response time."""
     user_data = users_collection.find_one({"_id": ObjectId(user_id)})
     
-    if not user_data or "performance" not in user_data or "history" not in user_data["performance"]:
+    if not user_data or "performance" not in user_data or "last_10_quizzes" not in user_data["performance"]:
         return 0  # Default ability score
     
-    responses = user_data["performance"]["history"]
+    responses = user_data["performance"]["last_10_quizzes"]
     if not responses:
         return 0
 
+    # ✅ Count Correct Responses & Total Responses
     correct_responses = sum([r["is_correct"] for quiz in responses for r in quiz])
     total_responses = sum([len(quiz) for quiz in responses])
-    total_time = sum([r["time_taken"] for quiz in responses for r in quiz])
 
     if total_responses == 0:
-        return 0
+        return 0  # Avoid division by zero
 
-    # ✅ Compute average response time
+    # ✅ Compute Weighted Response Time (Higher Weight for Harder Questions)
+    easy_time = sum([r["time_taken"] for quiz in responses for r in quiz if r["difficulty"] == "easy"])
+    medium_time = sum([r["time_taken"] for quiz in responses for r in quiz if r["difficulty"] == "medium"])
+    hard_time = sum([r["time_taken"] for quiz in responses for r in quiz if r["difficulty"] == "hard"])
+
+    # ✅ Weighted average time for better accuracy
+    total_time = (easy_time * 0.5 + medium_time * 1.0 + hard_time * 1.5) 
+
+    # ✅ Compute Average Time Per Question
     avg_time = total_time / total_responses
 
-    # ✅ Time-Based Penalty System:
+    # ✅ Adjust Time-Based Penalty Dynamically
     if avg_time < 3:  
         time_penalty = 0.3  # 🚨 Very fast responses (possible guessing)
     elif 3 <= avg_time < 7:  
@@ -66,8 +72,8 @@ def estimate_student_ability(user_id):
     else:  
         time_penalty = 0.2  # ⏳ Very long (possible distractions, not thinking about the quiz)
 
-    # ✅ Apply IRT-based ability estimation formula with time penalty
-    ability = np.log(correct_responses / (total_responses - correct_responses + 1)) - time_penalty
+    # ✅ Apply IRT-Based Ability Estimation Formula
+    ability = np.log(correct_responses / max(1, (total_responses - correct_responses + 1))) - time_penalty
 
     return round(ability, 2)
 
@@ -81,35 +87,63 @@ def update_user_performance(user_id, responses):
         raise ValueError(f"User {user_id} not found in the database.") 
 
     performance = user_data.get("performance", {
-        "easy_correct": 0, "easy_total": 0, "easy_time": 0, 
-        "medium_correct": 0, "medium_total": 0, "medium_time": 0, 
-        "hard_correct": 0, "hard_total": 0, "hard_time": 0, 
-        "history": []
+        "total_quizzes": 0,
+        "accuracy_easy": 0, "accuracy_medium": 0, "accuracy_hard": 0,
+        "time_easy": 0, "time_medium": 0, "time_hard": 0,
+        "strongest_area": None, "weakest_area": None,
+        "last_10_quizzes": [],
+        "consistency_score": 0
     })
+    
+    correct_answers = {"easy": 0, "medium": 0, "hard": 0}
+    total_questions = {"easy": 0, "medium": 0, "hard": 0}
+    time_spent = {"easy": 0, "medium": 0, "hard": 0}
 
     for response in responses:
         difficulty = response["difficulty"]
         is_correct = response["is_correct"]
         time_taken = response["time_taken"]
 
-        performance[f"{difficulty}_total"] += 1
+        total_questions[difficulty] += 1
         if is_correct:
-            performance[f"{difficulty}_correct"] += 1
-        performance[f"{difficulty}_time"] += time_taken
+            correct_answers[difficulty] += 1
+        time_spent[difficulty] += time_taken
 
-    # ✅ Store last 5 quizzes only
-    performance["history"].append(responses)
-    if len(performance["history"]) > 5:
-        performance["history"].pop(0)
-
-    # ✅ Save accuracy percentages
+    # Update Accuracy and Time Data
     for difficulty in ["easy", "medium", "hard"]:
-        total = performance[f"{difficulty}_total"]
-        if total > 0:
-            performance[f"{difficulty}_accuracy"] = round((performance[f"{difficulty}_correct"] / total) * 100, 2)
-        else:
-            performance[f"{difficulty}_accuracy"] = 0.0  # Avoid division by zero
+        if total_questions[difficulty] > 0:
+            accuracy = (correct_answers[difficulty] / total_questions[difficulty]) * 100
+            performance[f"accuracy_{difficulty}"] = round(accuracy, 2)
+            performance[f"time_{difficulty}"] += time_spent[difficulty]
 
+    # Track Last 10 Quiz Performance
+    quiz_performance = {
+        "accuracy": round((sum(correct_answers.values()) / sum(total_questions.values())) * 100, 2),
+        "total_time": sum(time_spent.values()),
+        "timestamp": time.time()
+    }
+    performance["last_10_quizzes"].append(quiz_performance)
+    if len(performance["last_10_quizzes"]) > 10:
+        performance["last_10_quizzes"].pop(0)
+
+    # Calculate Strongest and Weakest Area
+    difficulties = ["easy", "medium", "hard"]
+    strongest = max(difficulties, key=lambda d: performance[f"accuracy_{d}"])
+    weakest = min(difficulties, key=lambda d: performance[f"accuracy_{d}"])
+
+    performance["strongest_area"] = strongest
+    performance["weakest_area"] = weakest
+
+    # Calculate Consistency Score (How Often User Takes Quizzes)
+    last_10_timestamps = [q["timestamp"] for q in performance["last_10_quizzes"]]
+    if len(last_10_timestamps) >= 2:
+        avg_time_gap = sum(
+            last_10_timestamps[i] - last_10_timestamps[i - 1] for i in range(1, len(last_10_timestamps))
+        ) / (len(last_10_timestamps) - 1)
+        performance["consistency_score"] = max(100 - avg_time_gap // 86400, 0)  # Normalize Score (0-100)
+
+    # Increment Total Quizzes Count
+    performance["total_quizzes"] += 1
     try:
         result = users_collection.update_one({"_id": ObjectId(user_id)}, {"$set": {"performance": performance}})
         
@@ -260,29 +294,6 @@ def submit_quiz(data: SubmitQuizRequest,current_user: str = Depends(get_current_
     except Exception as e:
         logging.error(f"🔥 Error submitting quiz: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-    
-@router.get("/user_performance_chart/{user_id}")
-def generate_performance_chart(user_id: str):
-    """Generates a performance graph of user progress."""
-    user_data = users_collection.find_one({"_id": user_id})
-    if not user_data or "history" not in user_data["performance"]:
-        raise HTTPException(status_code=404, detail="No performance data found for this user.")
-
-    quiz_numbers = list(range(1, len(user_data["performance"]["history"]) + 1))
-    scores = [
-    round(sum([q["is_correct"] for q in quiz]) / max(1, len(quiz)) * 100, 2) 
-    for quiz in user_data["performance"]["history"] if quiz]
-
-    plt.figure(figsize=(8, 4))
-    plt.plot(quiz_numbers, scores, marker="o", linestyle="-", color="b")
-    plt.xlabel("Quiz Attempt")
-    plt.ylabel("Score (%)")
-    plt.title("User Performance Over Time")
-
-    img = io.BytesIO()
-    plt.savefig(img, format="png")
-    img.seek(0)
-    return base64.b64encode(img.getvalue()).decode()
 
 # ✅ New API Route to Fetch User Quiz History
 @router.get("/user_quiz_history/{user_id}")
@@ -392,3 +403,173 @@ def get_quiz_attempt_results(user_id: str, quiz_id: str, attempt_number: int,cur
     except Exception as e:
         logging.error(f"🔥 Error fetching attempt results: {str(e)}")
         raise HTTPException(status_code=500, detail="An error occurred while retrieving attempt results.")
+
+
+@router.get("/performance_graph/{user_id}")
+def generate_performance_graph(user_id: str):
+    """Generates graphs showing user improvement and consistency."""
+    user_data = users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user_data or "performance" not in user_data or "last_10_quizzes" not in user_data["performance"]:
+        return {
+            "quiz_numbers": [],
+            "scores": [],
+            "graph_image": None,
+            "message": "No quiz performance data available. Start taking quizzes to see your progress!"
+        }
+    history = user_data["performance"]["last_10_quizzes"]
+
+    quiz_numbers = list(range(1, len(history) + 1))
+    scores = [quiz["accuracy"] for quiz in history]
+
+    plt.figure(figsize=(8, 4))
+    plt.plot(quiz_numbers, scores, marker="o", linestyle="-", color="b", label="Accuracy (%)")
+    plt.xlabel("Quiz Attempt")
+    plt.ylabel("Score (%)")
+    plt.title("User Performance Over Time")
+    plt.legend()
+
+    img = io.BytesIO()
+    plt.savefig(img, format="png")
+    img.seek(0)
+    return {
+        "quiz_numbers": quiz_numbers,
+        "scores": scores,
+        "graph_image": base64.b64encode(img.getvalue()).decode(),
+        "message": "Performance data loaded successfully."
+    }
+
+@router.get("/progress_insights/{user_id}")
+def get_progress_insights(user_id: str, current_user: str = Depends(get_current_user)):
+    """Analyzes user progress and provides AI-driven insights."""
+    user_data = users_collection.find_one({"_id": ObjectId(user_id)})
+
+    if not user_data or "performance" not in user_data:
+        raise HTTPException(status_code=404, detail="No performance data found.")
+    
+    if current_user != user_id:
+            logging.error(f"🚫 Unauthorized access attempt by {current_user}")
+            raise HTTPException(status_code=403, detail="Unauthorized access")
+
+    history = user_data["performance"].get("last_10_quizzes", [])
+
+    if len(history) == 0:
+        return {"message": "No quiz attempts found. Start taking quizzes to track your progress!"}
+
+    if len(history) == 1:
+        # ✅ User has only one attempt – give insights based on it
+        first_attempt = history[0]
+        return {
+            "accuracy_trend": [first_attempt["accuracy"]],
+            "time_trend": [first_attempt["total_time"]],
+            "accuracy_improvement": 0,
+            "time_efficiency": 0,
+            "suggestion": "You’ve completed your first quiz! Keep practicing to track your progress over time."
+        }
+
+    # ✅ User has multiple attempts – calculate progress trends
+    accuracy_trend = [quiz["accuracy"] for quiz in history]
+    time_trend = [quiz["total_time"] for quiz in history]
+
+    accuracy_change = round(accuracy_trend[-1] - accuracy_trend[0], 2)
+    time_change = round(time_trend[-1] - time_trend[0], 2)
+
+    insights = {
+        "accuracy_trend": accuracy_trend,
+        "time_trend": time_trend,
+        "accuracy_improvement": accuracy_change,
+        "time_efficiency": time_change,
+        "suggestion": ""
+    }
+
+    # ✅ AI-Driven Suggestions
+    if accuracy_change > 5:
+        insights["suggestion"] = "Great job! Your accuracy is improving steadily. Keep practicing!"
+    elif accuracy_change < -5:
+        insights["suggestion"] = "Your accuracy has dropped. Try revising incorrect answers."
+    else:
+        insights["suggestion"] = "You're maintaining a steady performance. Keep going!"
+
+    return insights
+
+@router.get("/user_performance_comparison/{user_id}")
+def get_user_performance_comparison(user_id: str, current_user: str = Depends(get_current_user)):
+    """Compares user's performance against average stats of all users."""
+    user_data = users_collection.find_one({"_id": ObjectId(user_id)})
+    if current_user != user_id:
+            logging.error(f"🚫 Unauthorized access attempt by {current_user}")
+            raise HTTPException(status_code=403, detail="Unauthorized access")
+    logging.info(f"User data: {user_data}")
+    if not user_data or "performance" not in user_data:
+        raise HTTPException(status_code=404, detail="No performance data found.")
+
+    all_users = users_collection.find({"performance.total_quizzes": {"$gt": 0}})
+
+    total_accuracy = []
+    total_time = []
+
+    for user in all_users:
+        performance = user.get("performance", {})
+        last_quizzes = performance.get("last_10_quizzes", [])
+        if last_quizzes:
+            total_accuracy.append(last_quizzes[-1]["accuracy"])
+            total_time.append(last_quizzes[-1]["total_time"])
+
+    if not total_accuracy:
+        return {"message": "Not enough data for comparison."}
+
+    user_accuracy = user_data["performance"].get("last_10_quizzes", [])[-1]["accuracy"]
+    user_time = user_data["performance"].get("last_10_quizzes", [])[-1]["total_time"]
+
+    avg_accuracy = sum(total_accuracy) / len(total_accuracy)
+    avg_time = sum(total_time) / len(total_time)
+
+    return {
+        "user_accuracy": user_accuracy,
+        "average_accuracy": round(avg_accuracy, 2),
+        "user_time": user_time,
+        "average_time": round(avg_time, 2),
+        "comparison_accuracy": "Higher" if user_accuracy > avg_accuracy else "Lower",
+        "comparison_time": "Faster" if user_time < avg_time else "Slower"
+    }
+
+@router.get("/engagement_score/{user_id}")
+def get_engagement_score(user_id: str, current_user: str = Depends(get_current_user)):
+    """Calculates how active and engaged the user is."""
+    user_data = users_collection.find_one({"_id": ObjectId(user_id)})
+    if current_user != user_id:
+        logging.error(f"🚫 Unauthorized access attempt by {current_user}")
+        raise HTTPException(status_code=403, detail="Unauthorized access")
+    
+    if not user_data or "performance" not in user_data:
+        raise HTTPException(status_code=404, detail="No performance data found.")
+
+    history = user_data["performance"].get("last_10_quizzes", [])
+
+    # ✅ Handling Users with Only 1 or 2 Quiz Attempts
+    if len(history) == 1:
+        return {
+            "engagement_score": "Starter",
+            "category": "You're off to a great start! Keep going to build consistency."
+        }
+
+    if len(history) == 2:
+        return {
+            "engagement_score": "Developing",
+            "category": "You're beginning to build a habit. Try to maintain consistency!"
+        }
+
+    # ✅ Users with 3+ quizzes: Calculate engagement score normally
+    consistency_score = user_data["performance"].get("consistency_score", 0)
+
+    if consistency_score > 80:
+        category = "Highly Engaged Learner"
+    elif consistency_score > 50:
+        category = "Moderately Engaged Learner"
+    else:
+        category = "Needs Improvement"
+
+    return {
+        "engagement_score": consistency_score,
+        "category": category
+    }
+

@@ -1,13 +1,13 @@
 import os
 from dotenv import load_dotenv
-from fastapi import APIRouter, HTTPException,Response, Request
+from fastapi import APIRouter, HTTPException,Response, Depends
 from pydantic import BaseModel, EmailStr, Field
 from passlib.context import CryptContext
 from database.database import users_collection, quizzes_collection
 from bson import ObjectId
-from bson.json_util import dumps
-from utils.user_mgmt_methods import create_access_token, verify_password, create_refresh_token
+from utils.user_mgmt_methods import create_access_token, verify_password, create_refresh_token, get_current_user
 from jose import JWTError, jwt
+import logging
 
 router = APIRouter()
 load_dotenv() # Load environment variables
@@ -38,8 +38,9 @@ def register_user(user: UserRegister):
 
     existing_user = users_collection.find_one({"$or": [{"username": user.username}, {"email": user.email}]})
     if existing_user:
-        raise HTTPException(status_code=400, detail="Username or email already exists")
-
+        logging.error(f"🚫 Username or email already exists: {user.username}, {user.email}")
+        raise HTTPException(status_code=400, detail="Username or email already exists") 
+        
     new_user = {
         "username": user.username,
         "password": hashed_password,
@@ -47,10 +48,12 @@ def register_user(user: UserRegister):
         "full_name": user.full_name,
         "education_level": user.education_level,
         "performance": {  # Track accuracy & time for each difficulty level
-            "easy_correct": 0, "easy_total": 0, "easy_time": 0,
-            "medium_correct": 0, "medium_total": 0, "medium_time": 0,
-            "hard_correct": 0, "hard_total": 0, "hard_time": 0,
-            "history": []  # Store past quizzes (last 5)
+            "total_quizzes": 0,
+            "accuracy_easy": 0, "accuracy_medium": 0, "accuracy_hard": 0,
+            "time_easy": 0, "time_medium": 0, "time_hard": 0,
+            "strongest_area": None, "weakest_area": None,
+            "last_10_quizzes": [],
+            "consistency_score": 0
         }
     }
     result = users_collection.insert_one(new_user)
@@ -63,6 +66,7 @@ def login_user(user: UserLogin, response: Response):
     existing_user = users_collection.find_one({"email": user.email})
     
     if not existing_user or not verify_password(user.password, existing_user["password"]):
+        logging.error(f"🚫 Invalid email or password: {user.email}")
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     access_token = create_access_token(data={"sub": str(existing_user["_id"]), "username": existing_user["username"]})
@@ -86,6 +90,7 @@ def refresh_token(data: dict):
     refresh_token = data.get("refresh_token")  # Read from request body
 
     if not refresh_token:
+        logging.error("🚫 No refresh token provided")
         raise HTTPException(status_code=401, detail="No refresh token provided")
 
     try:
@@ -95,6 +100,7 @@ def refresh_token(data: dict):
         
         return {"access_token": new_access_token, "token_type": "bearer"}
     except JWTError:
+        logging.error("🚫 Invalid or expired refresh token")
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
 
 # Check if the user has any previous quizzes
@@ -108,6 +114,7 @@ def check_user_quiz_history(user_id: str):
         # Ensure the user exists
         user = users_collection.find_one({"_id": ObjectId(user_id)})
         if not user:
+            logging.error(f"🚫 User not found: {user_id}")
             raise HTTPException(status_code=404, detail="User not found.")
 
         # Check if the user has any quizzes
@@ -116,4 +123,46 @@ def check_user_quiz_history(user_id: str):
         return {"has_previous_quiz": quiz_count > 0}
 
     except Exception as e:
+        logging.error(f"🚫 Error checking user quiz history: {str(e)}")
         return HTTPException(status_code=500, detail=str(e))
+
+@router.get("/dashboard_data/{user_id}")
+def get_dashboard_data(user_id: str, current_user: str = Depends(get_current_user)):
+    """Returns structured performance data for the user dashboard."""
+    user_data = users_collection.find_one({"_id": ObjectId(user_id)})
+    
+    if current_user != user_id:
+        logging.error(f"🚫 Unauthorized access attempt by {current_user}")
+        raise HTTPException(status_code=403, detail="Unauthorized access")
+
+    # ✅ If user has no performance data, return default values
+    if not user_data or "performance" not in user_data:
+        return {
+            "total_quizzes": 0,
+            "accuracy_easy": 0,
+            "accuracy_medium": 0,
+            "accuracy_hard": 0,
+            "time_easy": 0,
+            "time_medium": 0,
+            "time_hard": 0,
+            "strongest_area": "N/A",
+            "weakest_area": "N/A",
+            "consistency_score": 0,
+            "last_10_quizzes": [],
+            "message": "No quiz data available yet. Start taking quizzes!"
+        }
+    performance = user_data["performance"]
+
+    return {
+        "total_quizzes": performance.get("total_quizzes", 0),
+        "accuracy_easy": performance.get("accuracy_easy", 0),
+        "accuracy_medium": performance.get("accuracy_medium", 0),
+        "accuracy_hard": performance.get("accuracy_hard", 0),
+        "time_easy": performance.get("time_easy", 0),
+        "time_medium": performance.get("time_medium", 0),
+        "time_hard": performance.get("time_hard", 0),
+        "strongest_area": performance.get("strongest_area", "N/A"),
+        "weakest_area": performance.get("weakest_area", "N/A"),
+        "consistency_score": performance.get("consistency_score", 0),
+        "last_10_quizzes": performance.get("last_10_quizzes", []),
+    }
