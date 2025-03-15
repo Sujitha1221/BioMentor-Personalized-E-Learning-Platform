@@ -38,9 +38,10 @@ const Login = () => {
         { email, password },
         { withCredentials: true }
       );
-      const { access_token, username, user_id } = response.data;
+      const { access_token, refresh_token, username, user_id } = response.data;
 
       localStorage.setItem("token", access_token);
+      localStorage.setItem("refresh_token", refresh_token);
       localStorage.setItem(
         "user",
         JSON.stringify({ email, username, user_id })
