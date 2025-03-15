@@ -17,6 +17,8 @@ while True:
         users_collection = db["users"]
         quizzes_collection = db["quizzes"]
         responses_collection = db["user_responses"]
+        topic_quizzes = db["topic_quizzes"]
+        topic_quiz_attempts = db["topic_quiz_attempts"]
         print("✅ Connected to MongoDB Atlas")
         break
     except ConnectionFailure as e:
