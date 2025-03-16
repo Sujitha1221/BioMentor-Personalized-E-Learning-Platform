@@ -31,7 +31,7 @@ api.interceptors.response.use(
 
         // Call the /refresh endpoint with refresh token in request body
         const refreshResponse = await axios.post(
-          `${api.defaults.baseURL}/users/refresh`,
+          `http://127.0.0.1:8001/refresh`,
           { refresh_token: refreshToken } // Send refresh token in body
         );
 

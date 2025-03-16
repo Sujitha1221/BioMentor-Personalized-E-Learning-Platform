@@ -6,3 +6,6 @@ python-multipart
 pymongo 
 bcrypt
 python-dotenv
+passlib
+python-jose[cryptography]
+pydantic[email]

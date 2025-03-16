@@ -3,6 +3,13 @@ from pydantic import BaseModel
 from service import UserService, UserCreate, UserUpdate
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import HTTPException,Response, Depends
+from pydantic import BaseModel, EmailStr, Field
+from passlib.context import CryptContext
+from database import users_collection
+from user_mgmt_methods import create_access_token, verify_password, create_refresh_token
+from jose import JWTError, jwt
+import logging
 
 app = FastAPI()
 
@@ -19,47 +26,94 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
-# Define login & logout request models
-class LoginRequest(BaseModel):
-    email: str  # Changed from username to email
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# JWT Secret & Algorithm
+SECRET_KEY = "E-learningplatform2k25" 
+ALGORITHM = "HS256"
+
+# User Registration Model
+class UserRegister(BaseModel):
+    full_name: str = Field(..., min_length=3, max_length=50, pattern="^[A-Za-z ]+$")
+    username: str = Field(..., min_length=3, max_length=20, pattern="^[a-zA-Z0-9_]+$")
+    password: str
+    email: EmailStr
+    education_level: str
+    
+# User Login Model
+class UserLogin(BaseModel):
+    email: EmailStr
     password: str
 
-class LogoutRequest(BaseModel):
-    token: str
+# Create User Route
+@app.post("/register")
+def register_user(user: UserRegister):
+    hashed_password = pwd_context.hash(user.password)
+
+    existing_user = users_collection.find_one({"$or": [{"username": user.username}, {"email": user.email}]})
+    if existing_user:
+        logging.error(f"🚫 Username or email already exists: {user.username}, {user.email}")
+        raise HTTPException(status_code=400, detail="Username or email already exists") 
+        
+    new_user = {
+        "username": user.username,
+        "password": hashed_password,
+        "email": user.email,
+        "full_name": user.full_name,
+        "education_level": user.education_level,
+        "performance": {  # Track accuracy & time for each difficulty level
+            "total_quizzes": 0,
+            "accuracy_easy": 0, "accuracy_medium": 0, "accuracy_hard": 0,
+            "time_easy": 0, "time_medium": 0, "time_hard": 0,
+            "strongest_area": None, "weakest_area": None,
+            "last_10_quizzes": [],
+            "consistency_score": 0
+        }
+    }
+    result = users_collection.insert_one(new_user)
+    return {"message": "User registered successfully!", "user_id": str(result.inserted_id)}
 
 
-# User Routes
-@app.post("/users/", status_code=status.HTTP_201_CREATED)
-def create_user(user: UserCreate):
-    return user_service.create_user(user)
-
-@app.get("/users/{email}")
-def get_user(email: str):
-    user = user_service.get_user(email)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    return user
-
-@app.put("/users/{email}")
-def update_user(email: str, user_update: UserUpdate):
-    return user_service.update_user(email, user_update)
-
-@app.delete("/users/{email}")
-def delete_user(email: str):
-    result = user_service.delete_user(email)
-    if "error" in result:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=result["error"])
-    return {"message": "User deleted successfully"}
-
-
+# Login Route with Refresh Token
 @app.post("/login")
-def login(user: LoginRequest):
-    token = user_service.login(user.email, user.password)
-    if not token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
-    return {"access_token": token, "token_type": "bearer"}
+def login_user(user: UserLogin, response: Response):
+    existing_user = users_collection.find_one({"email": user.email})
+    
+    if not existing_user or not verify_password(user.password, existing_user["password"]):
+        logging.error(f"🚫 Invalid email or password: {user.email}")
+        raise HTTPException(status_code=401, detail="Invalid email or password")
 
-@app.post("/logout")
-def logout(logout_data: LogoutRequest):
-    user_service.logout(logout_data.token)
-    return {"message": "User logged out successfully"}
+    access_token = create_access_token(data={"sub": str(existing_user["_id"]), "username": existing_user["username"]})
+    refresh_token = create_refresh_token(data={"sub": str(existing_user["_id"])})
+
+    # Store Refresh Token in HTTP-only cookie
+    response.set_cookie(key="refresh_token", value=refresh_token, httponly=True, samesite="Lax")
+
+    return {
+        "message": "Login successful",
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "user_id": str(existing_user["_id"]),
+        "username": existing_user["username"]
+    }
+
+# refresh token route
+@app.post("/refresh")
+def refresh_token(data: dict):
+    refresh_token = data.get("refresh_token")  # Read from request body
+
+    if not refresh_token:
+        logging.error("🚫 No refresh token provided")
+        raise HTTPException(status_code=401, detail="No refresh token provided")
+
+    try:
+        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("sub")
+        new_access_token = create_access_token(data={"sub": user_id})
+        
+        return {"access_token": new_access_token, "token_type": "bearer"}
+    except JWTError:
+        logging.error("🚫 Invalid or expired refresh token")
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+
