@@ -1,5 +1,6 @@
-from fastapi import FastAPI, UploadFile, Form, Request, BackgroundTasks, HTTPException
+from fastapi import FastAPI, UploadFile, Form, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from summarization_functions import process_document_function
 from summarization_functions import process_query_function
 from summarization_functions import summarize_text_function
@@ -10,7 +11,6 @@ from summarization_functions import get_pdf_file
 from rag import RAGModel
 import yaml
 import logging
-from fastapi.responses import JSONResponse
 
 
 # Load logging configuration

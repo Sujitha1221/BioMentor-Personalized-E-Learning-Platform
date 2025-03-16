@@ -10,7 +10,7 @@ import hashlib
 import asyncio
 from fastapi import Request, BackgroundTasks
 from fastapi import FastAPI, UploadFile, Form, HTTPException
-from fastapi.responses import StreamingResponse, FileResponse, JSONResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -441,7 +441,8 @@ async def generate_notes(
 
     # If a previous task exists for this topic, cancel it
     if task_id in ongoing_tasks:
-        logger.warning(f"Previous request for '{topic}' in '{lang}' is still running. Cancelling old task.")
+        logger.warning(
+            f"Previous request for '{topic}' in '{lang}' is still running. Cancelling old task.")
         ongoing_tasks[task_id].cancel()
         del ongoing_tasks[task_id]
 
@@ -450,22 +451,26 @@ async def generate_notes(
             logger.info(f"Generating structured notes for topic: {topic}")
 
             # Step 1: Check for inappropriate content
-            inappropriate_message = rag_model.contains_inappropriate_content(topic)
+            inappropriate_message = rag_model.contains_inappropriate_content(
+                topic)
             if inappropriate_message:
                 logger.warning(f"Inappropriate topic detected: {topic}")
-                raise HTTPException(status_code=400, detail=inappropriate_message)
+                raise HTTPException(
+                    status_code=400, detail=inappropriate_message)
 
             # Step 2: Retrieve relevant content
             relevant_texts = rag_model.retrieve_relevant_content(topic)
             if not relevant_texts or relevant_texts == "No relevant content found":
-                raise HTTPException(status_code=404, detail="No relevant content found.")
+                raise HTTPException(
+                    status_code=404, detail="No relevant content found.")
 
             # Step 3: Clean and format the text
             combined_text = " ".join(relevant_texts)
             cleaned_text = rag_model._correct_and_format_text(combined_text)
 
             # Step 4: Generate structured notes
-            structured_notes = rag_model.generate_structured_notes(cleaned_text, topic)
+            structured_notes = rag_model.generate_structured_notes(
+                cleaned_text, topic)
 
             # Step 5: Translate if necessary
             if lang in ["ta", "si"]:
@@ -474,7 +479,8 @@ async def generate_notes(
             else:
                 lang_name = "English"
 
-            logger.info(f"Structured notes generated (first 100 chars): {structured_notes[:100]}...")
+            logger.info(
+                f"Structured notes generated (first 100 chars): {structured_notes[:100]}...")
 
             # Step 6: Conditional PDF Generation (Only for English)
             if lang_name == "English":
@@ -517,9 +523,11 @@ async def generate_notes(
 
         except Exception as e:
             """ Handle unexpected errors and return a detailed message """
-            logging.error(f"Unexpected error generating notes for '{topic}' in '{lang}': {e}", exc_info=True)
+            logging.error(
+                f"Unexpected error generating notes for '{topic}' in '{lang}': {e}", exc_info=True)
             del ongoing_tasks[task_id]
-            raise HTTPException(status_code=500, detail=str(e))  # Returns actual error message
+            # Returns actual error message
+            raise HTTPException(status_code=500, detail=str(e))
 
     # Run the process in the background
     task = asyncio.create_task(process())
