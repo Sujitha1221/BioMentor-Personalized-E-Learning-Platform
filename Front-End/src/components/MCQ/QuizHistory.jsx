@@ -191,7 +191,7 @@ const QuizHistory = () => {
       <RetryQuizModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        onConfirm={handleRetryQuiz}
+        onConfirm={() => handleRetryQuiz(selectedQuizId)} // ✅ Wrap in a function
       />
     </div>
   );

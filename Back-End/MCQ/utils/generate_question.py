@@ -3,8 +3,10 @@ import logging
 import faiss
 import numpy as np
 import pandas as pd
+import redis
+import json
 from sentence_transformers import SentenceTransformer
-from utils.quiz_generation_methods import assign_difficulty_parameter, assign_discrimination_parameter, retrieve_context_questions,is_similar_to_same_quiz_questions, is_similar_to_past_quiz_questions, is_question_too_similar
+from utils.quiz_generation_methods import assign_difficulty_parameter, assign_discrimination_parameter, retrieve_context_questions,is_similar_to_same_quiz_questions, is_similar_to_past_quiz_questions, fetch_questions_from_db
 from routes.response_routes import estimate_student_ability
 
 # Load Sentence Transformer model
@@ -16,7 +18,9 @@ embeddings_matrix = np.load("dataset/question_embeddings.npy")
 dataset = pd.read_csv("dataset/question_dataset_with_clusters.csv")
 
 # Google Colab API Endpoint
-COLAB_API_URL = "https://852a-35-185-179-50.ngrok-free.app/generate_mcq"
+COLAB_API_URL = "https://1c75-35-247-107-19.ngrok-free.app/generate_mcq"
+
+mcq_cache = {}
 
 # Method to generate MCQs with unique context
 def generate_mcq(difficulty, user_id, max_retries=3):  # 🔥 Reduced retries to 3
@@ -100,73 +104,42 @@ def generate_mcq(difficulty, user_id, max_retries=3):  # 🔥 Reduced retries to
                 continue
 
             question_data = data["mcq"]
-            
-            # ✅ Handle API errors in response
-            if "error" in question_data:
-                logging.warning(f"⚠ MCQ API Error: {question_data['error']}. Retrying...")
-                retries += 1
-                continue
-
-            # ✅ Ensure the question exists and isn't a placeholder
             question_text = question_data.get("question", "").strip()
-            if not question_text or "<Generated Question>" in question_text:
-                logging.warning(f"⚠ Malformed MCQ detected: {question_data}. Retrying...")
-                retries += 1
-                continue
             
-            # ✅ Ensure question is NOT a duplicate within the same quiz
-            if question_text in generated_questions:
-                logging.warning(f"🚫 Skipping duplicate question in the same quiz: {question_text}")
-                retries += 1
-                continue 
-            
-            # ✅ Ensure question is NOT too similar to any generated question in the same quiz
-            if is_similar_to_same_quiz_questions(question_text, generated_questions, threshold=0.75):
-                logging.warning(f"⚠ Similar to existing quiz question: {question_text}, retrying...")
+            # ✅ Common invalid conditions
+            invalid_conditions = [
+                "error" in question_data,  # API returned an error
+                not question_text or "<Generated Question>" in question_text,  # Placeholder or missing question
+                question_text in generated_questions,  # Duplicate question in the same quiz
+                is_similar_to_same_quiz_questions(question_text, generated_questions, threshold=0.75),  # Too similar
+                "Generate a" in question_text or "is a **hard** level MCQ" in question_text  # Malformed question
+            ]
+
+            if any(invalid_conditions):
+                logging.warning(f"⚠ Invalid or duplicate MCQ detected: {question_text}. Retrying...")
                 retries += 1
                 continue  
-            
-            if "Generate a" in question_text or "is a **hard** level MCQ" in question_text:
-                logging.warning(f"⚠ Invalid MCQ question detected: {question_text}. Retrying...")
-                retries += 1
-                continue  # Regenerate the question
-
 
             # ✅ Ensure answer choices are unique
             options = question_data.get("options", {})
-            
-            if any("<Option" in opt for opt in options.values()):
-                logging.warning(f"⚠ Placeholder detected in options: {options}. Retrying...")
-                retries += 1
-                continue 
-            
-            # Check if all options are provided and non-empty
-            if len(options) < 5 or any(not opt.strip() for opt in options.values()):
-                logging.warning(f"⚠ Some answer choices are missing or empty: {options}. Retrying...")
-                retries += 1
-                continue  # Try generating a new question
-            
-            if len(set(options.values())) < 5:  # 🔥 Check for duplicate answers
-                logging.warning(f"⚠ Duplicate answer choices detected: {options}")
-                retries += 1
-                continue  
-            
-            if "<Insert Correct Answer Here>" in options.values():
-                logging.warning(f"⚠ Placeholder detected in options: {options}. Retrying...")
-                retries += 1
-                continue  # Regenerate the question
+            # ✅ Consolidated Option Validation
+            invalid_conditions = [
+                any("<Option" in opt for opt in options.values()),  # Placeholder options
+                len(options) < 5,  # Not enough answer choices
+                any(not opt.strip() for opt in options.values()),  # Empty options
+                len(set(options.values())) < 5,  # Duplicate answer choices
+                "<Insert Correct Answer Here>" in options.values()  # Placeholder correct answer
+            ]
 
+            if any(invalid_conditions):
+                logging.warning(f"⚠ Invalid options detected: {options}. Retrying...")
+                retries += 1
+                continue
 
             # ✅ Ensure correct answer exists and is valid
             correct_answer = question_data.get("correct_answer", "").strip()
             if correct_answer not in ["A", "B", "C", "D", "E"] or options.get(correct_answer, "") not in options.values():
                 logging.warning(f"⚠ Incorrect correct answer: {correct_answer} not in {options}")
-                retries += 1
-                continue  
-
-            # ✅ Ensure question is unique (Avoid FAISS similarity failures)
-            if is_question_too_similar(question_text):
-                logging.warning(f"⚠ Too Similar: {question_text}")
                 retries += 1
                 continue  
 
@@ -194,14 +167,11 @@ def generate_mcq(difficulty, user_id, max_retries=3):  # 🔥 Reduced retries to
     logging.error("❌ Failed to generate a unique MCQ after multiple attempts.")
     return None  # 🔥 Return None instead of an error
 
-
 def generate_mcq_based_on_performance(user_id, difficulty, max_retries=5):
     """Generates a new MCQ dynamically based on user's past performance and assigns IRT parameters using ability level."""
     retries = 0
     generated_questions = set()
     logging.info(f"🎯 Attempting to generate an MCQ for difficulty: {difficulty}")
-        
-    
     while retries < max_retries:
         # ✅ Fetch user ability
         theta = estimate_student_ability(user_id) or 0.0  # Default if None
@@ -280,67 +250,37 @@ def generate_mcq_based_on_performance(user_id, difficulty, max_retries=5):
                 continue
 
             question_data = data["mcq"]
-
-            # ✅ Handle API errors in response
-            if "error" in question_data:
-                logging.warning(f"⚠ MCQ API Error: {question_data['error']}. Retrying...")
-                retries += 1
-                continue
-
-            # ✅ Ensure the question exists and isn't a placeholder
             question_text = question_data.get("question", "").strip()
-            if not question_text or "<Generated Question>" in question_text:
-                logging.warning(f"⚠ Malformed MCQ detected: {question_data}. Retrying...")
-                retries += 1
-                continue
             
-            # ✅ Ensure question is NOT a duplicate within the same quiz
-            if question_text in generated_questions:
-                logging.warning(f"🚫 Skipping duplicate question in the same quiz: {question_text}")
+            # ✅ Common invalid conditions
+            invalid_conditions = [
+                "error" in question_data,  # API returned an error
+                not question_text or "<Generated Question>" in question_text,  # Placeholder or missing question
+                question_text in generated_questions,  # Duplicate question in the same quiz
+                is_similar_to_same_quiz_questions(question_text, generated_questions, threshold=0.75),  # Too similar
+                is_similar_to_past_quiz_questions(question_text, user_id, threshold=0.75),
+            ]
+
+            if any(invalid_conditions):
+                logging.warning(f"⚠ Invalid or duplicate MCQ detected: {question_text}. Retrying...")
                 retries += 1
-                continue 
-            
-            # ✅ Ensure question is NOT too similar to any generated question in the same quiz
-            if is_similar_to_same_quiz_questions(question_text, generated_questions, threshold=0.75):
-                logging.warning(f"⚠ Similar to existing quiz question: {question_text}, retrying...")
-                retries += 1
-                continue  
-            
-            # ✅ Ensure question is NOT too similar to past quiz questions
-            if is_similar_to_past_quiz_questions(question_text, user_id, threshold=0.75):
-                logging.warning(f"⚠ Similar to past quiz question: {question_text}, retrying...")
-                retries += 1
-                continue  
-            
-            # ✅ Ensure question is unique (Avoid FAISS similarity failures)
-            if is_question_too_similar(question_text):
-                logging.warning(f"⚠ Too Similar: {question_text}")
-                retries += 1
-                continue  
+                continue    
 
             # ✅ Ensure answer choices are unique
             options = question_data.get("options", {})
-            
-            if any("<Option" in opt for opt in options.values()):
-                logging.warning(f"⚠ Placeholder detected in options: {options}. Retrying...")
+            # ✅ Consolidated Option Validation
+            invalid_conditions = [
+                any("<Option" in opt for opt in options.values()),  # Placeholder options
+                len(options) < 5,  # Not enough answer choices
+                any(not opt.strip() for opt in options.values()),  # Empty options
+                len(set(options.values())) < 5,  # Duplicate answer choices
+                "<Insert Correct Answer Here>" in options.values()  # Placeholder correct answer
+            ]
+
+            if any(invalid_conditions):
+                logging.warning(f"⚠ Invalid options detected: {options}. Retrying...")
                 retries += 1
-                continue 
-            
-            # Check if all options are provided and non-empty
-            if len(options) < 5 or any(not opt.strip() for opt in options.values()):
-                logging.warning(f"⚠ Some answer choices are missing or empty: {options}. Retrying...")
-                retries += 1
-                continue  # Try generating a new question            
-            
-            if len(set(options.values())) < 5:  # 🔥 Check for duplicate answers
-                logging.warning(f"⚠ Duplicate answer choices detected: {options}")
-                retries += 1
-                continue  
-                
-            if "<Insert Correct Answer Here>" in options.values():
-                logging.warning(f"⚠ Placeholder detected in options: {options}. Retrying...")
-                retries += 1
-                continue  # Regenerate the question        
+                continue      
 
             # ✅ Ensure correct answer is valid
             correct_answer = question_data.get("correct_answer", "").strip()
@@ -362,7 +302,6 @@ def generate_mcq_based_on_performance(user_id, difficulty, max_retries=5):
             new_vector = embedding_model.encode([question_text]).astype(np.float32)
             index.add(new_vector)
             generated_questions.add(question_text)
-        
             logging.info(f"✅ Successfully generated MCQ: {question_data['question']}")
             return question_data
 
@@ -372,5 +311,10 @@ def generate_mcq_based_on_performance(user_id, difficulty, max_retries=5):
             retries += 1  # ✅ Make sure this line is indented properly
 
     logging.error("❌ Failed to generate a unique MCQ after multiple attempts.")
-    return None  # 🔥 Return None instead of an error
+    # ✅ Final fallback: Fetch from database
+    backup_question = fetch_questions_from_db(1)
+    if backup_question:
+        return backup_question[0]
+
+    return None 
 

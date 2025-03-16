@@ -32,48 +32,45 @@ class SubmitQuizRequest(BaseModel):
     responses: List[QuizResponse]  # ✅ Expect a list of QuizResponse objects
 
 def estimate_student_ability(user_id):
-    """Estimates student ability dynamically using correctness & response time."""
+    """Estimates student ability dynamically using accuracy & response time from the last 10 quizzes."""
     user_data = users_collection.find_one({"_id": ObjectId(user_id)})
     
     if not user_data or "performance" not in user_data or "last_10_quizzes" not in user_data["performance"]:
+        logging.error(f"❌ No performance data found for user {user_id}. Returning default ability.")
         return 0  # Default ability score
     
     responses = user_data["performance"]["last_10_quizzes"]
-    if not responses:
+    # logging.info(f"📥 Raw responses for user {user_id}: {responses}")
+
+    if not isinstance(responses, list):
+        logging.error(f"❌ Expected list for responses but got {type(responses)}: {responses}")
         return 0
 
-    # ✅ Count Correct Responses & Total Responses
-    correct_responses = sum([r["is_correct"] for quiz in responses for r in quiz])
-    total_responses = sum([len(quiz) for quiz in responses])
+    if not responses:
+        return 0  # No quizzes taken
 
-    if total_responses == 0:
-        return 0  # Avoid division by zero
+    # ✅ Compute Average Accuracy Across Last 10 Quizzes
+    total_accuracy = sum(quiz.get("accuracy", 0) for quiz in responses)
+    avg_accuracy = total_accuracy / len(responses) if responses else 0
 
-    # ✅ Compute Weighted Response Time (Higher Weight for Harder Questions)
-    easy_time = sum([r["time_taken"] for quiz in responses for r in quiz if r["difficulty"] == "easy"])
-    medium_time = sum([r["time_taken"] for quiz in responses for r in quiz if r["difficulty"] == "medium"])
-    hard_time = sum([r["time_taken"] for quiz in responses for r in quiz if r["difficulty"] == "hard"])
-
-    # ✅ Weighted average time for better accuracy
-    total_time = (easy_time * 0.5 + medium_time * 1.0 + hard_time * 1.5) 
-
-    # ✅ Compute Average Time Per Question
-    avg_time = total_time / total_responses
+    # ✅ Compute Weighted Average Time
+    total_time = sum(quiz.get("total_time", 0) for quiz in responses)
+    avg_time = total_time / len(responses) if responses else 0
 
     # ✅ Adjust Time-Based Penalty Dynamically
-    if avg_time < 3:  
+    if avg_time < 3:
         time_penalty = 0.3  # 🚨 Very fast responses (possible guessing)
-    elif 3 <= avg_time < 7:  
+    elif 3 <= avg_time < 7:
         time_penalty = 0.2  # ⚠ Slightly too fast  
-    elif 7 <= avg_time < 90:  
+    elif 7 <= avg_time < 90:
         time_penalty = 0.0  # ✅ Normal thoughtful response  
-    elif 90 <= avg_time < 120:  
+    elif 90 <= avg_time < 120:
         time_penalty = 0.1  # 🕒 Slightly long  
-    else:  
-        time_penalty = 0.2  # ⏳ Very long (possible distractions, not thinking about the quiz)
+    else:
+        time_penalty = 0.2  # ⏳ Very long (possible distractions)
 
-    # ✅ Apply IRT-Based Ability Estimation Formula
-    ability = np.log(correct_responses / max(1, (total_responses - correct_responses + 1))) - time_penalty
+    # ✅ Apply Ability Estimation Formula
+    ability = np.log(avg_accuracy / max(1, (100 - avg_accuracy + 1))) - time_penalty
 
     return round(ability, 2)
 

@@ -6,7 +6,6 @@ from fastapi import APIRouter, HTTPException, Depends
 from utils.user_mgmt_methods import get_current_user
 from database.database import quizzes_collection, users_collection
 from utils.generate_question import generate_mcq
-from utils.quiz_generation_methods import is_similar_to_same_quiz_questions
 
 router = APIRouter()
 
@@ -59,11 +58,6 @@ def generate_quiz(user_id: str, current_user: str = Depends(get_current_user)):
                     logging.warning(f"🚫 Duplicate detected within the same quiz: {mcq['question']}, retrying...")
                     failed_attempts += 1
                     continue
-                
-                if is_similar_to_same_quiz_questions(mcq["question"], current_quiz_questions, threshold=0.75):
-                    logging.warning(f"⚠ Too similar to an existing quiz question: {mcq['question']}, retrying...")
-                    failed_attempts += 1
-                    continue  
 
                 # ✅ Successfully generated a question, add to the list
                 formatted_mcq = {

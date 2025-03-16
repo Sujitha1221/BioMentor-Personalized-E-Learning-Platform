@@ -5,8 +5,10 @@ from bson import ObjectId
 from fastapi import APIRouter, HTTPException, Depends
 from utils.user_mgmt_methods import get_current_user
 from database.database import quizzes_collection, users_collection
-from utils.quiz_generation_methods import get_seen_questions, get_irt_based_difficulty_distribution, is_similar_to_past_quiz_questions, is_similar_to_same_quiz_questions
+from utils.quiz_generation_methods import fetch_questions_from_db, get_irt_based_difficulty_distribution
 from utils.generate_question import generate_mcq_based_on_performance
+import traceback
+import sys
 
 router = APIRouter()
 
@@ -15,23 +17,29 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 @router.get("/generate_adaptive_mcqs/{user_id}/{question_count}")
 def generate_next_quiz(user_id: str, question_count: int, current_user: str = Depends(get_current_user)):
-    """
-    Generate a new adaptive quiz based on user's previous performance.
-    Instead of selecting from a pre-existing database, new questions are generated dynamically.
-    """
+    """Generate a new adaptive quiz based on user's previous performance."""
     try:
+        logging.info(f"📝 Starting adaptive quiz generation for user {user_id} with {question_count} questions...")
+        sys.stdout.flush()  # Force log flushing
+
         existing_user = users_collection.find_one({"_id": ObjectId(user_id)})
         if not existing_user:
+            logging.error("❌ User not found")
+            sys.stdout.flush()
             raise HTTPException(status_code=404, detail="User not found. Please register before generating a quiz.")
         
         if current_user != user_id:
+            logging.error("❌ Unauthorized access")
+            sys.stdout.flush()
             raise HTTPException(status_code=403, detail="Unauthorized access")
 
-        logging.info(f"📝 Generating adaptive quiz for user {user_id}...")
-    
-        # ✅ Fetch user's past performance
+        logging.info("✅ User found, fetching past performance...")
+        sys.stdout.flush()
+
         difficulty_distribution = get_irt_based_difficulty_distribution(user_id, question_count)
-        seen_questions = get_seen_questions(user_id)  # ✅ Fetch previous questions using "question_text"
+        logging.info(f"📊 Difficulty distribution: {difficulty_distribution}")
+        sys.stdout.flush()
+
         current_quiz_questions = set()
         mcqs = []
 
@@ -39,81 +47,59 @@ def generate_next_quiz(user_id: str, question_count: int, current_user: str = De
             generated = 0
             failed_attempts = 0  
             while generated < count:
-                # ✅ Generate new question dynamically based on user performance
+                logging.info(f"⚙️ Generating MCQ (Difficulty: {difficulty}) - Attempt {generated + 1}/{count}")
+                sys.stdout.flush()
+
                 mcq = generate_mcq_based_on_performance(user_id, difficulty)
-                
-                # ✅ Log response for debugging
+
                 logging.info(f"📩 Received MCQ response: {mcq}")
-                
-                # ✅ Validate MCQ before using
+                sys.stdout.flush()
+
                 if not mcq or not isinstance(mcq, dict) or "question" not in mcq:
                     failed_attempts += 1
-                    logging.warning(f"⚠ Failed MCQ generation for {difficulty}. Retrying... ({failed_attempts}/3)")
+                    logging.warning(f"⚠️ Failed MCQ generation for {difficulty}. Retrying... ({failed_attempts}/3)")
+                    sys.stdout.flush()
 
-                    if failed_attempts >= 3:  # 🔥 Reduced from 5 → 3 retries
+                    if failed_attempts >= 3:
                         logging.error(f"❌ Skipping {difficulty} MCQ after 3 failed attempts.")
+                        sys.stdout.flush()
                         break  # Move to the next difficulty level
                     
                     continue  # Retry another question
                 
-                # ✅ Convert to "question_text" format for consistency
                 mcq_text = mcq["question"]
 
-                # ✅ Check for duplicate questions from past quizzes
-                if mcq_text in seen_questions:
-                    logging.warning(f"🚫 Duplicate detected in past quizzes: {mcq_text}, retrying...")
-                    failed_attempts += 1
-                    continue
-                
-                # ✅ Check if question is already generated in the same quiz
                 if mcq_text in current_quiz_questions:
-                    logging.warning(f"🚫 Duplicate detected within the same quiz: {mcq_text}, retrying...")
+                    logging.warning(f"🚫 Duplicate detected: {mcq_text}, retrying...")
                     failed_attempts += 1
+                    sys.stdout.flush()
                     continue
-                
-                if is_similar_to_same_quiz_questions(mcq_text, current_quiz_questions, threshold=0.75):
-                    logging.warning(f"⚠ Too similar to an existing quiz question: {mcq_text}, retrying...")
-                    failed_attempts += 1
-                    continue  
-                
-                # ✅ Ensure new question is NOT too similar to any past quiz question
-                if is_similar_to_past_quiz_questions(mcq_text, user_id, threshold=0.75):
-                    logging.warning(f"⚠ Too similar to a past quiz question: {mcq_text}, retrying...")
-                    failed_attempts += 1
-                    continue  
-                
-                # ✅ Ensure question is unique
-                if mcq and mcq_text not in seen_questions:
-                    formatted_mcq = {
-                        "question_text": mcq_text,  # ✅ Save as "question_text" for database consistency
-                        "option1": mcq.get("options", {}).get("A", "N/A"),
-                        "option2": mcq.get("options", {}).get("B", "N/A"),
-                        "option3": mcq.get("options", {}).get("C", "N/A"),
-                        "option4": mcq.get("options", {}).get("D", "N/A"),
-                        "option5": mcq.get("options", {}).get("E", "N/A"),
-                        "correct_answer": mcq.get("correct_answer", "N/A"),
-                        "difficulty": difficulty
-                    }
-                    mcqs.append(formatted_mcq)
-                    seen_questions.add(mcq_text)  # ✅ Add to seen_questions
-                    current_quiz_questions.add(mcq_text)  # ✅ Add to current quiz
-                    generated += 1
-                    
 
-        # ✅ Ensure we have the correct number of questions
+                formatted_mcq = {
+                    "question_text": mcq_text,
+                    "option1": mcq.get("options", {}).get("A", "N/A"),
+                    "option2": mcq.get("options", {}).get("B", "N/A"),
+                    "option3": mcq.get("options", {}).get("C", "N/A"),
+                    "option4": mcq.get("options", {}).get("D", "N/A"),
+                    "option5": mcq.get("options", {}).get("E", "N/A"),
+                    "correct_answer": mcq.get("correct_answer", "N/A"),
+                    "difficulty": difficulty
+                }
+
+                mcqs.append(formatted_mcq)
+                current_quiz_questions.add(mcq_text)
+                generated += 1
+                sys.stdout.flush()
+
         if len(mcqs) < question_count:
-            remaining_questions_needed = question_count - len(mcqs)
-            logging.warning(f"⚠ Not enough new questions generated. Fetching {remaining_questions_needed} from database.")
-            
-            available_questions = list(quizzes_collection.find({"user_id": user_id}))
-            for stored_quiz in available_questions:
-                for question in stored_quiz["questions"]:
-                    if question["question_text"] not in seen_questions and len(mcqs) < question_count:
-                        mcqs.append(question)
-                        seen_questions.add(question["question_text"])
+            remaining_needed = question_count - len(mcqs)
+            logging.warning(f"⚠ Not enough questions generated. Fetching {remaining_needed} from DB.")
+            sys.stdout.flush()
 
-        quiz_id = str(uuid.uuid4())  # Unique quiz session ID
+            db_questions = fetch_questions_from_db(remaining_needed)
+            mcqs.extend(db_questions)
 
+        quiz_id = str(uuid.uuid4())
         quiz_data = {
             "quiz_id": quiz_id,
             "user_id": user_id,
@@ -122,11 +108,17 @@ def generate_next_quiz(user_id: str, question_count: int, current_user: str = De
             "created_at": time.time(),
         }
 
-        # ✅ Save the adaptive quiz in quizzes_collection
+        logging.info("🛠️ Saving quiz to the database...")
+        sys.stdout.flush()
         quizzes_collection.insert_one(quiz_data)
+        
+        logging.info(f"✅ Quiz generated successfully! Quiz ID: {quiz_id}")
+        sys.stdout.flush()
 
         return {"quiz_id": quiz_id, "total_questions": len(mcqs), "mcqs": mcqs}
 
     except Exception as e:
         logging.error(f"🔥 Error generating adaptive quiz: {str(e)}")
+        logging.error(traceback.format_exc())
+        sys.stdout.flush()
         raise HTTPException(status_code=500, detail=str(e))

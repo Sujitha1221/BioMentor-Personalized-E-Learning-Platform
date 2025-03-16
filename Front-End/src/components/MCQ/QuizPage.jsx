@@ -174,9 +174,9 @@ const QuizPage = () => {
   }, [timer]);
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center sm:mt-0 lg:mt-20 bg-gradient-to-br from-gray-100 to-gray-50 text-gray-900 p-5">
+    <div className="min-h-screen flex flex-col sm:flex-row justify-center items-start sm:items-center sm:mt-0 lg:mt-20 bg-gradient-to-br from-gray-100 to-gray-50 text-gray-900 p-5">
       <motion.div
-        className="max-w-2xl w-full bg-white p-8 rounded-2xl shadow-xl border border-gray-300"
+        className="w-full sm:w-3/4 bg-white p-8 rounded-2xl shadow-xl border border-gray-300"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -266,6 +266,29 @@ const QuizPage = () => {
           )}
         </div>
       </motion.div>
+      <div className="w-full sm:w-1/4 bg-white p-6 rounded-lg shadow-lg sm:ml-6 sm:mt-[-400px]">
+        <h2 className="text-lg font-semibold text-gray-800 text-center mb-4">
+          Questions
+        </h2>
+        <div className="grid grid-cols-5 sm:grid-cols-4 gap-2">
+          {questions.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentQuestionIndex(index)}
+              className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-bold ${
+                currentQuestionIndex === index
+                  ? "bg-blue-500 text-white"
+                  : answers[index]
+                  ? "bg-green-500 text-white"
+                  : "bg-gray-300 hover:bg-gray-400"
+              }`}
+            >
+              {index + 1}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <SubmitConfirmationModal
         isOpen={showSubmitModal}
         onClose={() => setShowSubmitModal(false)}

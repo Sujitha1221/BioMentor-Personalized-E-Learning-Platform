@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import api from "../../axios/api.js";
 import LoadingScreen from "../loadingPage/LoadingScreen";
-import SubmitConfirmationModal from "../models/ConfirmationModal.jsx"; // ✅ Import Submit Modal
+import SubmitConfirmationModal from "../models/ConfirmationModal.jsx";
 
 const TopicBasedQuizPage = () => {
   const location = useLocation();
@@ -17,12 +17,12 @@ const TopicBasedQuizPage = () => {
   const [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(true);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [showSubmitModal, setShowSubmitModal] = useState(false); // ✅ Modal State
-  const [isSubmitting, setIsSubmitting] = useState(false); // ✅ Loading State
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!quizId) {
-      navigate("/topic-quizzes"); // Redirect if no quizId is found
+      navigate("/topic-quizzes");
       return;
     }
     fetchQuiz();
@@ -37,7 +37,7 @@ const TopicBasedQuizPage = () => {
       setQuiz(response.data);
     } catch (error) {
       console.error("Error fetching quiz:", error);
-      navigate("/topic-quizzes"); // Redirect if quiz is unavailable
+      navigate("/topic-quizzes");
     } finally {
       setLoading(false);
     }
@@ -51,7 +51,7 @@ const TopicBasedQuizPage = () => {
   };
 
   const handleSubmit = async () => {
-    setIsSubmitting(true); // ✅ Show Loading Button State
+    setIsSubmitting(true);
     try {
       const responses = quiz.questions.map((q, index) => ({
         question_text: q.question_text,
@@ -60,7 +60,7 @@ const TopicBasedQuizPage = () => {
       const requestData = {
         user_id: userId,
         quiz_id: quizId,
-        responses: responses,
+        responses,
       };
 
       await api.post(`/topic/questions/submit`, requestData, {
@@ -71,7 +71,7 @@ const TopicBasedQuizPage = () => {
     } catch (error) {
       console.error("Error submitting quiz:", error);
     } finally {
-      setIsSubmitting(false); // ✅ Hide Loading Button
+      setIsSubmitting(false);
     }
   };
 
@@ -94,11 +94,11 @@ const TopicBasedQuizPage = () => {
   const totalQuestions = quiz.questions.length;
 
   return (
-    <div className="min-h-screen mt-0 sm:mt-20 flex bg-gradient-to-br from-gray-100 to-gray-200 text-gray-900 p-5">
+    <div className="min-h-screen mt-0 sm:mt-20 flex flex-col sm:flex-row bg-gradient-to-br from-gray-100 to-gray-200 text-gray-900 p-4 sm:p-5">
       {/* Left: Question Section */}
-      <div className="w-3/4 flex flex-col justify-between bg-white p-6 rounded-lg shadow-lg">
+      <div className="w-full sm:w-3/4 flex flex-col justify-between bg-white p-6 rounded-lg shadow-lg mx-auto">
         <motion.h1
-          className="text-3xl font-extrabold text-indigo-700 text-center mb-6"
+          className="text-2xl sm:text-3xl font-extrabold text-indigo-700 text-center mb-4 sm:mb-6"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -108,15 +108,15 @@ const TopicBasedQuizPage = () => {
 
         {/* Question */}
         <div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3">
             {currentQuestionIndex + 1}. {currentQuestion.question_text}
           </h3>
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {Object.entries(currentQuestion.options).map(([letter, option]) => (
               <button
                 key={letter}
                 onClick={() => handleAnswerSelect(letter)}
-                className={`block w-full px-4 py-2 rounded-lg border transition-all text-left ${
+                className={`block w-full px-4 py-2 rounded-lg border transition-all text-left text-sm sm:text-base ${
                   answers[currentQuestionIndex] === letter
                     ? "bg-blue-500 text-white"
                     : "bg-gray-200 hover:bg-gray-300"
@@ -129,13 +129,13 @@ const TopicBasedQuizPage = () => {
         </div>
 
         {/* Navigation Buttons */}
-        <div className="flex justify-between mt-4">
+        <div className="flex justify-between mt-6">
           <button
             onClick={() =>
               setCurrentQuestionIndex((prev) => Math.max(prev - 1, 0))
             }
             disabled={currentQuestionIndex === 0}
-            className={`px-6 py-3 rounded-lg font-semibold text-lg transition-all ${
+            className={`px-4 py-2 sm:px-6 sm:py-3 rounded-lg font-semibold text-sm sm:text-lg transition-all ${
               currentQuestionIndex === 0
                 ? "bg-gray-300 text-gray-600 cursor-not-allowed"
                 : "bg-indigo-500 text-white hover:bg-indigo-700"
@@ -147,14 +147,14 @@ const TopicBasedQuizPage = () => {
           {currentQuestionIndex < totalQuestions - 1 ? (
             <button
               onClick={() => setCurrentQuestionIndex((prev) => prev + 1)}
-              className="px-6 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-800 text-white font-semibold text-lg transition-all"
+              className="px-4 py-2 sm:px-6 sm:py-3 rounded-lg bg-indigo-600 hover:bg-indigo-800 text-white font-semibold text-sm sm:text-lg transition-all"
             >
               Next
             </button>
           ) : (
             <button
-              onClick={confirmSubmit} // ✅ Show Confirmation Modal
-              className="px-6 py-3 rounded-lg bg-green-600 hover:bg-green-800 text-white font-semibold text-lg transition-all"
+              onClick={confirmSubmit}
+              className="px-4 py-2 sm:px-6 sm:py-3 rounded-lg bg-green-600 hover:bg-green-800 text-white font-semibold text-sm sm:text-lg transition-all"
             >
               Submit Quiz
             </button>
@@ -163,16 +163,16 @@ const TopicBasedQuizPage = () => {
       </div>
 
       {/* Right: Question Navigation Panel */}
-      <div className="w-1/4 ml-6 bg-white p-6 rounded-lg shadow-lg flex flex-col space-y-3">
-        <h2 className="text-lg font-semibold text-gray-800 text-center mb-4">
+      <div className="w-full sm:w-1/4 mt-6 sm:mt-0 sm:ml-6 bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-800 text-center mb-4">
           Questions
         </h2>
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-5 sm:grid-cols-4 gap-2">
           {quiz.questions.map((_, index) => (
             <button
               key={index}
               onClick={() => setCurrentQuestionIndex(index)}
-              className={`px-4 py-2 rounded-lg text-sm font-bold ${
+              className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-bold ${
                 currentQuestionIndex === index
                   ? "bg-blue-500 text-white"
                   : answers[index]
@@ -186,7 +186,7 @@ const TopicBasedQuizPage = () => {
         </div>
       </div>
 
-      {/* ✅ Submit Confirmation Modal */}
+      {/* Submit Confirmation Modal */}
       <SubmitConfirmationModal
         isOpen={showSubmitModal}
         onClose={() => setShowSubmitModal(false)}

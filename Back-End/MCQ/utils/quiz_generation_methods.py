@@ -78,31 +78,7 @@ def assign_discrimination_parameter():
     """Assigns a discrimination parameter (a) randomly within a reasonable range."""
     return random.uniform(0.5, 2.0)  # Higher a values indicate better question discrimination
 
-# Method to check if a question is too similar to existing ones
-def is_question_too_similar(new_question, threshold=0.8):
-    """Check if a generated MCQ is too similar to existing ones using FAISS & text similarity."""
-    query_vector = embedding_model.encode([new_question]).astype(np.float32)
-    
-    if index.ntotal == 0:
-        return False  # No stored questions, so no risk of duplicates
-    
-    # 🔹 Step 1: FAISS Similarity Search
-    D, I = index.search(query_vector, k=3)  # Retrieve top-3 closest MCQs
-    similarity_score = 1 / (1 + D[0][0])  # Convert L2 distance to similarity
-
-    if similarity_score > threshold:
-        return True  # Already too similar based on FAISS
-    
-    # 🔹 Step 2: Text-Based Cosine Similarity (To detect reworded questions)
-    similar_questions = [dataset.iloc[i]["Question Text"] for i in I[0] if 0 <= i < len(dataset)]
-    similar_vectors = embedding_model.encode(similar_questions)
-    new_vector = embedding_model.encode([new_question])
-
-    cosine_sim = cosine_similarity(new_vector, similar_vectors).max()
-    
-    return cosine_sim > 0.85  # Adjust threshold as needed
-
-def is_similar_to_same_quiz_questions(new_question, generated_questions, threshold=0.75):
+def is_similar_to_same_quiz_questions(new_question, generated_questions, threshold=0.65):
     """Check if the generated question is similar to any question already generated in the same quiz."""
     
     if not generated_questions:
@@ -121,7 +97,7 @@ def is_similar_to_same_quiz_questions(new_question, generated_questions, thresho
 
     return False
 
-def is_similar_to_past_quiz_questions(new_question, user_id, threshold=0.75):
+def is_similar_to_past_quiz_questions(new_question, user_id, threshold=0.65):
     """Check if the generated question is similar to any question from past quizzes of the same user."""
     
     seen_questions = get_seen_questions(user_id)
@@ -144,57 +120,126 @@ def is_similar_to_past_quiz_questions(new_question, user_id, threshold=0.75):
 
 # Method to get IRT-based difficulty distribution for a user
 def get_irt_based_difficulty_distribution(user_id, total_questions):
-    """Dynamically adjusts quiz difficulty based on user performance trend."""
-    theta = estimate_student_ability(user_id)
+    """Dynamically adjusts quiz difficulty based on user performance trend and API success rate."""
+    theta = estimate_student_ability(user_id) or 0.0  # Default if None
     
-    # 🔹 Get user's last 5 quiz difficulties
+    # 🔹 Fetch recent quiz performance (last 3 quizzes)
     recent_quizzes = list(quizzes_collection.find(
         {"user_id": ObjectId(user_id)},
-        {"difficulty_distribution": 1}
-    ).sort("created_at", -1).limit(5))
+        {"difficulty_distribution": 1, "questions": 1}
+    ).sort("created_at", -1).limit(3))
 
-    if recent_quizzes:
-        avg_difficulty = np.mean([quiz["difficulty_distribution"].get("medium", 0) for quiz in recent_quizzes])
-    else:
-        avg_difficulty = 0.4  # Default to 40% medium if no past data
+    # Track how many correct answers per difficulty in recent quizzes
+    correct_easy = correct_medium = correct_hard = 0
+    total_easy = total_medium = total_hard = 1  # Avoid division by zero
     
-    # 🔹 Adjust difficulty ratios based on trend
-    if theta > 1.5:  
-        easy_ratio, medium_ratio, hard_ratio = 0.05, avg_difficulty, 0.55
-    elif theta > 0.5:  
-        easy_ratio, medium_ratio, hard_ratio = 0.15, avg_difficulty, 0.4
-    elif theta < -0.5:  
-        easy_ratio, medium_ratio, hard_ratio = 0.5, avg_difficulty, 0.2
+    for quiz in recent_quizzes:
+        for question in quiz["questions"]:
+            difficulty = question.get("difficulty", "medium")
+            is_correct = question.get("user_answered_correctly", False)
+            
+            if difficulty == "easy":
+                total_easy += 1
+                correct_easy += int(is_correct)
+            elif difficulty == "medium":
+                total_medium += 1
+                correct_medium += int(is_correct)
+            elif difficulty == "hard":
+                total_hard += 1
+                correct_hard += int(is_correct)
+
+    # Compute accuracy per difficulty level
+    easy_accuracy = correct_easy / total_easy
+    medium_accuracy = correct_medium / total_medium
+    hard_accuracy = correct_hard / total_hard
+
+    # Base ratios on user's performance
+    if easy_accuracy > 0.8:  # User is doing well on easy
+        easy_ratio = 0.1
+    elif easy_accuracy < 0.5:
+        easy_ratio = 0.4
     else:
-        easy_ratio, medium_ratio, hard_ratio = 0.3, avg_difficulty, 0.3
-    logging.info(f"📊 IRT Difficulty Ratios: Easy={round(easy_ratio * total_questions)}, Medium={round(medium_ratio * total_questions)}, Hard={total_questions - (round(easy_ratio * total_questions) + round(medium_ratio * total_questions))}")
+        easy_ratio = 0.2
+
+    if medium_accuracy > 0.7:
+        medium_ratio = 0.5
+    elif medium_accuracy < 0.4:
+        medium_ratio = 0.3
+    else:
+        medium_ratio = 0.4
+
+    if hard_accuracy > 0.6:  # User is improving in hard
+        hard_ratio = 0.4
+    else:
+        hard_ratio = 0.3 if hard_accuracy < 0.4 else 0.2  # Reduce hard if they are failing too much
+
+    # Ensure total = 100%
+    total_ratio = easy_ratio + medium_ratio + hard_ratio
+    easy_ratio /= total_ratio
+    medium_ratio /= total_ratio
+    hard_ratio /= total_ratio
+    
     return {
         "easy": round(easy_ratio * total_questions),
         "medium": round(medium_ratio * total_questions),
         "hard": total_questions - (round(easy_ratio * total_questions) + round(medium_ratio * total_questions))
     }
 
-# Method to get previous quiz questions of a user
-def get_seen_questions(user_id):
-    """Retrieve previously seen questions and exclude similar ones."""
-    
+def get_seen_questions(user_id, limit=2):
+    """
+    Retrieve previously seen questions efficiently.
+    Instead of fetching all quizzes, we only fetch the last `limit` quizzes.
+    """
     seen_questions = set()
     
-    # 🔹 Fetch past quizzes from the database
+    # 🔹 Fetch only the last `limit` quizzes (sorted by newest first)
     past_quizzes = list(quizzes_collection.find(
         {"user_id": user_id},
         {"questions.question_text": 1, "_id": 0}  
-    ))
+    ).sort("created_at", -1).limit(limit))  # ✅ Fetch only recent quizzes
 
-    logging.info(f"🔍 Found {len(past_quizzes)} past quizzes for user {user_id}")
+    logging.info(f"🔍 Found {len(past_quizzes)} recent quizzes for user {user_id}")
 
     for quiz in past_quizzes:
-        if "questions" in quiz:
-            for question in quiz["questions"]:
-                if "question_text" in question:  # ✅ Ensure field exists
-                    seen_questions.add(question["question_text"])
+        for question in quiz.get("questions", []):  # ✅ Use `.get()` to avoid KeyErrors
+            if "question_text" in question:
+                seen_questions.add(question["question_text"])
 
-    # logging.info(f"🔍 Fetched {len(seen_questions)} unique questions from past quizzes: {seen_questions}")
     return seen_questions
 
+def fetch_questions_from_db(count=1):
+    """
+    Fetch random MCQs from the database as a backup when API-generated MCQs fail.
+    """
+    try:
+        pipeline = [{"$sample": {"size": count}}]  # Random sampling in MongoDB
+        questions = list(quizzes_collection.aggregate(pipeline))
 
+        if not questions:
+            return []
+
+        formatted_questions = []
+        for question in questions:
+            for q in question.get("questions", []):  # Get questions from stored quizzes
+                formatted_questions.append({
+                    "question_text": q.get("question_text", "N/A"),
+                    "option1": q.get("option1", "N/A"),
+                    "option2": q.get("option2", "N/A"),
+                    "option3": q.get("option3", "N/A"),
+                    "option4": q.get("option4", "N/A"),
+                    "option5": q.get("option5", "N/A"),
+                    "correct_answer": q.get("correct_answer", "N/A"),
+                    "difficulty": q.get("difficulty", "medium"),
+                })
+                if len(formatted_questions) >= count:
+                    break  # Stop when required count is met
+
+        if not isinstance(formatted_questions, list):
+            logging.error(f"❌ Database returned invalid format: {formatted_questions}")
+            return []
+
+        return formatted_questions
+
+    except Exception as e:
+        logging.error(f"❌ Error fetching backup MCQs from DB: {e}")
+        return []
