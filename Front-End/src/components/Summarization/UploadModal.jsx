@@ -35,6 +35,7 @@ const UploadModal = ({ isOpen, onClose }) => {
   const [isMediaPlayerOpen, setIsMediaPlayerOpen] = useState(false);
   const [alert, setAlert] = useState({ message: "", type: "" });
   const [copied, setCopied] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
 
   const audioRef = useRef(null);
 
@@ -299,6 +300,12 @@ const UploadModal = ({ isOpen, onClose }) => {
     const vol = parseFloat(e.target.value);
     audioRef.current.volume = vol;
     setVolume(vol);
+  };
+
+  const handlePlaybackSpeedChange = (event) => {
+    const speed = parseFloat(event.target.value);
+    audioRef.current.playbackRate = speed;
+    setPlaybackSpeed(speed);
   };
 
   if (!isOpen) return null;
@@ -599,6 +606,25 @@ const UploadModal = ({ isOpen, onClose }) => {
                   onChange={handleVolumeChange}
                   className="w-20 accent-gray-800"
                 />
+              </div>
+
+              {/* Playback Speed Control (Focus on Slower and Faster Speeds) */}
+              <div className="mt-4 flex justify-center items-center gap-3">
+                <label className="text-sm font-semibold text-[#140342]">
+                  Speed:
+                </label>
+                <select
+                  value={playbackSpeed}
+                  onChange={handlePlaybackSpeedChange}
+                  className="border border-gray-300 rounded-md p-1 text-[#140342]"
+                >
+                  <option value="0.25">0.25x (Very Slow)</option>
+                  <option value="0.5">0.5x (Slow)</option>
+                  <option value="0.75">0.75x (Moderate)</option>
+                  <option value="1">1x (Normal)</option>
+                  <option value="1.5">1.5x (Fast)</option>
+                  <option value="2">2x (Very Fast)</option>
+                </select>
               </div>
             </div>
           </div>
