@@ -10,14 +10,15 @@ const QuestionAndAnsweringStudyMaterials = () => {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [studentId,setStudentId] = useState("")
+  const [studentId, setStudentId] = useState("")
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const storedStudentId = localStorage.getItem("user");
+        let storedStudentId = localStorage.getItem("user");
         if (storedStudentId) {
-            setStudentId(storedStudentId);
+          storedStudentId = JSON.parse(storedStudentId).email;
+          setStudentId(storedStudentId);
         }
         const response = await axios.post(`${QA_URL}/student-analytics`, {
           student_id: storedStudentId,
