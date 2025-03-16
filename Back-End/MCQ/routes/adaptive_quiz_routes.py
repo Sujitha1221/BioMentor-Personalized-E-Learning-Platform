@@ -24,16 +24,16 @@ def generate_next_quiz(user_id: str, question_count: int, current_user: str = De
 
         existing_user = users_collection.find_one({"_id": ObjectId(user_id)})
         if not existing_user:
-            logging.error("❌ User not found")
+            logging.error(" User not found")
             sys.stdout.flush()
             raise HTTPException(status_code=404, detail="User not found. Please register before generating a quiz.")
         
         if current_user != user_id:
-            logging.error("❌ Unauthorized access")
+            logging.error(" Unauthorized access")
             sys.stdout.flush()
             raise HTTPException(status_code=403, detail="Unauthorized access")
 
-        logging.info("✅ User found, fetching past performance...")
+        logging.info(" User found, fetching past performance...")
         sys.stdout.flush()
 
         difficulty_distribution = get_irt_based_difficulty_distribution(user_id, question_count)
@@ -61,7 +61,7 @@ def generate_next_quiz(user_id: str, question_count: int, current_user: str = De
                     sys.stdout.flush()
 
                     if failed_attempts >= 3:
-                        logging.error(f"❌ Skipping {difficulty} MCQ after 3 failed attempts.")
+                        logging.error(f" Skipping {difficulty} MCQ after 3 failed attempts.")
                         sys.stdout.flush()
                         break  # Move to the next difficulty level
                     
@@ -70,7 +70,7 @@ def generate_next_quiz(user_id: str, question_count: int, current_user: str = De
                 mcq_text = mcq["question"]
 
                 if mcq_text in current_quiz_questions:
-                    logging.warning(f"🚫 Duplicate detected: {mcq_text}, retrying...")
+                    logging.warning(f" Duplicate detected: {mcq_text}, retrying...")
                     failed_attempts += 1
                     sys.stdout.flush()
                     continue
@@ -112,13 +112,13 @@ def generate_next_quiz(user_id: str, question_count: int, current_user: str = De
         sys.stdout.flush()
         quizzes_collection.insert_one(quiz_data)
         
-        logging.info(f"✅ Quiz generated successfully! Quiz ID: {quiz_id}")
+        logging.info(f" Quiz generated successfully! Quiz ID: {quiz_id}")
         sys.stdout.flush()
 
         return {"quiz_id": quiz_id, "total_questions": len(mcqs), "mcqs": mcqs}
 
     except Exception as e:
-        logging.error(f"🔥 Error generating adaptive quiz: {str(e)}")
+        logging.error(f" Error generating adaptive quiz: {str(e)}")
         logging.error(traceback.format_exc())
         sys.stdout.flush()
         raise HTTPException(status_code=500, detail=str(e))

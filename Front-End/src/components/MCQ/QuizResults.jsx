@@ -16,7 +16,7 @@ const QuizResults = () => {
 
   // Initialize results state (null at start)
   const [results, setResults] = useState(null);
-  const [loading, setLoading] = useState(true); // ✅ Start with loading as true
+  const [loading, setLoading] = useState(true); //  Start with loading as true
 
   useEffect(() => {
     if (userId && quizId && attemptNumber) {
@@ -30,7 +30,7 @@ const QuizResults = () => {
   // Function to fetch attempt results from the backend
   const fetchAttemptResults = async () => {
     try {
-      setLoading(true); // ✅ Show loading when fetching data
+      setLoading(true); //  Show loading when fetching data
       const response = await api.get(
         `/responses/quiz_attempt_results/${userId}/${quizId}/${attemptNumber}`,
         {
@@ -40,15 +40,15 @@ const QuizResults = () => {
 
       if (response.data) {
         setResults(response.data);
-        localStorage.setItem("quizResults", JSON.stringify(response.data)); // ✅ Overwrite localStorage with fresh data
+        localStorage.setItem("quizResults", JSON.stringify(response.data)); //  Overwrite localStorage with fresh data
       } else {
         setResults(null);
       }
-      setLoading(false); // ✅ Stop loading after data is fetched
+      setLoading(false); //  Stop loading after data is fetched
     } catch (error) {
       console.error("Error fetching quiz attempt:", error);
       setResults(null);
-      setLoading(false); // ✅ Stop loading on error
+      setLoading(false); //  Stop loading on error
     }
   };
 

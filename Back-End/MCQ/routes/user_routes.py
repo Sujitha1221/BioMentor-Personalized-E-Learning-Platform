@@ -38,7 +38,7 @@ def register_user(user: UserRegister):
 
     existing_user = users_collection.find_one({"$or": [{"username": user.username}, {"email": user.email}]})
     if existing_user:
-        logging.error(f"🚫 Username or email already exists: {user.username}, {user.email}")
+        logging.error(f" Username or email already exists: {user.username}, {user.email}")
         raise HTTPException(status_code=400, detail="Username or email already exists") 
         
     new_user = {
@@ -66,7 +66,7 @@ def login_user(user: UserLogin, response: Response):
     existing_user = users_collection.find_one({"email": user.email})
     
     if not existing_user or not verify_password(user.password, existing_user["password"]):
-        logging.error(f"🚫 Invalid email or password: {user.email}")
+        logging.error(f" Invalid email or password: {user.email}")
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     access_token = create_access_token(data={"sub": str(existing_user["_id"]), "username": existing_user["username"]})
@@ -90,7 +90,7 @@ def refresh_token(data: dict):
     refresh_token = data.get("refresh_token")  # Read from request body
 
     if not refresh_token:
-        logging.error("🚫 No refresh token provided")
+        logging.error(" No refresh token provided")
         raise HTTPException(status_code=401, detail="No refresh token provided")
 
     try:
@@ -100,5 +100,5 @@ def refresh_token(data: dict):
         
         return {"access_token": new_access_token, "token_type": "bearer"}
     except JWTError:
-        logging.error("🚫 Invalid or expired refresh token")
+        logging.error(" Invalid or expired refresh token")
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")

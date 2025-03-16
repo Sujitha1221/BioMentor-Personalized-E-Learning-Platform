@@ -9,7 +9,7 @@ const QuizPage = () => {
   const location = useLocation();
   const { quizId } = location.state || {};
   const [questions, setQuestions] = useState(location.state?.questions || null);
-  const [showSubmitModal, setShowSubmitModal] = useState(false); // ✅ State for modal
+  const [showSubmitModal, setShowSubmitModal] = useState(false); //  State for modal
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [timeSpent, setTimeSpent] = useState({});
@@ -66,7 +66,7 @@ const QuizPage = () => {
     currentQuestion.option5,
   ].filter((option) => option !== "N/A");
 
-  // ✅ Update time spent on a question
+  //  Update time spent on a question
   const updateTimeSpent = (index) => {
     const endTime = Date.now();
     const timeTaken = (endTime - startTime) / 1000;
@@ -79,12 +79,12 @@ const QuizPage = () => {
     setStartTime(Date.now());
   };
 
-  // ✅ Handle Answer Selection
+  //  Handle Answer Selection
   const handleAnswerSelect = (letter) => {
     setAnswers({ ...answers, [currentQuestionIndex]: letter });
   };
 
-  // ✅ Handle Next & Previous Button Clicks
+  //  Handle Next & Previous Button Clicks
   const handleNext = () => {
     updateTimeSpent(currentQuestionIndex);
     if (currentQuestionIndex < questions.length - 1) {
@@ -99,7 +99,7 @@ const QuizPage = () => {
     }
   };
 
-  // ✅ Handle quiz submission
+  //  Handle quiz submission
   const handleSubmit = async () => {
     updateTimeSpent(currentQuestionIndex);
 
@@ -170,7 +170,7 @@ const QuizPage = () => {
       setTimer((prev) => prev - 1);
     }, 1000);
 
-    return () => clearInterval(interval); // ✅ Cleanup to avoid memory leaks
+    return () => clearInterval(interval); //  Cleanup to avoid memory leaks
   }, [timer]);
 
   return (
@@ -181,12 +181,12 @@ const QuizPage = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        {/* ✅ Timer */}
+        {/*  Timer */}
         <div className="text-center text-xl font-bold text-red-600">
           ⏳ Time Left: {Math.floor(timer / 60)}:
           {String(timer % 60).padStart(2, "0")}
         </div>
-        {/* ✅ Question Progress */}
+        {/*  Question Progress */}
         <div className="w-full bg-gray-300 h-2 rounded-full my-4">
           <motion.div
             className="bg-purple-500 h-2 rounded-full"
@@ -212,7 +212,7 @@ const QuizPage = () => {
           {currentQuestion.question_text}
         </p>
 
-        {/* ✅ Answer Choices */}
+        {/*  Answer Choices */}
         <div className="mt-4 space-y-3">
           {filteredOptions.map((option, index) => {
             const letter = optionsMap[index];
@@ -234,7 +234,7 @@ const QuizPage = () => {
           })}
         </div>
 
-        {/* ✅ Navigation Buttons */}
+        {/*  Navigation Buttons */}
         <div className="flex justify-between mt-8">
           <button
             onClick={handlePrevious}
@@ -292,7 +292,7 @@ const QuizPage = () => {
       <SubmitConfirmationModal
         isOpen={showSubmitModal}
         onClose={() => setShowSubmitModal(false)}
-        onConfirm={handleSubmit} // ✅ Call handleSubmit when confirmed
+        onConfirm={handleSubmit} //  Call handleSubmit when confirmed
       />
     </div>
   );

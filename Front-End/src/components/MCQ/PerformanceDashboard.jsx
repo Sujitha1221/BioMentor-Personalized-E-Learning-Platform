@@ -16,7 +16,7 @@ const PerformanceDashboard = () => {
   const [progressInsights, setProgressInsights] = useState(null);
   const [comparisonData, setComparisonData] = useState(null);
   const [engagementScore, setEngagementScore] = useState(null);
-  const [loading, setLoading] = useState(true); // ✅ Unified loading state
+  const [loading, setLoading] = useState(true); //  Unified loading state
 
   const user = JSON.parse(localStorage.getItem("user"));
   const token = localStorage.getItem("token");
@@ -48,7 +48,7 @@ const PerformanceDashboard = () => {
         setComparisonData(comparisonRes.data);
         setEngagementScore(engagementRes.data);
 
-        setLoading(false); // ✅ Stop loading after data is fetched
+        setLoading(false); //  Stop loading after data is fetched
       } catch (error) {
         console.error("Error fetching performance data:", error);
         setLoading(false);

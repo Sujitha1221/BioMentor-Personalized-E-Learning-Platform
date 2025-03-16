@@ -19,57 +19,57 @@ router = APIRouter()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
-# 🔥 Pydantic Model for Each Response
+#  Pydantic Model for Each Response
 class QuizResponse(BaseModel):
     question_text: str
     selected_answer: str
-    time_taken: float  # ✅ Change this to an integer (was previously str)
+    time_taken: float  #  Change this to an integer (was previously str)
 
-# 🔥 Pydantic Model for Submitting Quiz
+#  Pydantic Model for Submitting Quiz
 class SubmitQuizRequest(BaseModel):
     user_id: str
     quiz_id: str
-    responses: List[QuizResponse]  # ✅ Expect a list of QuizResponse objects
+    responses: List[QuizResponse]  #  Expect a list of QuizResponse objects
 
 def estimate_student_ability(user_id):
     """Estimates student ability dynamically using accuracy & response time from the last 10 quizzes."""
     user_data = users_collection.find_one({"_id": ObjectId(user_id)})
     
     if not user_data or "performance" not in user_data or "last_10_quizzes" not in user_data["performance"]:
-        logging.error(f"❌ No performance data found for user {user_id}. Returning default ability.")
+        logging.error(f" No performance data found for user {user_id}. Returning default ability.")
         return 0  # Default ability score
     
     responses = user_data["performance"]["last_10_quizzes"]
     # logging.info(f"📥 Raw responses for user {user_id}: {responses}")
 
     if not isinstance(responses, list):
-        logging.error(f"❌ Expected list for responses but got {type(responses)}: {responses}")
+        logging.error(f" Expected list for responses but got {type(responses)}: {responses}")
         return 0
 
     if not responses:
         return 0  # No quizzes taken
 
-    # ✅ Compute Average Accuracy Across Last 10 Quizzes
+    #  Compute Average Accuracy Across Last 10 Quizzes
     total_accuracy = sum(quiz.get("accuracy", 0) for quiz in responses)
     avg_accuracy = total_accuracy / len(responses) if responses else 0
 
-    # ✅ Compute Weighted Average Time
+    #  Compute Weighted Average Time
     total_time = sum(quiz.get("total_time", 0) for quiz in responses)
     avg_time = total_time / len(responses) if responses else 0
 
-    # ✅ Adjust Time-Based Penalty Dynamically
+    #  Adjust Time-Based Penalty Dynamically
     if avg_time < 3:
         time_penalty = 0.3  # 🚨 Very fast responses (possible guessing)
     elif 3 <= avg_time < 7:
         time_penalty = 0.2  # ⚠ Slightly too fast  
     elif 7 <= avg_time < 90:
-        time_penalty = 0.0  # ✅ Normal thoughtful response  
+        time_penalty = 0.0  #  Normal thoughtful response  
     elif 90 <= avg_time < 120:
         time_penalty = 0.1  # 🕒 Slightly long  
     else:
         time_penalty = 0.2  # ⏳ Very long (possible distractions)
 
-    # ✅ Apply Ability Estimation Formula
+    #  Apply Ability Estimation Formula
     ability = np.log(avg_accuracy / max(1, (100 - avg_accuracy + 1))) - time_penalty
 
     return round(ability, 2)
@@ -80,7 +80,7 @@ def update_user_performance(user_id, responses):
     user_data = users_collection.find_one({"_id": ObjectId(user_id)})
 
     if not user_data:
-        logging.error(f"❌ User {user_id} not found. Aborting update.")
+        logging.error(f" User {user_id} not found. Aborting update.")
         raise ValueError(f"User {user_id} not found in the database.") 
 
     performance = user_data.get("performance", {
@@ -145,16 +145,16 @@ def update_user_performance(user_id, responses):
         result = users_collection.update_one({"_id": ObjectId(user_id)}, {"$set": {"performance": performance}})
         
         if result.matched_count == 0:
-            logging.error(f"❌ No matching user found for ID {user_id}. Performance update failed.")
+            logging.error(f" No matching user found for ID {user_id}. Performance update failed.")
             raise ValueError(f"Failed to update performance: No matching user found for ID {user_id}.")
 
         if result.modified_count == 0:
             logging.warning(f"⚠ Performance data for User {user_id} was not modified. Possible no changes.")
         
-        logging.info(f"✅ User performance updated successfully for User {user_id}.")
+        logging.info(f" User performance updated successfully for User {user_id}.")
 
     except PyMongoError as e:
-        logging.error(f"🔥 MongoDB Error updating user performance: {e}")
+        logging.error(f" MongoDB Error updating user performance: {e}")
         raise RuntimeError(f"Database error while updating user performance: {e}")
 
 @router.post("/submit_quiz/")
@@ -171,28 +171,28 @@ def submit_quiz(data: SubmitQuizRequest,current_user: str = Depends(get_current_
 
         existing_user = users_collection.find_one({"_id": ObjectId(user_id)})
         if not existing_user:
-            logging.error(f"❌ User {user_id} not found in the database.")
+            logging.error(f" User {user_id} not found in the database.")
             raise HTTPException(status_code=404, detail="User not found. Please register before generating a quiz.")
         
         if current_user != user_id:
-            logging.error(f"🚫 Unauthorized access attempt by {current_user}")
+            logging.error(f" Unauthorized access attempt by {current_user}")
             raise HTTPException(status_code=403, detail="Unauthorized access")
     
         # Fetch quiz to validate responses
         quiz = quizzes_collection.find_one({"quiz_id": quiz_id})
         if not quiz:
-            logging.error(f"❌ Quiz {quiz_id} not found in the database.")
+            logging.error(f" Quiz {quiz_id} not found in the database.")
             raise HTTPException(status_code=404, detail="Quiz not found.")
         
-        # ✅ Check that the quiz was created for this user
+        #  Check that the quiz was created for this user
         if str(quiz.get("user_id")) != str(user_id):
             raise HTTPException(status_code=403, detail="This quiz was not created for the provided user.")
         
         logging.info(f"📋 Validating responses for User {user_id} on Quiz {quiz_id}")
         submitted_at = time.time()
-        # ✅ Find previous attempts correctly
+        #  Find previous attempts correctly
         previous_attempts = responses_collection.count_documents({"user_id": user_id, "quiz_id": quiz_id})
-        attempt_number = 1 if previous_attempts == 0 else previous_attempts + 1  # ✅ Initialize correctly
+        attempt_number = 1 if previous_attempts == 0 else previous_attempts + 1  #  Initialize correctly
 
         logging.info(f"🔁 User {user_id} is submitting attempt {attempt_number} for quiz {quiz_id}.")
         
@@ -204,17 +204,17 @@ def submit_quiz(data: SubmitQuizRequest,current_user: str = Depends(get_current_
             "user_id": user_id,
             "quiz_id": quiz_id,
             "submitted_at": submitted_at,
-            "attempt_number": attempt_number,  # ✅ Track attempt number correctly
+            "attempt_number": attempt_number,  #  Track attempt number correctly
             "responses": [],
             "summary": {},
         }
 
-        # ✅ Ensure all questions are answered
+        #  Ensure all questions are answered
         expected_questions = {q["question_text"] for q in quiz["questions"]}
         submitted_questions = {r.question_text for r in responses}
         missing_questions = expected_questions - submitted_questions
 
-        # ✅ Instead of rejecting the submission, log missing answers as incorrect
+        #  Instead of rejecting the submission, log missing answers as incorrect
         for missed in missing_questions:
             question = next((q for q in quiz["questions"] if q["question_text"] == missed), None)
             if question:
@@ -257,10 +257,10 @@ def submit_quiz(data: SubmitQuizRequest,current_user: str = Depends(get_current_
                     }
                 })
             except Exception as e:
-                logging.error(f"❌ Error processing response {response}: {traceback.format_exc()}")
+                logging.error(f" Error processing response {response}: {traceback.format_exc()}")
                 raise HTTPException(status_code=500, detail=str(e))
             
-        # ✅ Calculate Quiz Summary
+        #  Calculate Quiz Summary
         accuracy = round((correct_count / total_questions) * 100, 2)
         avg_time_per_question = round(total_time / total_questions, 2)
         
@@ -274,25 +274,25 @@ def submit_quiz(data: SubmitQuizRequest,current_user: str = Depends(get_current_
         }
         
         logging.info(f"📤 Storing quiz response in the database...")
-        # ✅ Insert response data into database
+        #  Insert response data into database
         inserted_response = responses_collection.insert_one(response_data)
 
-        # ✅ Only update performance on the first attempt
+        #  Only update performance on the first attempt
         if attempt_number == 1:
             update_user_performance(user_id, response_data["responses"])
             
-        # ✅ Convert ObjectId to string for API response
+        #  Convert ObjectId to string for API response
         response_data["_id"] = str(inserted_response.inserted_id)
 
-        logging.info(f"✅ Quiz submitted: All responses saved for User {user_id}.")
-        logging.info(f"✅ Returning quiz results: {response_data}")
+        logging.info(f" Quiz submitted: All responses saved for User {user_id}.")
+        logging.info(f" Returning quiz results: {response_data}")
         return response_data
 
     except Exception as e:
-        logging.error(f"🔥 Error submitting quiz: {str(e)}")
+        logging.error(f" Error submitting quiz: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# ✅ New API Route to Fetch User Quiz History
+#  New API Route to Fetch User Quiz History
 @router.get("/user_quiz_history/{user_id}")
 def get_user_quiz_history(user_id: str,current_user: str = Depends(get_current_user)):
     """
@@ -305,7 +305,7 @@ def get_user_quiz_history(user_id: str,current_user: str = Depends(get_current_u
             raise HTTPException(status_code=404, detail="User not found.")
         
         if current_user != user_id:
-            logging.error(f"🚫 Unauthorized access attempt by {current_user}")
+            logging.error(f" Unauthorized access attempt by {current_user}")
             raise HTTPException(status_code=403, detail="Unauthorized access")
     
         # Step 2: Fetch all quiz attempts made by the user
@@ -325,7 +325,7 @@ def get_user_quiz_history(user_id: str,current_user: str = Depends(get_current_u
                 }
             
             quiz_history[quiz_id]["attempts"].append({
-                "response_id": str(attempt["_id"]),  # ✅ Convert MongoDB _id to string
+                "response_id": str(attempt["_id"]),  #  Convert MongoDB _id to string
                 "submitted_at": attempt["submitted_at"],
                 "attempt_number": attempt["attempt_number"],
                 "summary": attempt["summary"]
@@ -334,10 +334,10 @@ def get_user_quiz_history(user_id: str,current_user: str = Depends(get_current_u
         return {"quiz_history": list(quiz_history.values())}
 
     except Exception as e:
-        logging.error(f"🔥 Error fetching quiz history: {str(e)}")
+        logging.error(f" Error fetching quiz history: {str(e)}")
         raise HTTPException(status_code=500, detail="An error occurred while retrieving quiz history.")
 
-# ✅ New API Route to Fetch Attempt Results
+#  New API Route to Fetch Attempt Results
 @router.get("/quiz_attempt_results/{user_id}/{quiz_id}/{attempt_number}")
 def get_quiz_attempt_results(user_id: str, quiz_id: str, attempt_number: int,current_user: str = Depends(get_current_user)):
     """
@@ -346,11 +346,11 @@ def get_quiz_attempt_results(user_id: str, quiz_id: str, attempt_number: int,cur
     try:
         existing_user = users_collection.find_one({"_id": ObjectId(user_id)})
         if not existing_user:
-            logging.error(f"❌ User {user_id} not found in the database.")
+            logging.error(f" User {user_id} not found in the database.")
             raise HTTPException(status_code=404, detail="User not found. Please register before generating a quiz.")
         
         if current_user != user_id:
-            logging.error(f"🚫 Unauthorized access attempt by {current_user}")
+            logging.error(f" Unauthorized access attempt by {current_user}")
             raise HTTPException(status_code=403, detail="Unauthorized access")
     
         # Step 1: Retrieve the attempt from responses_collection
@@ -398,7 +398,7 @@ def get_quiz_attempt_results(user_id: str, quiz_id: str, attempt_number: int,cur
         return attempt
 
     except Exception as e:
-        logging.error(f"🔥 Error fetching attempt results: {str(e)}")
+        logging.error(f" Error fetching attempt results: {str(e)}")
         raise HTTPException(status_code=500, detail="An error occurred while retrieving attempt results.")
 
 
@@ -444,7 +444,7 @@ def get_progress_insights(user_id: str, current_user: str = Depends(get_current_
         raise HTTPException(status_code=404, detail="No performance data found.")
     
     if current_user != user_id:
-            logging.error(f"🚫 Unauthorized access attempt by {current_user}")
+            logging.error(f" Unauthorized access attempt by {current_user}")
             raise HTTPException(status_code=403, detail="Unauthorized access")
 
     history = user_data["performance"].get("last_10_quizzes", [])
@@ -453,7 +453,7 @@ def get_progress_insights(user_id: str, current_user: str = Depends(get_current_
         return {"message": "No quiz attempts found. Start taking quizzes to track your progress!"}
 
     if len(history) == 1:
-        # ✅ User has only one attempt – give insights based on it
+        #  User has only one attempt – give insights based on it
         first_attempt = history[0]
         return {
             "accuracy_trend": [first_attempt["accuracy"]],
@@ -463,7 +463,7 @@ def get_progress_insights(user_id: str, current_user: str = Depends(get_current_
             "suggestion": "You’ve completed your first quiz! Keep practicing to track your progress over time."
         }
 
-    # ✅ User has multiple attempts – calculate progress trends
+    #  User has multiple attempts – calculate progress trends
     accuracy_trend = [quiz["accuracy"] for quiz in history]
     time_trend = [quiz["total_time"] for quiz in history]
 
@@ -478,7 +478,7 @@ def get_progress_insights(user_id: str, current_user: str = Depends(get_current_
         "suggestion": ""
     }
 
-    # ✅ AI-Driven Suggestions
+    #  AI-Driven Suggestions
     if accuracy_change > 5:
         insights["suggestion"] = "Great job! Your accuracy is improving steadily. Keep practicing!"
     elif accuracy_change < -5:
@@ -493,7 +493,7 @@ def get_user_performance_comparison(user_id: str, current_user: str = Depends(ge
     """Compares user's performance against average stats of all users."""
     user_data = users_collection.find_one({"_id": ObjectId(user_id)})
     if current_user != user_id:
-            logging.error(f"🚫 Unauthorized access attempt by {current_user}")
+            logging.error(f" Unauthorized access attempt by {current_user}")
             raise HTTPException(status_code=403, detail="Unauthorized access")
     logging.info(f"User data: {user_data}")
     if not user_data or "performance" not in user_data:
@@ -534,7 +534,7 @@ def get_engagement_score(user_id: str, current_user: str = Depends(get_current_u
     """Calculates how active and engaged the user is."""
     user_data = users_collection.find_one({"_id": ObjectId(user_id)})
     if current_user != user_id:
-        logging.error(f"🚫 Unauthorized access attempt by {current_user}")
+        logging.error(f" Unauthorized access attempt by {current_user}")
         raise HTTPException(status_code=403, detail="Unauthorized access")
     
     if not user_data or "performance" not in user_data:
@@ -542,7 +542,7 @@ def get_engagement_score(user_id: str, current_user: str = Depends(get_current_u
 
     history = user_data["performance"].get("last_10_quizzes", [])
 
-    # ✅ Handling Users with Only 1 or 2 Quiz Attempts
+    #  Handling Users with Only 1 or 2 Quiz Attempts
     if len(history) == 1:
         return {
             "engagement_score": "Starter",
@@ -555,7 +555,7 @@ def get_engagement_score(user_id: str, current_user: str = Depends(get_current_u
             "category": "You're beginning to build a habit. Try to maintain consistency!"
         }
 
-    # ✅ Users with 3+ quizzes: Calculate engagement score normally
+    #  Users with 3+ quizzes: Calculate engagement score normally
     consistency_score = user_data["performance"].get("consistency_score", 0)
 
     if consistency_score > 80:
@@ -576,10 +576,10 @@ def get_dashboard_data(user_id: str, current_user: str = Depends(get_current_use
     user_data = users_collection.find_one({"_id": ObjectId(user_id)})
     
     if current_user != user_id:
-        logging.error(f"🚫 Unauthorized access attempt by {current_user}")
+        logging.error(f" Unauthorized access attempt by {current_user}")
         raise HTTPException(status_code=403, detail="Unauthorized access")
 
-    # ✅ If user has no performance data, return default values
+    #  If user has no performance data, return default values
     if not user_data or "performance" not in user_data:
         return {
             "total_quizzes": 0,
@@ -622,7 +622,7 @@ def check_user_quiz_history(user_id: str):
         # Ensure the user exists
         user = users_collection.find_one({"_id": ObjectId(user_id)})
         if not user:
-            logging.error(f"🚫 User not found: {user_id}")
+            logging.error(f" User not found: {user_id}")
             raise HTTPException(status_code=404, detail="User not found.")
 
         # Check if the user has any quizzes
@@ -631,5 +631,5 @@ def check_user_quiz_history(user_id: str):
         return {"has_previous_quiz": quiz_count > 0}
 
     except Exception as e:
-        logging.error(f"🚫 Error checking user quiz history: {str(e)}")
+        logging.error(f" Error checking user quiz history: {str(e)}")
         return HTTPException(status_code=500, detail=str(e))

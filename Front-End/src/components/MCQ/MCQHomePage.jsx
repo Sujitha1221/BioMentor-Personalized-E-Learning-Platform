@@ -206,7 +206,7 @@ const MCQHomePage = () => {
             />
           </motion.div>
         </div>
-        {/* ✅ New Section: Practice Topic-wise MCQ Questions */}
+        {/*  New Section: Practice Topic-wise MCQ Questions */}
         <div className="max-w-7xl w-full grid grid-cols-1 md:grid-cols-2 gap-20 items-center text-center md:text-left">
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}

@@ -35,7 +35,7 @@ def retrieve_context_questions(query_text, top_k=3):
 
     D, I = index.search(query_vector, k=min(top_k, index.ntotal))  # Retrieve top-K closest MCQs
 
-    # 🔥 FIX: Ensure valid indices
+    #  FIX: Ensure valid indices
     valid_indices = [i for i in I[0] if 0 <= i < len(dataset)]
     if not valid_indices:
         logging.warning("⚠ No valid indices found in FAISS search. Returning empty DataFrame.")
@@ -82,7 +82,7 @@ def is_similar_to_same_quiz_questions(new_question, generated_questions, thresho
     """Check if the generated question is similar to any question already generated in the same quiz."""
     
     if not generated_questions:
-        return False  # ✅ If no questions exist, return False (not similar)
+        return False  #  If no questions exist, return False (not similar)
     
     new_vector = embedding_model.encode([new_question]).astype(np.float32)
     existing_vectors = embedding_model.encode(list(generated_questions)).astype(np.float32)
@@ -90,9 +90,9 @@ def is_similar_to_same_quiz_questions(new_question, generated_questions, thresho
     # 🔹 Compute cosine similarity with all previous questions in the same quiz
     similarity_scores = cosine_similarity(new_vector, existing_vectors)[0]
     
-    # ✅ Return True if **any** question in the same quiz is too similar
+    #  Return True if **any** question in the same quiz is too similar
     if any(sim >= threshold for sim in similarity_scores):
-        logging.warning(f"🚫 Too Similar to Same Quiz Questions: {new_question} (Max Cosine Sim: {max(similarity_scores)})")
+        logging.warning(f" Too Similar to Same Quiz Questions: {new_question} (Max Cosine Sim: {max(similarity_scores)})")
         return True  
 
     return False
@@ -103,7 +103,7 @@ def is_similar_to_past_quiz_questions(new_question, user_id, threshold=0.65):
     seen_questions = get_seen_questions(user_id)
     
     if not seen_questions:
-        return False  # ✅ If no past questions exist, return False (not similar)
+        return False  #  If no past questions exist, return False (not similar)
 
     new_vector = embedding_model.encode([new_question]).astype(np.float32)
     past_vectors = embedding_model.encode(list(seen_questions)).astype(np.float32)
@@ -111,9 +111,9 @@ def is_similar_to_past_quiz_questions(new_question, user_id, threshold=0.65):
     # 🔹 Compute cosine similarity with all past questions
     similarity_scores = cosine_similarity(new_vector, past_vectors)[0]
 
-    # ✅ Return True if **any** past question is too similar
+    #  Return True if **any** past question is too similar
     if any(sim >= threshold for sim in similarity_scores):
-        logging.warning(f"🚫 Too Similar to Past Quiz Questions: {new_question} (Max Cosine Sim: {max(similarity_scores)})")
+        logging.warning(f" Too Similar to Past Quiz Questions: {new_question} (Max Cosine Sim: {max(similarity_scores)})")
         return True  
 
     return False
@@ -196,12 +196,12 @@ def get_seen_questions(user_id, limit=2):
     past_quizzes = list(quizzes_collection.find(
         {"user_id": user_id},
         {"questions.question_text": 1, "_id": 0}  
-    ).sort("created_at", -1).limit(limit))  # ✅ Fetch only recent quizzes
+    ).sort("created_at", -1).limit(limit))  #  Fetch only recent quizzes
 
     logging.info(f"🔍 Found {len(past_quizzes)} recent quizzes for user {user_id}")
 
     for quiz in past_quizzes:
-        for question in quiz.get("questions", []):  # ✅ Use `.get()` to avoid KeyErrors
+        for question in quiz.get("questions", []):  #  Use `.get()` to avoid KeyErrors
             if "question_text" in question:
                 seen_questions.add(question["question_text"])
 
@@ -235,11 +235,11 @@ def fetch_questions_from_db(count=1):
                     break  # Stop when required count is met
 
         if not isinstance(formatted_questions, list):
-            logging.error(f"❌ Database returned invalid format: {formatted_questions}")
+            logging.error(f" Database returned invalid format: {formatted_questions}")
             return []
 
         return formatted_questions
 
     except Exception as e:
-        logging.error(f"❌ Error fetching backup MCQs from DB: {e}")
+        logging.error(f" Error fetching backup MCQs from DB: {e}")
         return []

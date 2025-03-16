@@ -33,6 +33,6 @@ def get_current_user(authorization: str = Header(None)):
         user_id: str = payload.get("sub")
         if user_id is None:
             raise HTTPException(status_code=401, detail="Invalid token")
-        return user_id  # ✅ Return user ID for dependency injection
+        return user_id  #  Return user ID for dependency injection
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid or expired token")

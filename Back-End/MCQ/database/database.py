@@ -19,8 +19,8 @@ while True:
         responses_collection = db["user_responses"]
         topic_quizzes = db["topic_quizzes"]
         topic_quiz_attempts = db["topic_quiz_attempts"]
-        print("✅ Connected to MongoDB Atlas")
+        print(" Connected to MongoDB Atlas")
         break
     except ConnectionFailure as e:
-        print("❌ Database connection failed:", e)
+        print(" Database connection failed:", e)
         time.sleep(2)  # Retry every 2 seconds

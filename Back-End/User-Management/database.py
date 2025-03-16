@@ -15,8 +15,8 @@ while True:
         client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
         db = client.get_database("mcq_quiz_platform")  # Update database name if needed
         users_collection = db["users"]
-        print("✅ Connected to MongoDB Atlas")
+        print(" Connected to MongoDB Atlas")
         break
     except ConnectionFailure as e:
-        print("❌ Database connection failed:", e)
+        print(" Database connection failed:", e)
         time.sleep(2)  # Retry every 2 seconds
