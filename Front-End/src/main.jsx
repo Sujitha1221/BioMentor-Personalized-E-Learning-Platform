@@ -8,10 +8,6 @@ import {
 } from "react-router-dom";
 import Main from "./components/Layout/Main.jsx";
 import Home from "./components/Home/Home.jsx";
-import Courses from "./components/Courses/Courses.jsx";
-import Blogs from "./components/Blogs/Blogs.jsx";
-import About from "./components/About/About.jsx";
-import Contact from "./components/Contact/Contact.jsx";
 import Login from "./components/Login/Login.jsx";
 import SignUp from "./components/SignUp/SignUp.jsx";
 import QuestionAndAnsweringHomePage from "./components/Q&A/QuestionAndAnsweringHomePage.jsx";
@@ -59,10 +55,6 @@ const router = createBrowserRouter([
         element: <ProtectedRoute element={<Home />} />,
       },
       {
-        path: "courses",
-        element: <ProtectedRoute element={<Courses />} />,
-      },
-      {
         path: "Q&A-home",
         element: <ProtectedRoute element={<QuestionAndAnsweringHomePage />} />,
       },
@@ -87,18 +79,6 @@ const router = createBrowserRouter([
       {
         path: "summarize",
         element: <ProtectedRoute element={<Summarization />} />,
-      },
-      {
-        path: "blogs",
-        element: <ProtectedRoute element={<Blogs />} />,
-      },
-      {
-        path: "about",
-        element: <ProtectedRoute element={<About />} />,
-      },
-      {
-        path: "contact",
-        element: <ProtectedRoute element={<Contact />} />,
       },
       {
         path: "MCQ-home",
