@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import json
 from sentence_transformers import SentenceTransformer
-from utils.quiz_generation_methods import assign_difficulty_parameter, assign_discrimination_parameter, retrieve_context_questions,is_similar_to_same_quiz_questions, is_similar_to_past_quiz_questions, fetch_questions_from_db
+from utils.quiz_generation_methods import assign_difficulty_parameter, assign_discrimination_parameter, retrieve_context_questions,is_similar_to_same_quiz_questions, is_similar_to_past_quiz_questions, fetch_questions_from_db, is_duplicate_faiss
 from routes.response_routes import estimate_student_ability
 
 # Load Sentence Transformer model
@@ -17,7 +17,7 @@ embeddings_matrix = np.load("dataset/question_embeddings.npy")
 dataset = pd.read_csv("dataset/question_dataset_with_clusters.csv")
 
 # Google Colab API Endpoint
-COLAB_API_URL = "https://1c75-35-247-107-19.ngrok-free.app/generate_mcq"
+COLAB_API_URL = "https://d6b2-34-125-66-138.ngrok-free.app/generate_mcq"
 
 mcq_cache = {}
 
@@ -35,7 +35,7 @@ def generate_mcq(difficulty, user_id, max_retries=3):
                 logging.error("ERROR: Dataset is empty. Cannot generate MCQ.")
                 return None
             
-            sampled_question = dataset.sample(1)
+            sampled_question = dataset.groupby("Cluster").sample(1)
 
             if sampled_question.empty:
                 logging.error("ERROR: No questions available in dataset. Retrying...")
@@ -44,7 +44,7 @@ def generate_mcq(difficulty, user_id, max_retries=3):
 
             random_question = sampled_question.iloc[0]["Question Text"]
             context_questions = retrieve_context_questions(random_question, top_k=3)
-
+            
             # Construct context-based prompt
             context_list = [
                 f"- {row['Question Text']} (Correct Answer: {row['Correct Answer']})"
@@ -105,12 +105,25 @@ def generate_mcq(difficulty, user_id, max_retries=3):
             question_data = data["mcq"]
             question_text = question_data.get("question", "").strip()
             
+            if question_text in generated_questions:
+                logging.warning(f"⚠ Duplicate or similar question in same quiz: {question_text}. Retrying...")
+                retries += 1
+                continue  
+            
+            if  is_similar_to_same_quiz_questions(question_text, generated_questions, threshold=0.85):
+                logging.warning(f"⚠ Duplicate or similar question in same quiz: {question_text}. Retrying...")
+                retries += 1
+                continue  
+            
+            if is_duplicate_faiss(question_text, index, threshold=0.85):
+                logging.warning(f"⚠ FAISS detected duplicate. Retrying...")
+                retries += 1
+                continue
+
             #  Common invalid conditions
             invalid_conditions = [
                 "error" in question_data,  # API returned an error
                 not question_text or "<Generated Question>" in question_text,  # Placeholder or missing question
-                question_text in generated_questions,  # Duplicate question in the same quiz
-                is_similar_to_same_quiz_questions(question_text, generated_questions, threshold=0.75),  # Too similar
                 "Generate a" in question_text or "is a **hard** level MCQ" in question_text  # Malformed question
             ]
 
@@ -134,7 +147,7 @@ def generate_mcq(difficulty, user_id, max_retries=3):
                 logging.warning(f"⚠ Invalid options detected: {options}. Retrying...")
                 retries += 1
                 continue
-
+            
             #  Ensure correct answer exists and is valid
             correct_answer = question_data.get("correct_answer", "").strip()
             if correct_answer not in ["A", "B", "C", "D", "E"] or options.get(correct_answer, "") not in options.values():
@@ -163,7 +176,7 @@ def generate_mcq(difficulty, user_id, max_retries=3):
             logging.error(f"⚠ Unexpected Error: {e}")
             retries += 1
 
-    logging.error("  Failed to generate a unique MCQ after multiple attempts.")
+    logging.error("Failed to generate a unique MCQ after multiple attempts.")
     return None  #   Return None instead of an error
 
 def generate_mcq_based_on_performance(user_id, difficulty, max_retries=5):
@@ -180,7 +193,7 @@ def generate_mcq_based_on_performance(user_id, difficulty, max_retries=5):
                 logging.error("  ERROR: Dataset is empty. Cannot generate MCQ.")
                 return None
             
-            sampled_question = dataset.sample(1)
+            sampled_question = dataset.groupby("Cluster").sample(1)
 
             if sampled_question.empty:
                 logging.error("  ERROR: No questions available in dataset. Retrying...")
@@ -251,13 +264,31 @@ def generate_mcq_based_on_performance(user_id, difficulty, max_retries=5):
             question_data = data["mcq"]
             question_text = question_data.get("question", "").strip()
             
+            if question_text in generated_questions:
+                logging.warning(f"⚠ Duplicate or similar question in same quiz: {question_text}. Retrying...")
+                retries += 1
+                continue  
+            
+            if  is_similar_to_same_quiz_questions(question_text, generated_questions, threshold=0.85):
+                logging.warning(f"⚠ Duplicate or similar question in same quiz: {question_text}. Retrying...")
+                retries += 1
+                continue  
+            
+            if is_duplicate_faiss(question_text, index, threshold=0.85):
+                logging.warning(f"⚠ FAISS detected duplicate. Retrying...")
+                retries += 1
+                continue
+            
+            if  is_similar_to_past_quiz_questions(question_text, user_id, threshold=0.75):
+                logging.warning(f"⚠ Duplicate or similar question in same quiz: {question_text}. Retrying...")
+                retries += 1
+                continue  
+            
             #  Common invalid conditions
             invalid_conditions = [
                 "error" in question_data,  # API returned an error
                 not question_text or "<Generated Question>" in question_text,  # Placeholder or missing question
-                question_text in generated_questions,  # Duplicate question in the same quiz
-                is_similar_to_same_quiz_questions(question_text, generated_questions, threshold=0.75),  # Too similar
-                is_similar_to_past_quiz_questions(question_text, user_id, threshold=0.75),
+                "Generate a" in question_text or "is a **hard** level MCQ" in question_text  # Malformed question
             ]
 
             if any(invalid_conditions):

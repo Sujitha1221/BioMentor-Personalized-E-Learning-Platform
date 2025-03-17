@@ -25,7 +25,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Adjust this to your frontend URL for better security
+    allow_origins=["http://127.0.0.1:3000", "http://localhost:3000"],  # Adjust this to your frontend URL for better security
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
