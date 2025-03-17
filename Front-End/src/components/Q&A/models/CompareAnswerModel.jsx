@@ -36,9 +36,10 @@ const CompareAnswerModel = ({ onBack }) => {
       return;
     }
 
-    const studentId = localStorage.getItem("user");
-    if (studentId) {
-      setStudentId(studentId);
+    let storedStudentId = localStorage.getItem("user");
+    if (storedStudentId) {
+      storedStudentId = JSON.parse(storedStudentId).email;
+      setStudentId(storedStudentId);
     }
     
 
@@ -49,7 +50,7 @@ const CompareAnswerModel = ({ onBack }) => {
 
     try {
       const response = await axios.post(`${QA_URL}/evaluate-answer`, {
-        student_id: studentId,
+        student_id: storedStudentId,
         question,
         user_answer: answer,
         question_type: answerType,

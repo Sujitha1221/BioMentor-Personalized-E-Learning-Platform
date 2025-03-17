@@ -1,0 +1,91 @@
+Proper Order to Set Up a Python Environment for NLP and AI Projects
+
+This guide outlines the correct sequence for setting up a Python environment with necessary dependencies for NLP and AI-related projects.
+
+ 1. Install Python and Virtual Environment Tools
+Before setting up the virtual environment, ensure Python and `venv` are installed.
+
+ Linux
+ Install Python and `venv`
+
+sudo apt update && sudo apt upgrade -y
+sudo apt install python3 python3-venv python3-pip -y
+
+ Mac
+ Install Python (if not installed)
+
+brew install python
+
+ Windows
+Ensure Python is installed from the [official Python website](https://www.python.org/).
+
+
+ 2. Set Up a Virtual Environment
+Creating a virtual environment ensures isolation for project dependencies.
+
+ Linux/Mac
+ Create and Activate Virtual Environment
+
+python3 -m venv venv
+source venv/bin/activate
+
+ Deactivate Virtual Environment
+
+deactivate
+
+
+ Windows (PowerShell)
+ Create and Activate Virtual Environment
+
+python -m venv venv
+.\venv\Scripts\Activate
+
+ Deactivate Virtual Environment
+
+deactivate
+
+
+ 3. Install Required Python Packages
+After activating the virtual environment, install the necessary dependencies.
+
+ Install Dependencies
+
+pip install pymongo matplotlib google-generativeai 
+pip install transformers sentence-transformers spacy scikit-learn rapidfuzz language-tool-python
+pip install pandas sentence-transformers faiss-cpu transformers flask
+
+
+ Install Dependencies from a Requirements File
+If a `requirements.txt` file is available, install dependencies using:
+
+pip install -r requirements.txt
+
+
+
+
+ 4. Install spaCy Model
+To download and install the `en_core_web_sm` model for spaCy, use:
+
+python -m spacy download en_core_web_sm
+
+
+
+
+ 5. Running Key Scripts
+
+ Start a FastAPI Application
+To launch a FastAPI-based application, use:
+
+uvicorn question_and_answer_api:app --reload
+
+
+ Running Answer Evaluation Tool
+To execute a Python script for evaluating answers, use:
+
+python answer_evaluation_tool.py
+
+
+
+
+Following these steps ensures a properly configured Python environment for NLP and AI-related projects.
+
