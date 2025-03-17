@@ -1,12 +1,17 @@
 import logging
+import os
 from datetime import datetime
 from pymongo import MongoClient
 from evaluate_answers import save_evaluation, evaluate_answer_hybrid
 import pandas as pd
 import random
+from dotenv import load_dotenv
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
+
+# Load environment variables from .env file
+load_dotenv()
 
 # MongoDB connection
 def get_db():
@@ -14,7 +19,9 @@ def get_db():
     Connect to MongoDB and return the database object.
     """
     try:
-        client = MongoClient("mongodb://localhost:27017/")  # Update with your MongoDB URI
+        # MongoDB Connection
+        MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+        client = MongoClient(MONGO_URI)
         db = client["evaluation_db"]
         logging.info("Connected to MongoDB successfully.")
         return db

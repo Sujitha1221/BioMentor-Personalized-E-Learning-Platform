@@ -7,11 +7,14 @@ from pymongo import MongoClient
 from datetime import datetime
 from bson import ObjectId
 from sentence_transformers import SentenceTransformer
+from dotenv import load_dotenv
 
 NOTES_CSV_PATH = "Notes/cleaned_Notes.csv"  # Study Notes CSV
 FAISS_INDEX_PATH = "DB/cleaned_Notes_faiss_index.bin"  # FAISS Index Storage
 MODEL_NAME = 'all-MiniLM-L6-v2'  # Fast & Lightweight SentenceTransformer Model
 
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(
@@ -26,7 +29,9 @@ def get_db():
     Connect to MongoDB and return the database object.
     """
     try:
-        client = MongoClient("mongodb://localhost:27017/")  # Update with your MongoDB URI
+        # MongoDB Connection
+        MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+        client = MongoClient(MONGO_URI)
         db = client["evaluation_db"]
         logging.info("Connected to MongoDB successfully.")
         return db
@@ -238,7 +243,7 @@ def generate_feedback_report(student_id):
         grammar_errors += len(feedback.get("grammar_suggestions", []))
 
         # Strengths and weaknesses
-        if eval["evaluation_result"]["final_score"] > 80:
+        if eval["evaluation_result"]["final_score"] >= 65.0:
             strengths.append(eval["question"])
         else:
             weaknesses.append(eval["question"])
@@ -522,20 +527,6 @@ if __name__ == "__main__":
         )
 
     # Compute averages
-    averages = compute_average_scores("student123")
-    print("Average Scores:", averages)
-
-    # Get score trends
-    score_trends = get_score_trends("student123")
-    print("Score Trends:", score_trends)
-
-    # Perform group-level analysis
-    group_averages = get_group_analysis()
-    print("Group-Level Averages:", group_averages)
-
-    # Generate feedback report
-    feedback = generate_feedback_report("student123")
-    print("Feedback Report:", feedback)
-
-    recommendations = generate_recommendations("student123")
-    print("Adaptive Feedback and Recommendations:", recommendations)
+    averages = get_student_analytic_details("sajeesiva06@gmail.com")
+    analytics = convert_objectid(analytics)
+    print("Student Analytic Details:", averages)
