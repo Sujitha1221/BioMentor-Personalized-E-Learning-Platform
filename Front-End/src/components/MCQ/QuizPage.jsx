@@ -4,6 +4,12 @@ import { motion } from "framer-motion";
 import api from "../axios/api";
 import SubmitConfirmationModal from "./models/SubmitConfirmationModal";
 
+const difficultyColors = {
+  easy: "bg-green-200 text-green-800",
+  medium: "bg-yellow-200 text-yellow-800",
+  hard: "bg-red-200 text-red-800",
+};
+
 const QuizPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -203,6 +209,16 @@ const QuizPage = () => {
             }}
             transition={{ duration: 0.5 }}
           />
+        </div>
+        <div className="relative">
+          <span
+            className={`absolute top-2 right-2 text-xs px-3 py-1 rounded-full font-semibold ${
+              difficultyColors[currentQuestion?.difficulty] ||
+              "bg-gray-200 text-gray-800"
+            }`}
+          >
+            {currentQuestion?.difficulty || "Unknown"}
+          </span>
         </div>
 
         <h2 className="text-3xl font-extrabold mb-4 text-center tracking-wider text-indigo-700">
