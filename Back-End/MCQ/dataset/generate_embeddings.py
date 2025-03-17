@@ -11,7 +11,7 @@ dataset = pd.read_csv("merged_mcq_dataset.csv", encoding="latin1").fillna("")
 required_columns = ["Question Text", "Option 1", "Option 2", "Option 3", "Option 4", "Option 5", "Correct Answer", "Difficulty Level"]
 for col in required_columns:
     if col not in dataset.columns:
-        raise ValueError(f"❌ Missing column in dataset: {col}")
+        raise ValueError(f"Missing column in dataset: {col}")
 
 # Combine question, options, and correct answer for better context representation
 dataset["Combined"] = (
@@ -52,4 +52,4 @@ dataset["Cluster"] = kmeans.fit_predict(embeddings_matrix)
 # Save dataset with Clusters & Difficulty Level for retrieval
 dataset.to_csv("question_dataset_with_clusters.csv", index=False)
 
-print("✅ Embeddings, FAISS index, and Topic Clusters created successfully!")
+print(" Embeddings, FAISS index, and Topic Clusters created successfully!")

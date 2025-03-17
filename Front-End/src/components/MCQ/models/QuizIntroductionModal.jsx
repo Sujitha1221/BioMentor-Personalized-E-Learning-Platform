@@ -24,7 +24,7 @@ const QuizIntroductionModal = ({ isOpen, onClose }) => {
           Authorization: `Bearer ${token}`,
         };
         const response = await api.get(
-          `users/users/${userId}/has_previous_quiz`,
+          `responses/users/${userId}/has_previous_quiz`,
           {
             headers,
           }

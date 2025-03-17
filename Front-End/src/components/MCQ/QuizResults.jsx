@@ -4,6 +4,12 @@ import { motion } from "framer-motion";
 import api from "../axios/api"; // Import API handler
 import QuizLoadingScreen from "./loadingPage/QuizLoadingScreen"; // Import loading screen component
 
+const difficultyColors = {
+  easy: "bg-green-200 text-green-800",
+  medium: "bg-yellow-200 text-yellow-800",
+  hard: "bg-red-200 text-red-800",
+};
+
 const QuizResults = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -16,7 +22,7 @@ const QuizResults = () => {
 
   // Initialize results state (null at start)
   const [results, setResults] = useState(null);
-  const [loading, setLoading] = useState(true); // ✅ Start with loading as true
+  const [loading, setLoading] = useState(true); //  Start with loading as true
 
   useEffect(() => {
     if (userId && quizId && attemptNumber) {
@@ -30,7 +36,7 @@ const QuizResults = () => {
   // Function to fetch attempt results from the backend
   const fetchAttemptResults = async () => {
     try {
-      setLoading(true); // ✅ Show loading when fetching data
+      setLoading(true); //  Show loading when fetching data
       const response = await api.get(
         `/responses/quiz_attempt_results/${userId}/${quizId}/${attemptNumber}`,
         {
@@ -40,15 +46,16 @@ const QuizResults = () => {
 
       if (response.data) {
         setResults(response.data);
-        localStorage.setItem("quizResults", JSON.stringify(response.data)); // ✅ Overwrite localStorage with fresh data
+        console.log(response.data);
+        localStorage.setItem("quizResults", JSON.stringify(response.data)); //  Overwrite localStorage with fresh data
       } else {
         setResults(null);
       }
-      setLoading(false); // ✅ Stop loading after data is fetched
+      setLoading(false); //  Stop loading after data is fetched
     } catch (error) {
       console.error("Error fetching quiz attempt:", error);
       setResults(null);
-      setLoading(false); // ✅ Stop loading on error
+      setLoading(false); //  Stop loading on error
     }
   };
 
@@ -75,6 +82,14 @@ const QuizResults = () => {
       </div>
     );
   }
+  // Compute difficulty counts from responses
+  const difficultyCounts = results.responses.reduce(
+    (acc, { difficulty }) => {
+      acc[difficulty] = (acc[difficulty] || 0) + 1;
+      return acc;
+    },
+    { easy: 0, medium: 0, hard: 0 }
+  );
 
   return (
     <div className="min-h-screen flex flex-col items-center mt-0 sm:mt-20 bg-gradient-to-br from-gray-100 to-gray-300 p-6">
@@ -111,6 +126,17 @@ const QuizResults = () => {
               {results.summary.total_time} sec
             </span>
           </p>
+          <div className="flex justify-between mb-4 p-2 bg-gray-100 rounded-lg">
+            <span className="text-green-600 font-semibold">
+              Easy: {difficultyCounts.easy}
+            </span>
+            <span className="text-yellow-600 font-semibold">
+              Medium: {difficultyCounts.medium}
+            </span>
+            <span className="text-red-600 font-semibold">
+              Hard: {difficultyCounts.hard}
+            </span>
+          </div>
         </div>
 
         {/* Questions & Answers Section */}
@@ -120,12 +146,22 @@ const QuizResults = () => {
             return (
               <motion.div
                 key={index}
-                className="bg-white p-5 rounded-xl shadow-lg border border-gray-200"
+                className="relative bg-white p-5 rounded-xl shadow-lg border border-gray-200"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
               >
-                <h3 className="text-xl font-bold text-gray-800">
+                {/* Difficulty Tag - Now it will be positioned correctly */}
+                <span
+                  className={`absolute top-2 right-2 text-xs px-3 py-1 rounded-full font-semibold ${
+                    difficultyColors[response.difficulty]
+                  }`}
+                >
+                  {response.difficulty.charAt(0).toUpperCase() +
+                    response.difficulty.slice(1)}
+                </span>
+
+                <h3 className="text-xl font-bold text-gray-800 mt-6">
                   {index + 1}. {response.question_text}
                 </h3>
 
@@ -140,14 +176,14 @@ const QuizResults = () => {
                       <p
                         key={letter}
                         className={`px-4 py-2 rounded-lg text-lg font-medium transition-all
-                          ${
-                            isCorrectAnswer
-                              ? "bg-green-500 text-white shadow-md"
-                              : isSelected
-                              ? "bg-red-500 text-white shadow-md"
-                              : "bg-gray-200 text-gray-800"
-                          }
-                        `}
+            ${
+              isCorrectAnswer
+                ? "bg-green-500 text-white shadow-md"
+                : isSelected
+                ? "bg-red-500 text-white shadow-md"
+                : "bg-gray-200 text-gray-800"
+            }
+          `}
                       >
                         {letter}. {option}
                       </p>

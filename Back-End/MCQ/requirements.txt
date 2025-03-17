@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+pydantic
+python-dotenv
+pymongo
+sentence-transformers
+faiss-cpu
+scikit-learn
+numpy
+pandas
+matplotlib
+requests
+passlib
+python-jose
+bcrypt

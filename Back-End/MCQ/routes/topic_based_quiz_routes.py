@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pymongo import MongoClient
 from bson import ObjectId, errors
 from pydantic import BaseModel
-from datetime import datetime  # ✅ Correct import
+from datetime import datetime  #  Correct import
 import logging
 from database.database import topic_quizzes, topic_quiz_attempts
 from bson.errors import InvalidId
@@ -39,7 +39,7 @@ def create_topic_quiz(quiz_data: QuizRequest):
     """Creates a new topic-wise quiz with 30 MCQs, each having 5 options and a correct answer."""
     
     if len(quiz_data.questions) != 30:
-        logging.error("❌ Quiz creation failed: Invalid question count")
+        logging.error(" Quiz creation failed: Invalid question count")
         raise HTTPException(status_code=400, detail="A quiz must contain exactly 30 questions.")
 
     # Convert to proper structure
@@ -81,17 +81,17 @@ def get_topic_quiz(quiz_id: str):
         # Validate and convert quiz_id to ObjectId
         quiz_obj_id = ObjectId(quiz_id)
     except errors.InvalidId:
-        logging.error(f"❌ Invalid quiz_id: {quiz_id}")
+        logging.error(f" Invalid quiz_id: {quiz_id}")
         raise HTTPException(status_code=400, detail="Invalid quiz_id format.")
 
     # Query the quiz
     quiz = topic_quizzes.find_one({"_id": quiz_obj_id}, {"_id": 1, "topic_name": 1, "questions": 1})
 
     if not quiz:
-        logging.error(f"❌ Quiz not found for ID: {quiz_id}")
+        logging.error(f" Quiz not found for ID: {quiz_id}")
         raise HTTPException(status_code=404, detail="Quiz not found.")
 
-    # ✅ Convert ObjectId to string before returning
+    #  Convert ObjectId to string before returning
     quiz["_id"] = str(quiz["_id"])
 
     return quiz
@@ -106,7 +106,7 @@ def submit_topic_quiz(submission: QuizSubmission):
     quiz_id = submission.quiz_id
     responses = submission.responses
 
-    # ✅ Ensure quiz exists
+    #  Ensure quiz exists
     try:
         quiz = topic_quizzes.find_one({"_id": ObjectId(quiz_id)})
     except:
@@ -115,12 +115,12 @@ def submit_topic_quiz(submission: QuizSubmission):
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found.")
 
-    # ✅ Ensure user hasn't completed this quiz already
+    #  Ensure user hasn't completed this quiz already
     existing_attempt = topic_quiz_attempts.find_one({"quiz_id": quiz_id, "user_id": user_id})
     if existing_attempt:
         raise HTTPException(status_code=403, detail="Quiz already completed.")
 
-    # ✅ Process user responses
+    #  Process user responses
     correct_answers = {q["question_text"]: q["correct_answer"] for q in quiz["questions"]}
     
     score = 0
@@ -141,7 +141,7 @@ def submit_topic_quiz(submission: QuizSubmission):
         if is_correct:
             score += 1
 
-    # ✅ Store attempt
+    #  Store attempt
     attempt_data = {
         "user_id": user_id,
         "quiz_id": quiz_id,
@@ -209,7 +209,7 @@ def get_completed_topic_quizzes(user_id: str):
     """Fetches all topic quizzes that a user has completed."""
     
     if not user_id:
-        logging.error("❌ Invalid Request: user_id is missing")
+        logging.error(" Invalid Request: user_id is missing")
         raise HTTPException(status_code=400, detail="User ID is required.")
 
     # Find all quiz attempts by the user
@@ -219,7 +219,7 @@ def get_completed_topic_quizzes(user_id: str):
     ))
 
     if not completed_attempts:
-        logging.info(f"✅ No completed quizzes found for user: {user_id}")
+        logging.info(f" No completed quizzes found for user: {user_id}")
         return {"completed_quizzes": []}
 
     # Extract and validate quiz IDs
@@ -229,7 +229,7 @@ def get_completed_topic_quizzes(user_id: str):
         if quiz_id and isinstance(quiz_id, str):  # Ensure it's a valid string
             completed_quizzes.append(quiz_id)
         else:
-            logging.error(f"❌ Invalid quiz_id found: {quiz_id}")
+            logging.error(f" Invalid quiz_id found: {quiz_id}")
 
     return {"completed_quizzes": completed_quizzes}
 

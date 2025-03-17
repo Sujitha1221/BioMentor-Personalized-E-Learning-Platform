@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, Depends, HTTPException, status
 from pydantic import BaseModel
 from service import UserService, UserCreate, UserUpdate
@@ -6,10 +7,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi import HTTPException,Response, Depends
 from pydantic import BaseModel, EmailStr, Field
 from passlib.context import CryptContext
-from database import users_collection
-from user_mgmt_methods import create_access_token, verify_password, create_refresh_token
+from dotenv import load_dotenv
 from jose import JWTError, jwt
 import logging
+from database import users_collection
+from user_mgmt_methods import create_access_token, verify_password, create_refresh_token
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = FastAPI()
 
@@ -20,17 +25,22 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Adjust this to your frontend URL for better security
+    allow_origins=["http://127.0.0.1:3000", "http://localhost:3000"],  # Adjust this to your frontend URL for better security
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
 )
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Load SECRET_KEY & ALGORITHM from .env
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM")
 
-# JWT Secret & Algorithm
-SECRET_KEY = "E-learningplatform2k25" 
-ALGORITHM = "HS256"
+# Ensure they are loaded properly
+if not SECRET_KEY or not ALGORITHM:
+    raise ValueError("SECRET_KEY or ALGORITHM is missing in the .env file!")
+
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # User Registration Model
 class UserRegister(BaseModel):
@@ -52,7 +62,7 @@ def register_user(user: UserRegister):
 
     existing_user = users_collection.find_one({"$or": [{"username": user.username}, {"email": user.email}]})
     if existing_user:
-        logging.error(f"🚫 Username or email already exists: {user.username}, {user.email}")
+        logging.error(f" Username or email already exists: {user.username}, {user.email}")
         raise HTTPException(status_code=400, detail="Username or email already exists") 
         
     new_user = {
@@ -80,7 +90,7 @@ def login_user(user: UserLogin, response: Response):
     existing_user = users_collection.find_one({"email": user.email})
     
     if not existing_user or not verify_password(user.password, existing_user["password"]):
-        logging.error(f"🚫 Invalid email or password: {user.email}")
+        logging.error(f" Invalid email or password: {user.email}")
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     access_token = create_access_token(data={"sub": str(existing_user["_id"]), "username": existing_user["username"]})
@@ -104,7 +114,7 @@ def refresh_token(data: dict):
     refresh_token = data.get("refresh_token")  # Read from request body
 
     if not refresh_token:
-        logging.error("🚫 No refresh token provided")
+        logging.error(" No refresh token provided")
         raise HTTPException(status_code=401, detail="No refresh token provided")
 
     try:
@@ -114,6 +124,6 @@ def refresh_token(data: dict):
         
         return {"access_token": new_access_token, "token_type": "bearer"}
     except JWTError:
-        logging.error("🚫 Invalid or expired refresh token")
+        logging.error(" Invalid or expired refresh token")
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
 

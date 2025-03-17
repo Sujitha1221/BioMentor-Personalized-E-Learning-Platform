@@ -7,8 +7,12 @@ import {
   FaChartLine,
   FaUserClock,
   FaLightbulb,
+  FaStar,
+  FaBolt,
+  FaMedal,
 } from "react-icons/fa";
 import QuizLoadingScreen from "./loadingPage/QuizLoadingScreen";
+import { motion } from "framer-motion";
 
 const PerformanceDashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
@@ -16,7 +20,7 @@ const PerformanceDashboard = () => {
   const [progressInsights, setProgressInsights] = useState(null);
   const [comparisonData, setComparisonData] = useState(null);
   const [engagementScore, setEngagementScore] = useState(null);
-  const [loading, setLoading] = useState(true); // ✅ Unified loading state
+  const [loading, setLoading] = useState(true);
 
   const user = JSON.parse(localStorage.getItem("user"));
   const token = localStorage.getItem("token");
@@ -33,7 +37,7 @@ const PerformanceDashboard = () => {
           comparisonRes,
           engagementRes,
         ] = await Promise.all([
-          api.get(`/users/dashboard_data/${user.user_id}`, { headers }),
+          api.get(`/responses/dashboard_data/${user.user_id}`, { headers }),
           api.get(`/responses/performance_graph/${user.user_id}`, { headers }),
           api.get(`/responses/progress_insights/${user.user_id}`, { headers }),
           api.get(`/responses/user_performance_comparison/${user.user_id}`, {
@@ -48,7 +52,7 @@ const PerformanceDashboard = () => {
         setComparisonData(comparisonRes.data);
         setEngagementScore(engagementRes.data);
 
-        setLoading(false); // ✅ Stop loading after data is fetched
+        setLoading(false);
       } catch (error) {
         console.error("Error fetching performance data:", error);
         setLoading(false);
@@ -65,65 +69,57 @@ const PerformanceDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen p-10 mt-0 sm:mt-20 bg-gray-100 text-gray-900">
-      <h1 className="text-4xl font-bold text-center text-indigo-700 mb-6">
+    <div className="min-h-screen p-10 mt-0 sm:mt-20 bg-gradient-to-br from-blue-50 to-indigo-100 text-gray-900">
+      <motion.h1
+        className="text-5xl font-bold text-center text-indigo-700 mb-6"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         📊 User Performance Dashboard
-      </h1>
+      </motion.h1>
       <p className="text-center text-lg text-gray-700 max-w-3xl mx-auto mb-8">
-        Welcome to your personalized **Performance Dashboard**!🎯 Here, you can
-        track your quiz history, analyze your **accuracy trends**, compare your
-        scores with other users, and gain **AI-driven insights** to improve your
-        learning. Keep practicing and watch your performance grow!🚀
+        Track your progress, analyze your performance trends, and compare scores
+        with peers. Unlock insights to improve your skills and become a quiz
+        master! 🚀
       </p>
 
-      {/* Key Performance Metrics */}
+      {/* Key Metrics Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <div className="bg-white p-6 shadow-lg rounded-lg text-center">
-          <FaTrophy className="text-yellow-500 text-4xl mx-auto" />
-          <h2 className="text-xl font-semibold mt-4">Total Quizzes</h2>
-          <p className="text-2xl font-bold">
-            {dashboardData?.total_quizzes || 0}
-          </p>
-        </div>
-        <div className="bg-white p-6 shadow-lg rounded-lg text-center">
-          <FaUserClock className="text-blue-500 text-4xl mx-auto" />
-          <h2 className="text-xl font-semibold mt-4">Engagement Score</h2>
-          <p className="text-2xl font-bold">
-            {engagementScore?.engagement_score ?? "N/A"}%
-          </p>
-        </div>
-      </div>
-
-      {/* Performance Trend Chart */}
-      <div className="bg-white p-6 shadow-lg rounded-lg mb-10">
-        <h2 className="text-2xl font-semibold mb-4">
-          📈 Performance Over Time
-        </h2>
-        {performanceGraph?.quiz_numbers?.length > 0 ? (
-          <Line
-            data={{
-              labels: performanceGraph.quiz_numbers.map((num) => `Quiz ${num}`),
-              datasets: [
-                {
-                  label: "Accuracy (%)",
-                  data: performanceGraph.scores,
-                  borderColor: "#4F46E5",
-                  borderWidth: 2,
-                  fill: false,
-                },
-              ],
-            }}
-          />
-        ) : (
-          <p className="text-lg text-gray-500">
-            No quiz performance data available yet.
-          </p>
-        )}
+        {[
+          {
+            icon: <FaTrophy className="text-yellow-500 text-4xl mx-auto" />,
+            title: "Total Quizzes",
+            value: dashboardData?.total_quizzes || 0,
+          },
+          {
+            icon: <FaUserClock className="text-blue-500 text-4xl mx-auto" />,
+            title: "Engagement Score",
+            value: `${engagementScore?.engagement_score ?? "N/A"}%`,
+          },
+          {
+            icon: <FaMedal className="text-green-500 text-4xl mx-auto" />,
+            title: "Consistency Score",
+            value: dashboardData?.consistency_score || "N/A",
+          },
+        ].map((metric, index) => (
+          <motion.div
+            key={index}
+            className="bg-white p-6 shadow-lg rounded-lg text-center hover:shadow-2xl transition-all"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.2 }}
+          >
+            {metric.icon}
+            <h2 className="text-xl font-semibold mt-4">{metric.title}</h2>
+            <p className="text-2xl font-bold">{metric.value}</p>
+          </motion.div>
+        ))}
       </div>
 
       {/* AI-Driven Insights */}
-      <div className="bg-white p-6 shadow-lg rounded-lg mb-10">
-        <h2 className="text-2xl font-semibold mb-4 flex items-center">
+      <div className="bg-yellow-100 p-6 shadow-lg rounded-lg mb-10 text-center">
+        <h2 className="text-2xl font-semibold flex items-center justify-center">
           <FaLightbulb className="mr-2 text-yellow-500" /> AI Insights
         </h2>
         <p className="text-lg font-semibold">
@@ -132,27 +128,62 @@ const PerformanceDashboard = () => {
         </p>
       </div>
 
-      {/* Accuracy Comparison */}
+      {/* Performance Trend Chart */}
+      <div className="bg-white p-6 shadow-lg rounded-lg mb-10">
+        <h2 className="text-2xl font-semibold mb-4">
+          📈 Performance Over Time
+        </h2>
+        {performanceGraph?.quiz_numbers?.length > 0 ? (
+          <div className="w-full h-64">
+            <Line
+              data={{
+                labels: performanceGraph.quiz_numbers.map(
+                  (num) => `Quiz ${num}`
+                ),
+                datasets: [
+                  {
+                    label: "Accuracy (%)",
+                    data: performanceGraph.scores,
+                    borderColor: "#4F46E5",
+                    borderWidth: 2,
+                    fill: false,
+                  },
+                ],
+              }}
+              options={{ maintainAspectRatio: false }}
+            />
+          </div>
+        ) : (
+          <p className="text-lg text-gray-500">
+            No quiz performance data available yet.
+          </p>
+        )}
+      </div>
+
+      {/* Accuracy Comparison Chart */}
       <div className="bg-white p-6 shadow-lg rounded-lg mb-10">
         <h2 className="text-2xl font-semibold mb-4">
           🏆 Comparison with Other Users
         </h2>
         {comparisonData?.user_accuracy !== undefined ? (
-          <Bar
-            data={{
-              labels: ["Your Accuracy", "Average Accuracy"],
-              datasets: [
-                {
-                  label: "Accuracy (%)",
-                  data: [
-                    comparisonData?.user_accuracy,
-                    comparisonData?.average_accuracy,
-                  ],
-                  backgroundColor: ["#34D399", "#60A5FA"],
-                },
-              ],
-            }}
-          />
+          <div className="w-full h-64">
+            <Bar
+              data={{
+                labels: ["Your Accuracy", "Average Accuracy"],
+                datasets: [
+                  {
+                    label: "Accuracy (%)",
+                    data: [
+                      comparisonData?.user_accuracy,
+                      comparisonData?.average_accuracy,
+                    ],
+                    backgroundColor: ["#34D399", "#60A5FA"],
+                  },
+                ],
+              }}
+              options={{ maintainAspectRatio: false }}
+            />
+          </div>
         ) : (
           <p className="text-lg text-gray-500">
             Not enough data for comparison.
