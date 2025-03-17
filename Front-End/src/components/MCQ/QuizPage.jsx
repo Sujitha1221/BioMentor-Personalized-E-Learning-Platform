@@ -138,7 +138,7 @@ const QuizPage = () => {
         Authorization: `Bearer ${token}`,
       };
       const response = await api.post(
-        "http://127.0.0.1:8000/responses/submit_quiz/",
+        "responses/submit_quiz/",
         {
           user_id: user.user_id,
           quiz_id: quizId,
