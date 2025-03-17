@@ -48,7 +48,7 @@ const router = createBrowserRouter([
     path: "/", // Parent route for authenticated pages
     element: (
       <>
-        <ScrollToTop /> {/*  Ensures page scrolls to top on route change */}
+        <ScrollToTop /> {/*Ensures page scrolls to top on route change */}
         <ProtectedRoute element={<Main />} />
       </>
     ),
