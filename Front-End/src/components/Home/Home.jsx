@@ -14,7 +14,7 @@ const Home = () => {
       <div className="my-20">
         <TrustedBrand />
       </div>
-      <div className="my-20">
+      <div id="top-categories" className="my-20">
         <TopCategories />
       </div>
       <div className="my-20">
