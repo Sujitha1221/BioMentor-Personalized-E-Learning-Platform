@@ -49,10 +49,10 @@ const MCQHomePage = () => {
             <div className="p-6 bg-indigo-100 rounded-full shadow-lg flex items-center justify-center w-20 h-20 mb-4 animate-pulse">
               <FaQuestionCircle className="text-5xl text-purple-600" />
             </div>
-            <h1 className="text-4xl font-extrabold leading-tight tracking-wide">
+            <h1 className="text-4xl font-semibold leading-tight tracking-wide">
               Master Your Knowledge with Adaptive Quizzes
             </h1>
-            <p className="text-lg mt-4 leading-relaxed">
+            <p className="text-gray-600 text-lg mt-4 leading-relaxed">
               Take personalized quizzes that adjust based on your answers. Track
               your improvements, identify your strengths, and enhance your
               learning journey.
@@ -66,7 +66,7 @@ const MCQHomePage = () => {
               ].map((tag) => (
                 <span
                   key={tag}
-                  className="text-sm px-4 py-2 bg-indigo-200 rounded-full text-purple-800 font-semibold shadow-md"
+                  className="text-sm px-4 py-2 bg-indigo-200 rounded-full text-purple-800 font-semibold rounded-md"
                 >
                   {tag}
                 </span>
@@ -132,10 +132,10 @@ const MCQHomePage = () => {
             <div className="p-6 bg-purple-100 rounded-full shadow-lg flex items-center justify-center w-20 h-20 mb-4 animate-pulse">
               <FaHistory className="text-5xl text-indigo-600" />
             </div>
-            <h1 className="text-4xl font-extrabold leading-tight tracking-wide">
+            <h1 className="text-4xl font-semibold leading-tight tracking-wide">
               Explore Your Quiz History
             </h1>
-            <p className="text-lg mt-4 leading-relaxed">
+            <p className="text-gray-600 text-lg mt-4 leading-relaxed">
               Keep track of all quizzes you have attempted. Reattempt previous
               quizzes, compare your scores, and measure your improvement over
               time.
@@ -149,7 +149,7 @@ const MCQHomePage = () => {
               ].map((tag) => (
                 <span
                   key={tag}
-                  className="text-sm px-4 py-2 bg-purple-200 rounded-full text-indigo-800 font-semibold shadow-md"
+                  className="text-sm px-4 py-2 bg-purple-200 rounded-full text-indigo-800 font-semibold rounded-md"
                 >
                   {tag}
                 </span>
@@ -186,10 +186,10 @@ const MCQHomePage = () => {
             <div className="p-6 bg-green-100 rounded-full shadow-lg flex items-center justify-center w-20 h-20 mb-4 animate-pulse">
               <FaChartBar className="text-5xl text-green-600" />
             </div>
-            <h1 className="text-4xl font-extrabold leading-tight tracking-wide">
+            <h1 className="text-4xl font-semibold leading-tight tracking-wide">
               View Your Performance Dashboard
             </h1>
-            <p className="text-lg mt-4 leading-relaxed">
+            <p className="text-gray-600 text-lg mt-4 leading-relaxed">
               Track your progress, see detailed analytics, and get insights into
               your learning trends.
             </p>
@@ -202,7 +202,7 @@ const MCQHomePage = () => {
               ].map((tag) => (
                 <span
                   key={tag}
-                  className="text-sm px-4 py-2 bg-green-200 rounded-full text-green-800 font-semibold shadow-md"
+                  className="text-sm px-4 py-2 bg-green-200 rounded-full text-green-800 font-semibold rounded-md"
                 >
                   {tag}
                 </span>
@@ -264,10 +264,10 @@ const MCQHomePage = () => {
             <div className="p-6 bg-yellow-100 rounded-full shadow-lg flex items-center justify-center w-20 h-20 mb-4 animate-pulse">
               <FaBookOpen className="text-5xl text-yellow-600" />
             </div>
-            <h1 className="text-4xl font-extrabold leading-tight tracking-wide">
+            <h1 className="text-4xl font-semibold leading-tight tracking-wide">
               Practice Topic-wise MCQ Questions
             </h1>
-            <p className="text-lg mt-4 leading-relaxed">
+            <p className="text-gray-600 text-lg mt-4 leading-relaxed">
               Strengthen your knowledge by practicing MCQs from different
               topics. Choose a subject, test your skills, and improve your
               understanding.
@@ -281,7 +281,7 @@ const MCQHomePage = () => {
               ].map((tag) => (
                 <span
                   key={tag}
-                  className="text-sm px-4 py-2 bg-yellow-200 rounded-full text-yellow-800 font-semibold shadow-md"
+                  className="text-sm px-4 py-2 bg-yellow-200 rounded-full text-yellow-800 font-semibold rounded-md"
                 >
                   {tag}
                 </span>
