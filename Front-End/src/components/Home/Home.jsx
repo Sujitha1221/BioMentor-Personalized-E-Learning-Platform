@@ -1,8 +1,8 @@
 import React from "react";
 import "./Home.css";
 import Hero from "../Hero/Hero";
-import TrustedBrand from "../TrustedBrand/TrustedBrand";
-import TopCategories from "../TopCategories/TopCategories";
+import Testimonials from "../Testimonials/Testimonials";
+import Features from "../Features/Features";
 import PromoSection from "../PromoSection/PromoSection";
 
 const Home = () => {
@@ -12,10 +12,10 @@ const Home = () => {
         <Hero />
       </div>
       <div className="my-20">
-        <TrustedBrand />
+        <Testimonials />
       </div>
       <div id="top-categories" className="my-20">
-        <TopCategories />
+        <Features />
       </div>
       <div className="my-20">
         <PromoSection />

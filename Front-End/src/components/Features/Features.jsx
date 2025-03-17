@@ -3,10 +3,10 @@ import icon1 from "../../assets/image/flash_cards.png";
 import icon2 from "../../assets/image/memo_4836957.png";
 import icon3 from "../../assets/image/mcq.png";
 import icon4 from "../../assets/image/qa.png";
-import "./TopCategories.css";
+import "./Features.css";
 import { Link } from "react-router-dom";
 
-const TopCategories = () => {
+const Features = () => {
   return (
     <div className="w-2/3 mx-auto mt-20">
       <div className="text-center">
@@ -88,4 +88,4 @@ const TopCategories = () => {
   );
 };
 
-export default TopCategories;
+export default Features;

@@ -28,7 +28,7 @@ const testimonials = [
   },
 ];
 
-const TrustedBy = () => {
+const Testimonials = () => {
   return (
     <div className="w-4/5 mx-auto p-6 text-center py-16 bg-gradient-to-b from-gray-900 to-gray-800 rounded-xl shadow-lg">
       <h2 className="text-3xl font-extrabold text-white mb-4">
@@ -57,4 +57,4 @@ const TrustedBy = () => {
   );
 };
 
-export default TrustedBy;
+export default Testimonials;
