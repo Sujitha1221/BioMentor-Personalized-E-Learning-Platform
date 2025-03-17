@@ -7,11 +7,14 @@ from pymongo import MongoClient
 from datetime import datetime
 from bson import ObjectId
 from sentence_transformers import SentenceTransformer
+from dotenv import load_dotenv
 
 NOTES_CSV_PATH = "Notes/cleaned_Notes.csv"  # Study Notes CSV
 FAISS_INDEX_PATH = "DB/cleaned_Notes_faiss_index.bin"  # FAISS Index Storage
 MODEL_NAME = 'all-MiniLM-L6-v2'  # Fast & Lightweight SentenceTransformer Model
 
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(
@@ -26,7 +29,9 @@ def get_db():
     Connect to MongoDB and return the database object.
     """
     try:
-        client = MongoClient("mongodb://localhost:27017/")  # Update with your MongoDB URI
+        # MongoDB Connection
+        MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+        client = MongoClient(MONGO_URI)
         db = client["evaluation_db"]
         logging.info("Connected to MongoDB successfully.")
         return db
