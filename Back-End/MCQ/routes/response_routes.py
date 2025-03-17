@@ -403,9 +403,16 @@ def get_quiz_attempt_results(user_id: str, quiz_id: str, attempt_number: int,cur
 
 
 @router.get("/performance_graph/{user_id}")
-def generate_performance_graph(user_id: str):
+def generate_performance_graph(user_id: str,current_user: str = Depends(get_current_user)):
     """Generates graphs showing user improvement and consistency."""
     user_data = users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user_data:
+            raise HTTPException(status_code=404, detail="User not found.")
+        
+    if current_user != user_id:
+            logging.error(f" Unauthorized access attempt by {current_user}")
+            raise HTTPException(status_code=403, detail="Unauthorized access")
+    
     if not user_data or "performance" not in user_data or "last_10_quizzes" not in user_data["performance"]:
         return {
             "quiz_numbers": [],
@@ -439,6 +446,8 @@ def generate_performance_graph(user_id: str):
 def get_progress_insights(user_id: str, current_user: str = Depends(get_current_user)):
     """Analyzes user progress and provides AI-driven insights."""
     user_data = users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user_data:
+            raise HTTPException(status_code=404, detail="User not found.")
 
     if not user_data or "performance" not in user_data:
         raise HTTPException(status_code=404, detail="No performance data found.")
@@ -492,6 +501,8 @@ def get_progress_insights(user_id: str, current_user: str = Depends(get_current_
 def get_user_performance_comparison(user_id: str, current_user: str = Depends(get_current_user)):
     """Compares user's performance against average stats of all users."""
     user_data = users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user_data:
+            raise HTTPException(status_code=404, detail="User not found.")
     if current_user != user_id:
             logging.error(f" Unauthorized access attempt by {current_user}")
             raise HTTPException(status_code=403, detail="Unauthorized access")
@@ -533,6 +544,8 @@ def get_user_performance_comparison(user_id: str, current_user: str = Depends(ge
 def get_engagement_score(user_id: str, current_user: str = Depends(get_current_user)):
     """Calculates how active and engaged the user is."""
     user_data = users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user_data:
+            raise HTTPException(status_code=404, detail="User not found.")
     if current_user != user_id:
         logging.error(f" Unauthorized access attempt by {current_user}")
         raise HTTPException(status_code=403, detail="Unauthorized access")
@@ -574,6 +587,8 @@ def get_engagement_score(user_id: str, current_user: str = Depends(get_current_u
 def get_dashboard_data(user_id: str, current_user: str = Depends(get_current_user)):
     """Returns structured performance data for the user dashboard."""
     user_data = users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user_data:
+            raise HTTPException(status_code=404, detail="User not found.")
     
     if current_user != user_id:
         logging.error(f" Unauthorized access attempt by {current_user}")

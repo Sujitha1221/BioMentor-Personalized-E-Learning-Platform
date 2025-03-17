@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes.user_routes import router as user_router
 from routes.mcq_routes import router as mcq_router
 from routes.adaptive_quiz_routes import router as adaptive_quiz_router
 from routes.response_routes import router as response_router
@@ -18,7 +17,6 @@ app.add_middleware(
 )
 
 #  Include routers AFTER CORS middleware
-app.include_router(user_router, prefix="/users", tags=["Users"])
 app.include_router(mcq_router, prefix="/mcqs", tags=["MCQ Generation"])
 app.include_router(adaptive_quiz_router, prefix="/quiz", tags=["Adaptive MCQ Generation"])
 app.include_router(response_router, prefix="/responses", tags=["User Responses"])
