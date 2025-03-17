@@ -13,9 +13,10 @@ const QuestionAndAnsweringStudentHistory = () => {
   const [studentId,setStudentId] = useState("");
 
   useEffect(() => {
-    const storedStudentId = localStorage.getItem("user");
+    let storedStudentId = localStorage.getItem("user");
     if (storedStudentId) {
-        setStudentId(storedStudentId);
+      storedStudentId = JSON.parse(storedStudentId).email;
+      setStudentId(storedStudentId);
     }
 
     axios

@@ -307,7 +307,7 @@ const QuestionAndAnsweringHomePage = () => {
                 </p>
                 <div className="flex justify-center gap-3 mt-4">
                   <button className="text-green-500 text-lg">📖</button>
-                  <button className="text-orange-500 text-lg"></button>
+                  <button className="text-orange-500 text-lg">✅</button>
                 </div>
                 <span className="bg-gray-500 text-white px-3 py-1 rounded-md text-xs mt-4 inline-block">
                   PERFORMANCE-BASED STUDY

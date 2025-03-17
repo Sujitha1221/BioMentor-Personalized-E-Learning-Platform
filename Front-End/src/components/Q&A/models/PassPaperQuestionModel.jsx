@@ -20,9 +20,10 @@ const PassPaperQuestionModel = ({ isOpen, onClose }) => {
   useEffect(() => {
     if (!isOpen) return;
 
-    const studentId = localStorage.getItem("user");
-    if (studentId) {
-      setStudentId(studentId);
+    let storedStudentId = localStorage.getItem("user");
+    if (storedStudentId) {
+      storedStudentId = JSON.parse(storedStudentId).email;
+      setStudentId(storedStudentId);
     }
 
     // Reset states on modal open

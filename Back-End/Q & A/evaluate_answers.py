@@ -1,4 +1,5 @@
 import logging
+import os
 from sentence_transformers import SentenceTransformer, models
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity as cosine
@@ -8,6 +9,7 @@ from datetime import datetime
 from pymongo import MongoClient
 from language_tool_python import LanguageTool
 from generate_answers import generate_structured_answer, generate_essay_answer
+from dotenv import load_dotenv
 
 # Configure logging
 logging.basicConfig(
@@ -16,13 +18,18 @@ logging.basicConfig(
     handlers=[logging.StreamHandler()]
 )
 
+# Load environment variables from .env file
+load_dotenv()
+
 # MongoDB Connection
 def get_db():
     """
     Connect to MongoDB and return the database object.
     """
     try:
-        client = MongoClient("mongodb://localhost:27017/")  # Update with your MongoDB URI
+        # MongoDB Connection
+        MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+        client = MongoClient(MONGO_URI)
         db = client["evaluation_db"]
         logging.info("Connected to MongoDB successfully.")
         return db
