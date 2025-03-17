@@ -36,9 +36,10 @@ const CompareAnswerModel = ({ onBack }) => {
       return;
     }
 
-    const studentId = localStorage.getItem("user");
-    if (studentId) {
-      setStudentId(studentId);
+    let storedStudentId = localStorage.getItem("user");
+    if (storedStudentId) {
+      storedStudentId = JSON.parse(storedStudentId).email;
+      setStudentId(storedStudentId);
     }
     
 
