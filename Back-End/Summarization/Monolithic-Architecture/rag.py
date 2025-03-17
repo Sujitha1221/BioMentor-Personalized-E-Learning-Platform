@@ -1,4 +1,4 @@
-from dangerous_keywords import DANGEROUS_KEYWORDS
+from utils.dangerous_keywords import DANGEROUS_KEYWORDS
 import logging
 import pandas as pd
 from sentence_transformers import SentenceTransformer
