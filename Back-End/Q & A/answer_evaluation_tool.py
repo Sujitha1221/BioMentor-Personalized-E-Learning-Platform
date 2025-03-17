@@ -528,5 +528,4 @@ if __name__ == "__main__":
 
     # Compute averages
     averages = get_student_analytic_details("sajeesiva06@gmail.com")
-    analytics = convert_objectid(analytics)
     print("Student Analytic Details:", averages)
