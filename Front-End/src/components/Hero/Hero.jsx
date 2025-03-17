@@ -9,7 +9,7 @@ import {
 
 const Hero = () => {
   return (
-    <div className="w-4/5 mx-auto flex flex-col lg:flex-row items-center pt-20">
+    <div className="w-4/5 mx-auto flex flex-col lg:flex-row items-center pt-20 pb-10">
       <div className="w-full lg:w-1/2">
         <h1 className="mb-4 text-4xl font-extrabold leading-none tracking-tight md:text-5xl lg:text-6xl text-white">
           Enhance Biology Learning with ML-Powered{" "}
@@ -23,12 +23,12 @@ const Hero = () => {
           questions.
         </p>
         <div className="flex flex-col md:flex-row">
-          <button
-            type="button"
+          <a
+            href="#top-categories"
             className="button-course outline-none font-medium rounded-lg px-8 py-4 text-center text-lg mb-2 md:mb-0 md:me-2"
           >
             Explore Features
-          </button>
+          </a>
         </div>
         <div className="my-5 flex flex-col gap-5 md:flex-row md:gap-8">
           <p className="flex gap-2 text-white">
