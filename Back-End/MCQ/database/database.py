@@ -7,7 +7,11 @@ from pymongo.errors import ConnectionFailure
 # Load environment variables
 load_dotenv()
 
-MONGO_URI = "mongodb+srv://Y3S1:y3s1spm@spm.pbmlqx7.mongodb.net/mcq_quiz_platform?retryWrites=true&w=majority" # Default in case .env is missing
+# Get MongoDB URI from .env
+MONGO_URI = os.getenv("MONGO_URI")
+
+if not MONGO_URI:
+    raise ValueError("MONGO_URI is not set in the .env file!")
 
 # Connect to MongoDB Atlas with retry mechanism
 while True:

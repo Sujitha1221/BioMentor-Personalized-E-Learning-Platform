@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, Depends, HTTPException, status
 from pydantic import BaseModel
 from service import UserService, UserCreate, UserUpdate
@@ -6,10 +7,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi import HTTPException,Response, Depends
 from pydantic import BaseModel, EmailStr, Field
 from passlib.context import CryptContext
-from database import users_collection
-from user_mgmt_methods import create_access_token, verify_password, create_refresh_token
+from dotenv import load_dotenv
 from jose import JWTError, jwt
 import logging
+from database import users_collection
+from user_mgmt_methods import create_access_token, verify_password, create_refresh_token
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = FastAPI()
 
@@ -26,11 +31,16 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Load SECRET_KEY & ALGORITHM from .env
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM")
 
-# JWT Secret & Algorithm
-SECRET_KEY = "E-learningplatform2k25" 
-ALGORITHM = "HS256"
+# Ensure they are loaded properly
+if not SECRET_KEY or not ALGORITHM:
+    raise ValueError("SECRET_KEY or ALGORITHM is missing in the .env file!")
+
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # User Registration Model
 class UserRegister(BaseModel):
