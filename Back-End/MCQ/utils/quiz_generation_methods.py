@@ -25,25 +25,18 @@ dataset = pd.read_csv("dataset/question_dataset_with_clusters.csv")
 
 # Method to retrieve diverse context questions to generate new questions
 def retrieve_context_questions(query_text, top_k=3):
-    """Retrieve diverse MCQs from different clusters to blend context for a new question."""
+    """Retrieve diverse MCQs from different clusters for better question variety."""
     query_vector = embedding_model.encode([query_text]).astype(np.float32)
-    
-    # Ensure FAISS index isn't empty before searching
+
     if index.ntotal == 0:
         logging.warning("⚠ FAISS index is empty! No previous questions available.")
         return pd.DataFrame()
 
-    D, I = index.search(query_vector, k=min(top_k, index.ntotal))  # Retrieve top-K closest MCQs
+    D, I = index.search(query_vector, k=min(top_k * 3, index.ntotal))  # Retrieve 3x top-k
 
-    #  FIX: Ensure valid indices
     valid_indices = [i for i in I[0] if 0 <= i < len(dataset)]
-    if not valid_indices:
-        logging.warning("⚠ No valid indices found in FAISS search. Returning empty DataFrame.")
-        return pd.DataFrame()
-
     retrieved_questions = dataset.iloc[valid_indices]
 
-    # Ensure selection from different clusters
     unique_clusters = set()
     context_questions = []
 
@@ -54,11 +47,8 @@ def retrieve_context_questions(query_text, top_k=3):
         if len(context_questions) >= top_k:
             break
 
-    if not context_questions:
-        logging.warning("⚠ No diverse context questions found.")
-        return pd.DataFrame()
-
     return pd.DataFrame(context_questions)
+
 
 # Method to assign difficulty parameter based on student ability
 def assign_difficulty_parameter(user_id, difficulty):
@@ -78,24 +68,30 @@ def assign_discrimination_parameter():
     """Assigns a discrimination parameter (a) randomly within a reasonable range."""
     return random.uniform(0.5, 2.0)  # Higher a values indicate better question discrimination
 
-def is_similar_to_same_quiz_questions(new_question, generated_questions, threshold=0.65):
-    """Check if the generated question is similar to any question already generated in the same quiz."""
+def is_similar_to_same_quiz_questions(new_question, existing_questions, threshold=0.85):
+    """Check if the new question is too similar to previously generated questions."""
     
-    if not generated_questions:
-        return False  #  If no questions exist, return False (not similar)
+    if not existing_questions:
+        return False  # No previous questions to compare with
     
+    # Encode the new question
     new_vector = embedding_model.encode([new_question]).astype(np.float32)
-    existing_vectors = embedding_model.encode(list(generated_questions)).astype(np.float32)
 
-    # 🔹 Compute cosine similarity with all previous questions in the same quiz
+    # Encode existing questions
+    existing_vectors = embedding_model.encode(list(existing_questions)).astype(np.float32)
+
+    # Compute cosine similarity
     similarity_scores = cosine_similarity(new_vector, existing_vectors)[0]
-    
-    #  Return True if **any** question in the same quiz is too similar
-    if any(sim >= threshold for sim in similarity_scores):
-        logging.warning(f" Too Similar to Same Quiz Questions: {new_question} (Max Cosine Sim: {max(similarity_scores)})")
+
+    # Get the max similarity score
+    max_similarity = max(similarity_scores) if similarity_scores.size else 0
+
+    # If the similarity score is too high, reject the question
+    if max_similarity >= threshold:
+        logging.warning(f"⚠ Similarity {max_similarity} exceeds threshold {threshold}. Skipping question: {new_question}")
         return True  
 
-    return False
+    return False  # Safe to use
 
 def is_similar_to_past_quiz_questions(new_question, user_id, threshold=0.65):
     """Check if the generated question is similar to any question from past quizzes of the same user."""
@@ -105,15 +101,26 @@ def is_similar_to_past_quiz_questions(new_question, user_id, threshold=0.65):
     if not seen_questions:
         return False  #  If no past questions exist, return False (not similar)
 
-    new_vector = embedding_model.encode([new_question]).astype(np.float32)
-    past_vectors = embedding_model.encode(list(seen_questions)).astype(np.float32)
+    # Generate embeddings for the new question
+    new_vector = embedding_model.encode([new_question]).astype(np.float32).reshape(1, -1)
 
-    # 🔹 Compute cosine similarity with all past questions
+    # Generate embeddings for past questions (only if questions exist)
+    past_vectors = embedding_model.encode(seen_questions).astype(np.float32) if seen_questions else np.array([])
+    
+    # Handle case where there are no past vectors
+    if past_vectors.shape[0] == 0:
+        return False  
+
+    # Ensure past vectors are correctly shaped (2D array)
+    past_vectors = past_vectors.reshape(len(past_vectors), -1)
+    
+    # Compute cosine similarity with all past questions
     similarity_scores = cosine_similarity(new_vector, past_vectors)[0]
 
-    #  Return True if **any** past question is too similar
-    if any(sim >= threshold for sim in similarity_scores):
-        logging.warning(f" Too Similar to Past Quiz Questions: {new_question} (Max Cosine Sim: {max(similarity_scores)})")
+    # Check if similarity exceeds threshold
+    max_sim = max(similarity_scores) if len(similarity_scores) > 0 else 0
+    if max_sim >= threshold:
+        logging.warning(f"🚫 Too Similar to Past Quiz Questions: {new_question} (Max Cosine Sim: {max_sim})")
         return True  
 
     return False
@@ -185,28 +192,30 @@ def get_irt_based_difficulty_distribution(user_id, total_questions):
         "hard": total_questions - (round(easy_ratio * total_questions) + round(medium_ratio * total_questions))
     }
 
+# fetch last 2 quizzes of a particular user
 def get_seen_questions(user_id, limit=2):
     """
     Retrieve previously seen questions efficiently.
     Instead of fetching all quizzes, we only fetch the last `limit` quizzes.
     """
-    seen_questions = set()
-    
-    # 🔹 Fetch only the last `limit` quizzes (sorted by newest first)
+    seen_questions = []
+
+    # Fetch only the last `limit` quizzes (sorted by newest first)
     past_quizzes = list(quizzes_collection.find(
         {"user_id": user_id},
-        {"questions.question_text": 1, "_id": 0}  
-    ).sort("created_at", -1).limit(limit))  #  Fetch only recent quizzes
+        {"questions.question_text": 1, "_id": 0}
+    ).sort("created_at", -1).limit(limit))  # Fetch only recent quizzes
 
     logging.info(f"🔍 Found {len(past_quizzes)} recent quizzes for user {user_id}")
 
     for quiz in past_quizzes:
-        for question in quiz.get("questions", []):  #  Use `.get()` to avoid KeyErrors
+        for question in quiz.get("questions", []):  # Use `.get()` to avoid KeyErrors
             if "question_text" in question:
-                seen_questions.add(question["question_text"])
+                seen_questions.append(question["question_text"])  # Maintain order
 
     return seen_questions
 
+# fetch random questions from database to use it if model hasn't generated proper questions
 def fetch_questions_from_db(count=1):
     """
     Fetch random MCQs from the database as a backup when API-generated MCQs fail.
@@ -243,3 +252,19 @@ def fetch_questions_from_db(count=1):
     except Exception as e:
         logging.error(f" Error fetching backup MCQs from DB: {e}")
         return []
+    
+def is_duplicate_faiss(new_question, index, threshold=0.85):
+    """Check if a newly generated question is too similar to stored FAISS index questions."""
+
+    # Encode the new question into a vector
+    new_vector = embedding_model.encode([new_question]).astype(np.float32)
+
+    # Search for the most similar questions in FAISS
+    D, I = index.search(new_vector, k=5)  # Retrieve top 5 similar questions
+
+    if len(D[0]) > 0 and min(D[0]) <= (1 - threshold):  # Convert FAISS L2 distance to similarity
+        logging.warning(f"⚠ FAISS detected duplicate! Min distance: {min(D[0]):.4f}, Threshold: {1 - threshold:.4f}. Skipping question: {new_question}")
+        return True  
+
+    return False  # No duplicate detected
+ 
