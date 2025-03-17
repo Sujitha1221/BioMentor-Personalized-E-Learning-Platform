@@ -220,8 +220,9 @@ def polish_with_gemini(model_answer, query, retrieved_content, question_type):
         else:
             prompt += (
                 f"Word Count: {word_count}, Sentence Count: {sentence_count}\n\n"
-                "Please refine and improve the response to **ensure a minimum of 300 words**. "
+                "Please refine and improve the response to **ensure a minimum of 500 words**. "
                 "Make the answer well-structured, clear, and factually accurate while avoiding repetition."
+                "Ensure that the response is written in a single, cohesive paragraph suitable for an essay-style answer."
             )
 
         response = gemini_model.generate_content(prompt)

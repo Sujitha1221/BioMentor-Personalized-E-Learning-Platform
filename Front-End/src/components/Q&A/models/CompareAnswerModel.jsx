@@ -50,7 +50,7 @@ const CompareAnswerModel = ({ onBack }) => {
 
     try {
       const response = await axios.post(`${QA_URL}/evaluate-answer`, {
-        student_id: studentId,
+        student_id: storedStudentId,
         question,
         user_answer: answer,
         question_type: answerType,

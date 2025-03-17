@@ -36,6 +36,23 @@ const QuestionAndAnsweringStudentDashboard = () => {
     axios
       .post(`${QA_URL}/student-analytics`, { student_id: storedStudentId })
       .then((response) => {
+
+        // Classify strengths and weaknesses based on final score threshold of 65
+        const strengths = [];
+        const weaknesses = [];
+
+        response.data.analytics.evaluations.forEach((evaluation) => {
+          console.log();
+          if (evaluation.evaluation_result.final_score > 65) {
+            strengths.push(evaluation.question);
+          } else {
+            weaknesses.push(evaluation.question);
+          }
+        });
+
+        response.data.analytics.feedback_report.strengths = strengths;
+        response.data.analytics.feedback_report.weaknesses = weaknesses;
+
         setStudentData(response.data.analytics);
         setLoading(false);
       })
