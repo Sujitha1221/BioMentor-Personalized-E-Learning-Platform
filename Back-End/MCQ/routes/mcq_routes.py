@@ -39,27 +39,27 @@ def generate_quiz(user_id: str, current_user: str = Depends(get_current_user)):
             while generated < count:
                 mcq = generate_mcq(difficulty, user_id)
 
-                # ✅ Log response for debugging
+                #  Log response for debugging
                 logging.info(f"📩 Received MCQ response: {mcq}")
 
-                # ✅ Validate MCQ before using
+                #  Validate MCQ before using
                 if not mcq or not isinstance(mcq, dict) or "question" not in mcq:
                     failed_attempts += 1
                     logging.warning(f"⚠ Failed MCQ generation for {difficulty}. Retrying... ({failed_attempts}/3)")
 
-                    if failed_attempts >= 3:  # 🔥 Reduced from 5 → 3 retries
-                        logging.error(f"❌ Skipping {difficulty} MCQ after 3 failed attempts.")
+                    if failed_attempts >= 3:  #  Reduced from 5 → 3 retries
+                        logging.error(f" Skipping {difficulty} MCQ after 3 failed attempts.")
                         break  # Move to the next difficulty level
                     
                     continue  # Retry another question
                 
-                # ✅ Check if question is already generated in the same quiz
+                #  Check if question is already generated in the same quiz
                 if mcq["question"] in current_quiz_questions:
-                    logging.warning(f"🚫 Duplicate detected within the same quiz: {mcq['question']}, retrying...")
+                    logging.warning(f" Duplicate detected within the same quiz: {mcq['question']}, retrying...")
                     failed_attempts += 1
                     continue
 
-                # ✅ Successfully generated a question, add to the list
+                #  Successfully generated a question, add to the list
                 formatted_mcq = {
                     "question_text": mcq.get("question", "N/A"),  
                     "option1": mcq.get("options", {}).get("A", "N/A"),
@@ -72,16 +72,16 @@ def generate_quiz(user_id: str, current_user: str = Depends(get_current_user)):
                 }
                 current_quiz_questions.add(mcq["question"])
                 mcqs.append(formatted_mcq)
-                generated += 1  # ✅ Increase count only if a valid MCQ is added
+                generated += 1  #  Increase count only if a valid MCQ is added
 
-            # ✅ Log how many MCQs were generated per difficulty
-            logging.info(f"✅ Successfully generated {generated}/{count} {difficulty}-level MCQs.")
+            #  Log how many MCQs were generated per difficulty
+            logging.info(f" Successfully generated {generated}/{count} {difficulty}-level MCQs.")
 
-        # ✅ Handle partial quiz generation
+        #  Handle partial quiz generation
         if len(mcqs) < 15:
             logging.warning(f"⚠ Could not generate all 15 questions. Returning {len(mcqs)} instead.")
 
-        # ✅ Store successfully generated quiz in DB
+        #  Store successfully generated quiz in DB
         quiz_data = {
             "quiz_id": quiz_id,
             "user_id": user_id,
@@ -94,14 +94,14 @@ def generate_quiz(user_id: str, current_user: str = Depends(get_current_user)):
         return {"quiz_id": quiz_id, "total_questions": len(mcqs), "mcqs": mcqs}
 
     except Exception as e:
-        logging.critical(f"🔥 Unexpected Fatal Error: {str(e)}")
+        logging.critical(f" Unexpected Fatal Error: {str(e)}")
 
-        # ✅ If an error occurs, return the **generated** MCQs instead of crashing
+        #  If an error occurs, return the **generated** MCQs instead of crashing
         return {
             "error": "An error occurred while generating the quiz.",
             "quiz_id": quiz_id,
             "total_questions": len(mcqs),
-            "mcqs": mcqs  # ✅ Return the questions that were successfully generated
+            "mcqs": mcqs  #  Return the questions that were successfully generated
         }
 
 @router.get("/get_quiz/{quiz_id}")
@@ -121,5 +121,5 @@ def get_quiz(quiz_id: str):
         return quiz
 
     except Exception as e:
-        logging.error(f"🔥 Error fetching quiz: {str(e)}")
+        logging.error(f" Error fetching quiz: {str(e)}")
         raise HTTPException(status_code=500, detail="An error occurred while retrieving the quiz.")

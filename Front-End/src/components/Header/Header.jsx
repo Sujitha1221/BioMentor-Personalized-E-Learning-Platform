@@ -10,7 +10,7 @@ const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showLogoutModal, setShowLogoutModal] = useState(false); // ✅ Logout modal state
+  const [showLogoutModal, setShowLogoutModal] = useState(false); //  Logout modal state
 
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
@@ -23,7 +23,7 @@ const Header = () => {
   }, []);
 
   const handleLogout = () => {
-    // ✅ Remove all stored authentication details
+    //  Remove all stored authentication details
     localStorage.removeItem("token");
     localStorage.removeItem("refresh_token");
     localStorage.removeItem("user");
@@ -155,7 +155,7 @@ const Header = () => {
           </div>
         </div>
       </nav>
-      {/* ✅ Logout Confirmation Modal */}
+      {/*  Logout Confirmation Modal */}
       {showLogoutModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg text-center">

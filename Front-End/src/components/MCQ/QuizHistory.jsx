@@ -24,7 +24,7 @@ const QuizHistory = () => {
     } else {
       fetchQuizHistory();
     }
-  }, [userId, token, navigate]); // ✅ Now it only runs when userId or token changes
+  }, [userId, token, navigate]); //  Now it only runs when userId or token changes
 
   const fetchQuizHistory = async () => {
     try {
@@ -191,7 +191,7 @@ const QuizHistory = () => {
       <RetryQuizModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        onConfirm={() => handleRetryQuiz(selectedQuizId)} // ✅ Wrap in a function
+        onConfirm={() => handleRetryQuiz(selectedQuizId)} //  Wrap in a function
       />
     </div>
   );

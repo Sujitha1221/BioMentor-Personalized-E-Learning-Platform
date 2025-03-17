@@ -3,7 +3,7 @@ import QuestionAndAnsweringModal from "./models/QuestionAndAnsweringModal";
 import { FcBiomass } from "react-icons/fc";
 import { motion } from "framer-motion";
 import LoadingScreen from "../LoadingScreen/LoadingScreen";
-import logo from '../../../src/assets/Logo.png';
+import logo from "../../../src/assets/Logo.png";
 import Hero from "./Hero/Hero";
 import PassPaperQuestionModel from "./models/PassPaperQuestionModel";
 
@@ -15,7 +15,10 @@ const QuestionAndAnsweringHomePage = () => {
   return (
     <>
       <Hero firstSectionRef={firstSectionRef} />
-      <div ref={firstSectionRef} className="p-4 md:p-8 bg-gray-100 min-h-screen flex flex-col items-center justify-center gap-6 md:mt-5">
+      <div
+        ref={firstSectionRef}
+        className="p-4 md:p-8 bg-gray-100 min-h-screen flex flex-col items-center justify-center gap-6 md:mt-5"
+      >
         {/* Q&A Generation and evaluation */}
         <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center text-center md:text-left mt-5 md:mt-20">
           {/* Left Section: Text Content */}
@@ -23,13 +26,26 @@ const QuestionAndAnsweringHomePage = () => {
             <div className="p-6 bg-white rounded-full shadow-md flex items-center justify-center w-16 h-16 mb-4">
               <span className="text-3xl">🔬</span>
             </div>
-            <h1 className="text-4xl font-semibold">Structured and Essay Type Question Assistance</h1>
+            <h1 className="text-4xl font-semibold">
+              Structured and Essay Type Question Assistance
+            </h1>
             <p className="text-gray-600 text-lg mt-4">
-              Need help with structured and essay-type questions? Generate accurate answers or compare your answers with expert solutions to get personalized feedback.
+              Need help with structured and essay-type questions? Generate
+              accurate answers or compare your answers with expert solutions to
+              get personalized feedback.
             </p>
             <div className="mt-4 flex gap-2 flex-wrap justify-center md:justify-start">
-              {["MODEL ANSWER", "FEEDBACK SYSTEM", "QUESTION BANK", "BIOLOGY TOPICS", "EXAM GUIDES"].map(tag => (
-                <span key={tag} className="text-sm px-3 py-1 bg-gray-200 rounded-md text-gray-700">
+              {[
+                "MODEL ANSWER",
+                "FEEDBACK SYSTEM",
+                "QUESTION BANK",
+                "BIOLOGY TOPICS",
+                "EXAM GUIDES",
+              ].map((tag) => (
+                <span
+                  key={tag}
+                  className="text-sm px-3 py-1 bg-gray-200 rounded-md text-gray-700"
+                >
                   {tag}
                 </span>
               ))}
@@ -57,20 +73,31 @@ const QuestionAndAnsweringHomePage = () => {
             >
               Open Verification Modal
             </button> */}
-            <QuestionAndAnsweringModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+            <QuestionAndAnsweringModal
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+            />
           </div>
 
           {/* Right Section: Card */}
           <div className="hidden md:flex justify-center order-1 md:order-2">
             <div className="bg-white p-6 md:p-8 rounded-2xl shadow-lg w-64 md:w-80 text-center relative transform hover:scale-105 transition duration-300 ease-in-out">
-              <img src="https://plus.unsplash.com/premium_vector-1706709710787-05e3f59294cf?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8bWVkaWNhbHxlbnwwfHwwfHx8MA%3D%3D " alt="Profile" className="w-24 h-24 mx-auto mb-4 rounded-full border-4 border-pink-500" />
+              <img
+                src="https://plus.unsplash.com/premium_vector-1706709710787-05e3f59294cf?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8bWVkaWNhbHxlbnwwfHwwfHx8MA%3D%3D "
+                alt="Profile"
+                className="w-24 h-24 mx-auto mb-4 rounded-full border-4 border-pink-500"
+              />
               <h3 className="text-xl font-semibold">Biology AI Assistant</h3>
-              <p className="text-gray-500 text-sm">Your AI-powered tutor for Sri Lankan AL Biology</p>
+              <p className="text-gray-500 text-sm">
+                Your AI-powered tutor for Sri Lankan AL Biology
+              </p>
               <div className="flex justify-center gap-3 mt-4">
                 <button className="text-green-500 text-lg">🧬</button>
                 <button className="text-orange-500 text-lg">🔍</button>
               </div>
-              <span className="bg-pink-500 text-white px-3 py-1 rounded-md text-xs mt-4 inline-block">AI SUPPORT</span>
+              <span className="bg-pink-500 text-white px-3 py-1 rounded-md text-xs mt-4 inline-block">
+                AI SUPPORT
+              </span>
               <div className="absolute -top-4 right-4 bg-gray-900 text-white p-2 rounded-full shadow-lg">
                 <img src={logo} alt="Logo" className="w-7 h-7 mx-auto" />
               </div>
@@ -85,18 +112,27 @@ const QuestionAndAnsweringHomePage = () => {
             {/* Left Section: Analytics Card */}
             <div className="hidden md:flex justify-center md:mt-10">
               <div className="bg-white p-6 md:p-8 rounded-2xl shadow-lg w-64 md:w-80 text-center relative transform hover:scale-105 transition duration-300 ease-in-out">
-                <img src="https://plus.unsplash.com/premium_vector-1682303102478-205a13e17265?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8cGVyZm9ybWFuY2V8ZW58MHx8MHx8fDA%3D"
-                  alt="Student Analytics" className="w-24 h-24 mx-auto mb-4 rounded-full border-4 border-yellow-500" />
+                <img
+                  src="https://plus.unsplash.com/premium_vector-1682303102478-205a13e17265?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8cGVyZm9ybWFuY2V8ZW58MHx8MHx8fDA%3D"
+                  alt="Student Analytics"
+                  className="w-24 h-24 mx-auto mb-4 rounded-full border-4 border-yellow-500"
+                />
 
-                <h3 className="text-xl font-semibold">Student Performance Analytics</h3>
-                <p className="text-gray-500 text-sm">Track student progress, accuracy, and improvement over time.</p>
+                <h3 className="text-xl font-semibold">
+                  Student Performance Analytics
+                </h3>
+                <p className="text-gray-500 text-sm">
+                  Track student progress, accuracy, and improvement over time.
+                </p>
 
                 <div className="flex justify-center gap-3 mt-4">
                   <button className="text-blue-500 text-lg">📊</button>
                   <button className="text-green-500 text-lg">📈</button>
                 </div>
 
-                <span className="bg-yellow-500 text-white px-3 py-1 rounded-md text-xs mt-4 inline-block">ANALYTICS REPORT</span>
+                <span className="bg-yellow-500 text-white px-3 py-1 rounded-md text-xs mt-4 inline-block">
+                  ANALYTICS REPORT
+                </span>
 
                 <div className="absolute -top-4 right-4 bg-gray-900 text-white p-2 rounded-full shadow-lg">
                   <img src={logo} alt="Logo" className="w-7 h-7 mx-auto" />
@@ -110,10 +146,21 @@ const QuestionAndAnsweringHomePage = () => {
               </div>
               <h1 className="text-4xl font-semibold">View Student Analytics</h1>
               <p className="text-gray-600 text-lg mt-4">
-                Gain insights into student question-answering performance. Track accuracy, improvement trends, and areas of difficulty with detailed analytics.            </p>
+                Gain insights into student question-answering performance. Track
+                accuracy, improvement trends, and areas of difficulty with
+                detailed analytics.{" "}
+              </p>
               <div className="mt-4 flex gap-2 flex-wrap justify-center md:justify-start">
-                {["ACCURACY RATE", "WEAK AREAS", "PROGRESS OVER TIME", "AI FEEDBACK"].map(tag => (
-                  <span key={tag} className="text-sm px-3 py-1 bg-gray-200 rounded-md text-gray-700">
+                {[
+                  "ACCURACY RATE",
+                  "WEAK AREAS",
+                  "PROGRESS OVER TIME",
+                  "AI FEEDBACK",
+                ].map((tag) => (
+                  <span
+                    key={tag}
+                    className="text-sm px-3 py-1 bg-gray-200 rounded-md text-gray-700"
+                  >
                     {tag}
                   </span>
                 ))}
@@ -125,7 +172,10 @@ const QuestionAndAnsweringHomePage = () => {
                 transition={{ duration: 0.5, delay: 0.4 }}
               >
                 <motion.button
-                  onClick={() => window.location.href = "http://localhost:3000/Q&A-dashboard"}
+                  onClick={() =>
+                    (window.location.href =
+                      "http://localhost:3000/Q&A-dashboard")
+                  }
                   className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-[#140342]
               font-semibold rounded-lg 
               hover:bg-[#140342] hover:text-white hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
@@ -142,7 +192,10 @@ const QuestionAndAnsweringHomePage = () => {
                 Open Q&A Dashboard
               </button> */}
 
-              <QuestionAndAnsweringModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+              <QuestionAndAnsweringModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+              />
             </div>
           </div>
         </div>
@@ -156,11 +209,20 @@ const QuestionAndAnsweringHomePage = () => {
             </div>
             <h1 className="text-4xl font-semibold">Q&A Answer History</h1>
             <p className="text-gray-600 text-lg mt-4">
-              View your previously answered questions and responses. Track your learning progress and review expert-verified answers anytime.
+              View your previously answered questions and responses. Track your
+              learning progress and review expert-verified answers anytime.
             </p>
             <div className="mt-4 flex gap-2 flex-wrap justify-center md:justify-start">
-              {["ANSWERED QUESTIONS", "EXPERT FEEDBACK", "REVIEW HISTORY", "IMPROVEMENT TRACKING"].map(tag => (
-                <span key={tag} className="text-sm px-3 py-1 bg-gray-200 rounded-md text-gray-700">
+              {[
+                "ANSWERED QUESTIONS",
+                "EXPERT FEEDBACK",
+                "REVIEW HISTORY",
+                "IMPROVEMENT TRACKING",
+              ].map((tag) => (
+                <span
+                  key={tag}
+                  className="text-sm px-3 py-1 bg-gray-200 rounded-md text-gray-700"
+                >
                   {tag}
                 </span>
               ))}
@@ -172,7 +234,9 @@ const QuestionAndAnsweringHomePage = () => {
               transition={{ duration: 0.5, delay: 0.4 }}
             >
               <motion.button
-                onClick={() => window.location.href = "http://localhost:3000/Q&A-history"}
+                onClick={() =>
+                  (window.location.href = "http://localhost:3000/Q&A-history")
+                }
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-[#140342]
               font-semibold rounded-lg 
               hover:bg-[#140342] hover:text-white hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
@@ -188,24 +252,34 @@ const QuestionAndAnsweringHomePage = () => {
             >
               View Answer History
             </button> */}
-            <QuestionAndAnsweringModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+            <QuestionAndAnsweringModal
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+            />
           </div>
 
           {/* Right Section: Card */}
           <div className="hidden md:flex justify-center order-1 md:order-2 md:mt-10">
             <div className="bg-white p-6 md:p-8 rounded-2xl shadow-lg w-64 md:w-80 text-center relative transform hover:scale-105 transition duration-300 ease-in-out">
-              <img src="https://plus.unsplash.com/premium_vector-1683140720003-a1c000682f2b?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8YW5zd2VyfGVufDB8fDB8fHww  "
-                alt="Answer History" className="w-24 h-24 mx-auto mb-4 rounded-full border-4 border-green-500" />
+              <img
+                src="https://plus.unsplash.com/premium_vector-1683140720003-a1c000682f2b?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8YW5zd2VyfGVufDB8fDB8fHww  "
+                alt="Answer History"
+                className="w-24 h-24 mx-auto mb-4 rounded-full border-4 border-green-500"
+              />
 
               <h3 className="text-xl font-semibold">Your Answer History</h3>
-              <p className="text-gray-500 text-sm">Review your previously answered questions anytime.</p>
+              <p className="text-gray-500 text-sm">
+                Review your previously answered questions anytime.
+              </p>
 
               <div className="flex justify-center gap-3 mt-4">
                 <button className="text-green-500 text-lg">📜</button>
                 <button className="text-orange-500 text-lg">🔍</button>
               </div>
 
-              <span className="bg-green-500 text-white px-3 py-1 rounded-md text-xs mt-4 inline-block">Q&A HISTORY</span>
+              <span className="bg-green-500 text-white px-3 py-1 rounded-md text-xs mt-4 inline-block">
+                Q&A HISTORY
+              </span>
 
               <div className="absolute -top-4 right-4 bg-gray-900 text-white p-2 rounded-full shadow-lg">
                 <img src={logo} alt="Logo" className="w-7 h-7 mx-auto" />
@@ -221,14 +295,23 @@ const QuestionAndAnsweringHomePage = () => {
             {/* Left Section: Analytics Card */}
             <div className="hidden md:flex justify-center md:mt-10">
               <div className="bg-white p-6 md:p-8 rounded-2xl shadow-lg w-64 md:w-80 text-center relative transform hover:scale-105 transition duration-300 ease-in-out">
-                <img src="https://images.unsplash.com/vector-1739026151896-fb077bba7a70?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8c3R1ZHklMjBtZXRyaWFsc3xlbnwwfHwwfHx8MA%3D%3D" alt="Profile" className="w-24 h-24 mx-auto mb-4 rounded-full border-4 border-gray-500" />
+                <img
+                  src="https://images.unsplash.com/vector-1739026151896-fb077bba7a70?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8c3R1ZHklMjBtZXRyaWFsc3xlbnwwfHwwfHx8MA%3D%3D"
+                  alt="Profile"
+                  className="w-24 h-24 mx-auto mb-4 rounded-full border-4 border-gray-500"
+                />
                 <h3 className="text-xl font-semibold">Smart Study Guide</h3>
-                <p className="text-gray-500 text-sm">BioMentor recommends AL Biology notes based on your performance, helping you focus on weak areas.</p>
+                <p className="text-gray-500 text-sm">
+                  BioMentor recommends AL Biology notes based on your
+                  performance, helping you focus on weak areas.
+                </p>
                 <div className="flex justify-center gap-3 mt-4">
                   <button className="text-green-500 text-lg">📖</button>
-                  <button className="text-orange-500 text-lg">✅</button>
+                  <button className="text-orange-500 text-lg"></button>
                 </div>
-                <span className="bg-gray-500 text-white px-3 py-1 rounded-md text-xs mt-4 inline-block">PERFORMANCE-BASED STUDY</span>
+                <span className="bg-gray-500 text-white px-3 py-1 rounded-md text-xs mt-4 inline-block">
+                  PERFORMANCE-BASED STUDY
+                </span>
                 <div className="absolute -top-4 right-4 bg-gray-900 text-white p-2 rounded-full shadow-lg">
                   <img src={logo} alt="Logo" className="w-7 h-7 mx-auto" />
                 </div>
@@ -239,13 +322,27 @@ const QuestionAndAnsweringHomePage = () => {
               <div className="p-6 bg-white rounded-full shadow-md flex items-center justify-center w-16 h-16 mb-4">
                 <span className="text-3xl">📘</span>
               </div>
-              <h1 className="text-4xl font-semibold">Personalized Study Recommendations with BioMentor</h1>
+              <h1 className="text-4xl font-semibold">
+                Personalized Study Recommendations with BioMentor
+              </h1>
               <p className="text-gray-600 text-lg mt-4">
-                Based on your performance, BioMentor intelligently recommends notes and study materials from the Sri Lankan AL Biology resource book, ensuring you focus on areas that need improvement.
+                Based on your performance, BioMentor intelligently recommends
+                notes and study materials from the Sri Lankan AL Biology
+                resource book, ensuring you focus on areas that need
+                improvement.
               </p>
               <div className="mt-4 flex gap-2 flex-wrap justify-center md:justify-start">
-                {["SMART NOTES", "TOPIC TIPS", "GUIDED STUDY", "CONCEPT BOOST", "EXAM PREP"].map(tag => (
-                  <span key={tag} className="text-sm px-3 py-1 bg-gray-200 rounded-md text-gray-700">
+                {[
+                  "SMART NOTES",
+                  "TOPIC TIPS",
+                  "GUIDED STUDY",
+                  "CONCEPT BOOST",
+                  "EXAM PREP",
+                ].map((tag) => (
+                  <span
+                    key={tag}
+                    className="text-sm px-3 py-1 bg-gray-200 rounded-md text-gray-700"
+                  >
                     {tag}
                   </span>
                 ))}
@@ -257,7 +354,10 @@ const QuestionAndAnsweringHomePage = () => {
                 transition={{ duration: 0.5, delay: 0.4 }}
               >
                 <motion.button
-                  onClick={() => window.location.href = "http://localhost:3000/Q&A-materials"}
+                  onClick={() =>
+                    (window.location.href =
+                      "http://localhost:3000/Q&A-materials")
+                  }
                   className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-[#140342]
               font-semibold rounded-lg 
               hover:bg-[#140342] hover:text-white hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
@@ -273,25 +373,39 @@ const QuestionAndAnsweringHomePage = () => {
               >
                 Get Your Study Plan
               </button> */}
-              <QuestionAndAnsweringModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+              <QuestionAndAnsweringModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+              />
             </div>
           </div>
 
           {/* Practice Past Paper Questions */}
           <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center text-center md:text-left mt-5 md:mt-20">
-
             {/* Left Section: Text Content */}
             <div className="flex flex-col items-center md:items-start order-2 md:order-1 md:mt-10">
               <div className="p-6 bg-white rounded-full shadow-md flex items-center justify-center w-16 h-16 mb-4">
                 <span className="text-3xl">📖</span>
               </div>
-              <h1 className="text-4xl font-semibold">Practice Past Paper Questions</h1>
+              <h1 className="text-4xl font-semibold">
+                Practice Past Paper Questions
+              </h1>
               <p className="text-gray-600 text-lg mt-4">
-                Improve your exam performance by practicing structured and essay-type past paper questions. Get real-time evaluation, expert feedback, and track your progress.
+                Improve your exam performance by practicing structured and
+                essay-type past paper questions. Get real-time evaluation,
+                expert feedback, and track your progress.
               </p>
               <div className="mt-4 flex gap-2 flex-wrap justify-center md:justify-start">
-                {["PRACTICE QUESTIONS", "REAL-TIME FEEDBACK", "EXAM PREPARATION", "IMPROVE YOUR SCORE"].map(tag => (
-                  <span key={tag} className="text-sm px-3 py-1 bg-gray-200 rounded-md text-gray-700">
+                {[
+                  "PRACTICE QUESTIONS",
+                  "REAL-TIME FEEDBACK",
+                  "EXAM PREPARATION",
+                  "IMPROVE YOUR SCORE",
+                ].map((tag) => (
+                  <span
+                    key={tag}
+                    className="text-sm px-3 py-1 bg-gray-200 rounded-md text-gray-700"
+                  >
                     {tag}
                   </span>
                 ))}
@@ -303,33 +417,46 @@ const QuestionAndAnsweringHomePage = () => {
                 transition={{ duration: 0.5, delay: 0.4 }}
               >
                 <motion.button
-                onClick={() => setIsPassPaperModalOpen(true)}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-[#140342]
+                  onClick={() => setIsPassPaperModalOpen(true)}
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-[#140342]
                   font-semibold rounded-lg hover:bg-[#140342] hover:text-white hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Start Practicing Now
-              </motion.button>
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Start Practicing Now
+                </motion.button>
               </motion.div>
-              <PassPaperQuestionModel isOpen={isPassPaperModalOpen} onClose={() => setIsPassPaperModalOpen(false)} />
+              <PassPaperQuestionModel
+                isOpen={isPassPaperModalOpen}
+                onClose={() => setIsPassPaperModalOpen(false)}
+              />
             </div>
 
             {/* Right Section: Exam Prep Card */}
             <div className="hidden md:flex justify-center order-1 md:order-2 md:mt-10">
               <div className="bg-white p-6 md:p-8 rounded-2xl shadow-lg w-64 md:w-80 text-center relative transform hover:scale-105 transition duration-300 ease-in-out">
-                <img src="https://plus.unsplash.com/premium_vector-1728663772730-e5c0693f4206?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fGV4YW0lMjBwcmFjdGljZXxlbnwwfHwwfHx8MA%3D%3D"
-                  alt="Exam Preparation" className="w-24 h-24 mx-auto mb-4 rounded-full border-4 border-blue-500" />
+                <img
+                  src="https://plus.unsplash.com/premium_vector-1728663772730-e5c0693f4206?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fGV4YW0lMjBwcmFjdGljZXxlbnwwfHwwfHx8MA%3D%3D"
+                  alt="Exam Preparation"
+                  className="w-24 h-24 mx-auto mb-4 rounded-full border-4 border-blue-500"
+                />
 
-                <h3 className="text-xl font-semibold">Track Your Exam Readiness</h3>
-                <p className="text-gray-500 text-sm">Get instant feedback on your answers and improve with expert suggestions.</p>
+                <h3 className="text-xl font-semibold">
+                  Track Your Exam Readiness
+                </h3>
+                <p className="text-gray-500 text-sm">
+                  Get instant feedback on your answers and improve with expert
+                  suggestions.
+                </p>
 
                 <div className="flex justify-center gap-3 mt-4">
                   <button className="text-blue-500 text-lg">📝</button>
                   <button className="text-orange-500 text-lg">📊</button>
                 </div>
 
-                <span className="bg-blue-500 text-white px-3 py-1 rounded-md text-xs mt-4 inline-block">EXAM PRACTICE</span>
+                <span className="bg-blue-500 text-white px-3 py-1 rounded-md text-xs mt-4 inline-block">
+                  EXAM PRACTICE
+                </span>
 
                 <div className="absolute -top-4 right-4 bg-gray-900 text-white p-2 rounded-full shadow-lg">
                   <img src={logo} alt="Logo" className="w-7 h-7 mx-auto" />
@@ -337,7 +464,6 @@ const QuestionAndAnsweringHomePage = () => {
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </>

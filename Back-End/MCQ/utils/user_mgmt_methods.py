@@ -1,11 +1,20 @@
+import os
 from fastapi import HTTPException, Header
-from datetime import datetime, timedelta
 from passlib.context import CryptContext
 from jose import JWTError, jwt
+from dotenv import load_dotenv
 
-# JWT Secret & Algorithm
-SECRET_KEY = "E-learningplatform2k25"  # Change this to a strong secret key
-ALGORITHM = "HS256"
+# Load environment variables from .env file
+load_dotenv()
+
+# Load SECRET_KEY & ALGORITHM from .env
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM")
+
+# Ensure they are loaded properly
+if not SECRET_KEY or not ALGORITHM:
+    raise ValueError("SECRET_KEY or ALGORITHM is missing in the .env file!")
+
 
 def verify_access_token(token: str):
     try:
@@ -33,6 +42,6 @@ def get_current_user(authorization: str = Header(None)):
         user_id: str = payload.get("sub")
         if user_id is None:
             raise HTTPException(status_code=401, detail="Invalid token")
-        return user_id  # ✅ Return user ID for dependency injection
+        return user_id  #  Return user ID for dependency injection
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid or expired token")

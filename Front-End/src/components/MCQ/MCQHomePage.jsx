@@ -49,10 +49,10 @@ const MCQHomePage = () => {
             <div className="p-6 bg-indigo-100 rounded-full shadow-lg flex items-center justify-center w-20 h-20 mb-4 animate-pulse">
               <FaQuestionCircle className="text-5xl text-purple-600" />
             </div>
-            <h1 className="text-4xl font-extrabold text-gray-800 leading-tight tracking-wide">
+            <h1 className="text-4xl font-extrabold leading-tight tracking-wide">
               Master Your Knowledge with Adaptive Quizzes
             </h1>
-            <p className="text-gray-600 text-lg mt-4 leading-relaxed">
+            <p className="text-lg mt-4 leading-relaxed">
               Take personalized quizzes that adjust based on your answers. Track
               your improvements, identify your strengths, and enhance your
               learning journey.
@@ -72,12 +72,23 @@ const MCQHomePage = () => {
                 </span>
               ))}
             </div>
-            <motion.button
-              onClick={() => setIsQuizIntroductionModalOpen(true)}
-              className="mt-6 px-10 py-4 bg-purple-700 text-white text-lg font-bold rounded-2xl shadow-lg hover:bg-purple-900 transition-all duration-300 hover:scale-105"
+            <motion.div
+              className="mt-10 flex flex-wrap justify-center gap-4 sm:gap-6"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
             >
-              Start Your Quiz
-            </motion.button>
+              <motion.button
+                onClick={() => setIsQuizIntroductionModalOpen(true)}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-purple-700 text-purple-700
+                          font-semibold rounded-lg 
+                          hover:bg-purple-700 hover:text-white hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Start Your Quiz
+              </motion.button>
+            </motion.div>
           </motion.div>
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
@@ -121,10 +132,10 @@ const MCQHomePage = () => {
             <div className="p-6 bg-purple-100 rounded-full shadow-lg flex items-center justify-center w-20 h-20 mb-4 animate-pulse">
               <FaHistory className="text-5xl text-indigo-600" />
             </div>
-            <h1 className="text-4xl font-extrabold text-gray-800 leading-tight tracking-wide">
+            <h1 className="text-4xl font-extrabold leading-tight tracking-wide">
               Explore Your Quiz History
             </h1>
-            <p className="text-gray-600 text-lg mt-4 leading-relaxed">
+            <p className="text-lg mt-4 leading-relaxed">
               Keep track of all quizzes you have attempted. Reattempt previous
               quizzes, compare your scores, and measure your improvement over
               time.
@@ -144,12 +155,23 @@ const MCQHomePage = () => {
                 </span>
               ))}
             </div>
-            <motion.button
-              onClick={() => (window.location.href = "/quiz-history")}
-              className="mt-6 px-10 py-4 bg-indigo-700 text-white text-lg font-bold rounded-2xl shadow-lg hover:bg-indigo-900 transition-all duration-300 hover:scale-105"
+            <motion.div
+              className="mt-10 flex flex-wrap justify-center gap-4 sm:gap-6"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
             >
-              View Quiz History
-            </motion.button>
+              <motion.button
+                onClick={() => (window.location.href = "/quiz-history")}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-indigo-700 text-indigo-700
+                          font-semibold rounded-lg 
+                          hover:bg-indigo-700 hover:text-white hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                View Quiz History
+              </motion.button>
+            </motion.div>
           </motion.div>
         </div>
 
@@ -164,10 +186,10 @@ const MCQHomePage = () => {
             <div className="p-6 bg-green-100 rounded-full shadow-lg flex items-center justify-center w-20 h-20 mb-4 animate-pulse">
               <FaChartBar className="text-5xl text-green-600" />
             </div>
-            <h1 className="text-4xl font-extrabold text-gray-800 leading-tight tracking-wide">
+            <h1 className="text-4xl font-extrabold leading-tight tracking-wide">
               View Your Performance Dashboard
             </h1>
-            <p className="text-gray-600 text-lg mt-4 leading-relaxed">
+            <p className="text-lg mt-4 leading-relaxed">
               Track your progress, see detailed analytics, and get insights into
               your learning trends.
             </p>
@@ -186,12 +208,25 @@ const MCQHomePage = () => {
                 </span>
               ))}
             </div>
-            <motion.button
-              onClick={() => (window.location.href = "/performance-dashboard")}
-              className="mt-6 px-10 py-4 bg-green-700 text-white text-lg font-bold rounded-2xl shadow-lg hover:bg-green-900 transition-all duration-300 hover:scale-105"
+            <motion.div
+              className="mt-10 flex flex-wrap justify-center gap-4 sm:gap-6"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
             >
-              Open Dashboard
-            </motion.button>
+              <motion.button
+                onClick={() =>
+                  (window.location.href = "/performance-dashboard")
+                }
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-green-700 text-green-700
+                          font-semibold rounded-lg 
+                          hover:bg-green-700 hover:text-white hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Open Dashboard
+              </motion.button>
+            </motion.div>
           </motion.div>
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
@@ -206,7 +241,7 @@ const MCQHomePage = () => {
             />
           </motion.div>
         </div>
-        {/* ✅ New Section: Practice Topic-wise MCQ Questions */}
+        {/*  New Section: Practice Topic-wise MCQ Questions */}
         <div className="max-w-7xl w-full grid grid-cols-1 md:grid-cols-2 gap-20 items-center text-center md:text-left">
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
@@ -229,10 +264,10 @@ const MCQHomePage = () => {
             <div className="p-6 bg-yellow-100 rounded-full shadow-lg flex items-center justify-center w-20 h-20 mb-4 animate-pulse">
               <FaBookOpen className="text-5xl text-yellow-600" />
             </div>
-            <h1 className="text-4xl font-extrabold text-gray-800 leading-tight tracking-wide">
+            <h1 className="text-4xl font-extrabold leading-tight tracking-wide">
               Practice Topic-wise MCQ Questions
             </h1>
-            <p className="text-gray-600 text-lg mt-4 leading-relaxed">
+            <p className="text-lg mt-4 leading-relaxed">
               Strengthen your knowledge by practicing MCQs from different
               topics. Choose a subject, test your skills, and improve your
               understanding.
@@ -252,12 +287,23 @@ const MCQHomePage = () => {
                 </span>
               ))}
             </div>
-            <motion.button
-              onClick={() => navigate("/topic-quizzes")}
-              className="mt-6 px-10 py-4 bg-yellow-700 text-white text-lg font-bold rounded-2xl shadow-lg hover:bg-yellow-900 transition-all duration-300 hover:scale-105"
+            <motion.div
+              className="mt-10 flex flex-wrap justify-center gap-4 sm:gap-6"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
             >
-              Practice MCQs
-            </motion.button>
+              <motion.button
+                onClick={() => navigate("/topic-quizzes")} // Opens Modal on Click
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-yellow-700 text-yellow-700
+                          font-semibold rounded-lg 
+                          hover:bg-yellow-700 hover:text-white hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Practice MCQs
+              </motion.button>
+            </motion.div>
           </motion.div>
         </div>
       </div>
