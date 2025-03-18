@@ -74,15 +74,25 @@ const QuizPage = () => {
 
   //  Update time spent on a question
   const updateTimeSpent = (index) => {
-    const endTime = Date.now();
-    const timeTaken = (endTime - startTime) / 1000;
+    return new Promise((resolve) => {
+      const endTime = Date.now();
+      const timeTaken = (endTime - startTime) / 1000;
 
-    setTimeSpent((prev) => ({
-      ...prev,
-      [index]: (prev[index] || 0) + timeTaken,
-    }));
+      setTimeSpent((prev) => {
+        const updatedTime = {
+          ...prev,
+          [index]: (prev[index] || 0) + timeTaken,
+        };
+        console.log(
+          `⏳ Time Updated for Question ${index + 1}:`,
+          updatedTime[index]
+        ); // Debugging log
+        resolve(updatedTime); // Ensure we resolve with the new state
+        return updatedTime;
+      });
 
-    setStartTime(Date.now());
+      setStartTime(Date.now());
+    });
   };
 
   //  Handle Answer Selection
@@ -112,7 +122,8 @@ const QuizPage = () => {
 
   //  Handle quiz submission
   const handleSubmit = async () => {
-    updateTimeSpent(currentQuestionIndex);
+    console.log("Ensuring last question time is recorded before submitting...");
+    await updateTimeSpent(currentQuestionIndex);
 
     // Check for unanswered questions
     const unansweredIndexes = questions
