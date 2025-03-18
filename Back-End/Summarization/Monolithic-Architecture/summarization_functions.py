@@ -22,7 +22,8 @@ logger = logging.getLogger("myapp")
 file_store = {}  # Temporary storage for files
 ongoing_tasks = {}  # Track running tasks
 
-async def process_document_function(request: Request,file, word_count, rag_model):
+
+async def process_document_function(request: Request, file, word_count, rag_model):
     """
     Handles document processing: extraction, summarization, and text-to-speech conversion.
     Ensures request cancellations do not keep processing.
@@ -47,7 +48,8 @@ async def process_document_function(request: Request,file, word_count, rag_model
 
             if not raw_text.strip():
                 logger.warning(f"No content extracted from {file.filename}.")
-                raise HTTPException(status_code=400, detail="No content extracted.")
+                raise HTTPException(
+                    status_code=400, detail="No content extracted.")
 
             # Check if the client disconnected before proceeding
             if await request.is_disconnected():
@@ -64,12 +66,13 @@ async def process_document_function(request: Request,file, word_count, rag_model
                 logger.warning(
                     f"Request was canceled. Stopping processing for {file.filename}.")
                 return None
-            
+
             # Generate summary
             logger.info(f"Generating summary for {file.filename}...")
 
             # Step 3: Generate summary
-            summary = rag_model.generate_summary_for_long_text(formatted_text, max_words=word_count)
+            summary = rag_model.generate_summary_for_long_text(
+                formatted_text, max_words=word_count)
 
             if not summary:
                 logger.warning(
@@ -77,14 +80,15 @@ async def process_document_function(request: Request,file, word_count, rag_model
                 raise HTTPException(
                     status_code=500, detail="Summary generation failed.")
 
-            summary_file_path = f"summary_{task_id}.txt"
+            summary_file_path = f"summary_{task_id}.pdf"
             audio_file_path = f"summary_{task_id}.mp3"
 
-            # Store summary in memory
-            file_store[summary_file_path] = summary.encode("utf-8")
+            # Generate PDF
+            pdf_data = generate_pdf(summary, topic="Summary")
+            file_store[summary_file_path] = pdf_data
 
             logger.info(
-                f"Summary saved as {summary_file_path}. Generating audio...")
+                f"PDF summary saved as {summary_file_path}. Generating audio...")
 
             # Check before generating audio
             if await request.is_disconnected():
@@ -101,7 +105,6 @@ async def process_document_function(request: Request,file, word_count, rag_model
             logger.info(
                 f"Audio file saved as {audio_file_path}. Processing complete.")
 
-
             # Cleanup task tracking
             del ongoing_tasks[task_id]
 
@@ -111,7 +114,7 @@ async def process_document_function(request: Request,file, word_count, rag_model
             logger.warning(f"Processing for {file.filename} was canceled.")
             del ongoing_tasks[task_id]
             return None, None
-        
+
         except HTTPException as http_err:
             del ongoing_tasks[task_id]
             raise http_err  # Return FastAPI HTTPException directly
@@ -190,14 +193,15 @@ async def process_query_function(request: Request, query, word_count, rag_model)
                 raise HTTPException(
                     status_code=400, detail="Generated summary is empty.")
 
-            summary_file_path = f"summary_{task_id}.txt"
+            summary_file_path = f"summary_{task_id}.pdf"
             audio_file_path = f"summary_{task_id}.mp3"
 
-            # Store summary text file using task_id
-            file_store[summary_file_path] = summary.encode("utf-8")
+            # Generate PDF
+            pdf_data = generate_pdf(summary, topic="Summary")
+            file_store[summary_file_path] = pdf_data
 
             logger.info(
-                f"Text summary saved as {summary_file_path}. Generating audio...")
+                f"PDF summary saved as {summary_file_path}. Generating audio...")
 
             # Check if request is disconnected before generating audio
             if await request.is_disconnected():
@@ -223,20 +227,22 @@ async def process_query_function(request: Request, query, word_count, rag_model)
             logger.warning(f"Processing for query '{query}' was canceled.")
             del ongoing_tasks[task_id]
             return None, None
-        
+
         except HTTPException as http_error:
             del ongoing_tasks[task_id]
             raise http_error  # Return FastAPI HTTPException directly
 
         except Exception as e:
-            logger.error(f"Unexpected error processing query: {e}", exc_info=True)
+            logger.error(
+                f"Unexpected error processing query: {e}", exc_info=True)
             del ongoing_tasks[task_id]
-            raise HTTPException(status_code=500, detail="Failed to process query.")
+            raise HTTPException(
+                status_code=500, detail="Failed to process query.")
 
     # Store and run the task in the background
     task = asyncio.create_task(process())
     ongoing_tasks[task_id] = task
-    
+
     return await task
 
 
@@ -261,7 +267,6 @@ async def summarize_text_function(request: Request, text, word_count, rag_model)
                 logger.warning("Empty text input received.")
                 raise HTTPException(
                     status_code=400, detail="Text input cannot be empty.")
-            
 
             # Step 1: Check for inappropriate content
             inappropriate_response = rag_model.contains_inappropriate_content(
@@ -277,21 +282,23 @@ async def summarize_text_function(request: Request, text, word_count, rag_model)
                 return None, None
 
             # Step 2: Generate summary
-            summary = rag_model.generate_summary_for_long_text(text, max_words=word_count)
+            summary = rag_model.generate_summary_for_long_text(
+                text, max_words=word_count)
 
             if not summary.strip():
                 logger.warning("Generated summary is empty.")
                 raise HTTPException(
                     status_code=400, detail="Generated summary is empty.")
 
-            summary_file_path = f"summary_{task_id}.txt"
+            summary_file_path = f"summary_{task_id}.pdf"
             audio_file_path = f"summary_{task_id}.mp3"
 
-            # Store summary text file using task_id
-            file_store[summary_file_path] = summary.encode("utf-8")
+            # Generate PDF
+            pdf_data = generate_pdf(summary, topic="Summary")
+            file_store[summary_file_path] = pdf_data
 
             logger.info(
-                f"Text summary saved as {summary_file_path}. Generating audio...")
+                f"PDF summary saved as {summary_file_path}. Generating audio...")
 
             # Check if request is disconnected before generating audio
             if await request.is_disconnected():
@@ -317,7 +324,7 @@ async def summarize_text_function(request: Request, text, word_count, rag_model)
             logger.warning("Summarization request was canceled.")
             del ongoing_tasks[task_id]
             return None, None
-        
+
         except HTTPException as http_error:
             del ongoing_tasks[task_id]
             raise http_error  # Return FastAPI HTTPException directly
@@ -325,13 +332,15 @@ async def summarize_text_function(request: Request, text, word_count, rag_model)
         except Exception as e:
             logger.error(f"Error summarizing text: {e}", exc_info=True)
             del ongoing_tasks[task_id]
-            raise HTTPException(status_code=500, detail="Failed to summarize text.")
+            raise HTTPException(
+                status_code=500, detail="Failed to summarize text.")
 
     # Store and run the task in the background
     task = asyncio.create_task(process())
     ongoing_tasks[task_id] = task
 
     return await task
+
 
 async def generate_notes_function(request: Request, topic, lang, rag_model):
     """
@@ -350,23 +359,27 @@ async def generate_notes_function(request: Request, topic, lang, rag_model):
             logger.info(f"Generating structured notes for topic: {topic}")
 
             # Step 1: Check for inappropriate content
-            inappropriate_message = rag_model.contains_inappropriate_content(topic)
+            inappropriate_message = rag_model.contains_inappropriate_content(
+                topic)
             if inappropriate_message:
                 logger.warning(f"Inappropriate topic detected: {topic}")
-                raise HTTPException(status_code=400, detail=inappropriate_message)
+                raise HTTPException(
+                    status_code=400, detail=inappropriate_message)
 
             # Step 2: Retrieve relevant content
             relevant_texts = rag_model.retrieve_relevant_content(topic)
 
             if not relevant_texts or relevant_texts == "No relevant content found":
-                raise HTTPException(status_code=404, detail="No relevant content found.")
+                raise HTTPException(
+                    status_code=404, detail="No relevant content found.")
 
             # Step 3: Clean and format the text
             combined_text = " ".join(relevant_texts)
             cleaned_text = rag_model._correct_and_format_text(combined_text)
 
             # Step 4: Generate structured notes
-            structured_notes = rag_model.generate_structured_notes(cleaned_text, topic)
+            structured_notes = rag_model.generate_structured_notes(
+                cleaned_text, topic)
 
             # Step 5: Translate if necessary
             if lang in ["ta", "si"]:
@@ -375,7 +388,8 @@ async def generate_notes_function(request: Request, topic, lang, rag_model):
             else:
                 lang_name = "English"
 
-            logger.info(f"Structured notes generated (first 100 chars): {structured_notes[:100]}...")
+            logger.info(
+                f"Structured notes generated (first 100 chars): {structured_notes[:100]}...")
 
             if await request.is_disconnected():
                 return None
@@ -412,10 +426,11 @@ async def generate_notes_function(request: Request, topic, lang, rag_model):
                 return {"structured_notes": structured_notes}
 
         except asyncio.CancelledError:
-            logger.warning(f"Generating notes for topic '{topic}' was canceled.")
+            logger.warning(
+                f"Generating notes for topic '{topic}' was canceled.")
             del ongoing_tasks[task_id]
             return None
-        
+
         except HTTPException as http_exc:
             """ Handle expected errors like inappropriate content or missing data """
             del ongoing_tasks[task_id]
@@ -423,29 +438,33 @@ async def generate_notes_function(request: Request, topic, lang, rag_model):
             raise http_exc  # Preserves error messages
 
         except Exception as e:
-            logger.error(f"Error generating notes for '{topic}' in '{lang}': {e}", exc_info=True)
+            logger.error(
+                f"Error generating notes for '{topic}' in '{lang}': {e}", exc_info=True)
             del ongoing_tasks[task_id]
-            raise HTTPException(status_code=500, detail="Failed to generate notes.")
+            raise HTTPException(
+                status_code=500, detail="Failed to generate notes.")
 
     # Store and run the task in the background
     task = asyncio.create_task(process())
     ongoing_tasks[task_id] = task
     return await task
 
+
 async def get_summary_file(task_id: str):
     """
-    Retrieves and streams a summary text file based on the provided task_id.
+    Retrieves and streams a PDF summary file based on the provided task_id.
     """
-    summary_file_path = f"summary_{task_id}.txt"
+    summary_file_path = f"summary_{task_id}.pdf"
 
     if summary_file_path not in file_store:
-        logger.warning(f"Summary file {summary_file_path} not found.")
+        logger.warning(f"Summary PDF file {summary_file_path} not found.")
         raise HTTPException(status_code=404, detail="Summary file not found.")
 
-    logger.info(f"Downloading summary file: {summary_file_path}")
+    logger.info(f"Downloading summary PDF file: {summary_file_path}")
     return StreamingResponse(io.BytesIO(file_store[summary_file_path]),
-                             media_type="text/plain",
+                             media_type="application/pdf",
                              headers={"Content-Disposition": f"attachment; filename={summary_file_path}"})
+
 
 async def get_audio_file(task_id: str):
     """
@@ -461,6 +480,7 @@ async def get_audio_file(task_id: str):
     return StreamingResponse(io.BytesIO(file_store[audio_file_path]),
                              media_type="audio/mpeg",
                              headers={"Content-Disposition": f"attachment; filename={audio_file_path}"})
+
 
 async def get_pdf_file(file_name: str):
     """

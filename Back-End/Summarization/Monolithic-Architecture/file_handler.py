@@ -46,7 +46,8 @@ def generate_pdf(structured_notes: str, topic: str) -> bytes:
 
     # Set a title font (bold, size 16)
     pdf.set_font("Arial", "B", 16)
-    pdf.cell(200, 10, txt=f"Topic: {topic}", ln=True, align="L")
+    pdf.cell(0, 10, txt=f"{topic}", ln=True, align="C")
+
 
     # Change to a normal font for content
     pdf.set_font("Arial", size=12)
@@ -58,8 +59,7 @@ def generate_pdf(structured_notes: str, topic: str) -> bytes:
     for line in structured_notes.split("\n"):
         pdf.multi_cell(0, 10, txt=line, align="L")
 
-    # Generate the PDF in-memory and get its bytes using UTF-8 encoding
-    pdf_bytes = pdf.output(dest='S').encode("utf-8")
-    
-    return pdf_bytes
+    # Generate the PDF in-memory properly
+    pdf_bytes = pdf.output(dest='S').encode('latin1')  # Correct encoding
 
+    return pdf_bytes
