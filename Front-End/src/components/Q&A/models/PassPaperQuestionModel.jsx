@@ -36,7 +36,7 @@ const PassPaperQuestionModel = ({ isOpen, onClose }) => {
 
     const fetchQuestions = async () => {
       try {
-        const response = await fetch(`${QA_URL}/get-student-question/${studentId}`);
+        const response = await fetch(`${QA_URL}/get-student-question/${storedStudentId}`);
         if (!response.ok) {
           throw new Error("Failed to fetch questions");
         }
@@ -59,6 +59,7 @@ const PassPaperQuestionModel = ({ isOpen, onClose }) => {
     }
 
     try {
+      setLoading(true);
       setAlert({ message: "Submitting answer...", type: "success" });
 
       const response = await fetch(`${QA_URL}/evaluate-passpaper-answer`, {
@@ -90,7 +91,9 @@ const PassPaperQuestionModel = ({ isOpen, onClose }) => {
 
     } catch (error) {
       console.error("Error evaluating answer:", error);
-      setAlert({ message: "Failed to submit answer. Try again.", type: "error" });
+      //setAlert({ message: "Failed to submit answer. Try again.", type: "error" });
+    } finally {
+      setLoading(false);
     }
   };
 
