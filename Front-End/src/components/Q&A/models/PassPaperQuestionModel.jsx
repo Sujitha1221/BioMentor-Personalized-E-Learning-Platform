@@ -102,9 +102,7 @@ const PassPaperQuestionModel = ({ isOpen, onClose }) => {
   return (
     <>
       {alert.message && <AlertMessage message={alert.message} type={alert.type} onClose={() => setAlert({ message: "", type: "" })} />}
-      {loading && (
-        <ModalLoadingScreen />
-      )}
+      
       <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
         <div className="bg-white p-6 rounded-lg shadow-xl max-w-2xl w-full relative">
 
@@ -194,7 +192,9 @@ const PassPaperQuestionModel = ({ isOpen, onClose }) => {
             </Tab.Group>
           )}
         </div>
-
+        {loading && (
+        <ModalLoadingScreen />
+      )}
         {/* Comparison Modal */}
         {showComparisonModal && evaluationResult && (
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
