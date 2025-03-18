@@ -77,6 +77,15 @@ const QuizHistory = () => {
     }
   };
 
+  const formatTime = (seconds) => {
+    if (seconds < 60) {
+      return `${seconds.toFixed(1)} sec`; // Show seconds for values < 60
+    }
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes} min ${remainingSeconds} sec`; // Show MM:SS for values >= 60
+  };
+
   return (
     <div className="min-h-screen mt-0 sm:mt-20 bg-gradient-to-br from-gray-100 to-gray-200 p-5 sm:p-10">
       <motion.h1
@@ -159,7 +168,8 @@ const QuizHistory = () => {
                         </span>
                         <span className="block sm:inline mt-2 sm:mt-0 text-gray-700 text-lg">
                           {" "}
-                          ⏳ Time: {attempt.summary.total_time}s
+                          ⏳ Total Time:{" "}
+                          {formatTime(attempt.summary.total_time)}s
                         </span>
                       </div>
                       <button
