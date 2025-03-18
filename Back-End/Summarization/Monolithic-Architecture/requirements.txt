@@ -17,10 +17,11 @@ tqdm
 autocorrect
 PyMuPDF
 colorlog
-easyocr
 joblib 
 better_profanity
 textblob
 nltk
 fpdf
 deep_translator
+pytesseract
+pdf2image

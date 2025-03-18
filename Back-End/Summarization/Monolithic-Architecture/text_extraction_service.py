@@ -1,3 +1,4 @@
+from pdf2image import convert_from_path
 import re
 import logging
 from tqdm import tqdm
@@ -6,10 +7,8 @@ from pptx import Presentation
 from autocorrect import Speller
 import fitz  # PyMuPDF
 import tabula
-from PIL import Image
-import numpy as np
-import easyocr
-
+import pytesseract
+import logging
 # Configure logging
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s - %(levelname)s - %(message)s")
@@ -315,62 +314,27 @@ def extract_text_from_pdf(pdf_path):
         raise RuntimeError(f"Error processing PDF: {pdf_path}")
 
 
-def extract_text_from_image_pdf(pdf_path):
+def extract_text_from_image_pdf(pdf_path, dpi=300):
     """
-    Extract text from image-based PDFs using fitz (PyMuPDF) with OCR.
+    Extracts all text from an image-based PDF using OCR.
+
+    Parameters:
+        pdf_path (str): The path to the PDF file.
+        dpi (int): The resolution for converting PDF pages to images.
+
+    Returns:
+        str: The extracted text from the PDF.
     """
-    try:
-        text = ""
-        document = fitz.open(pdf_path)
-        reader = easyocr.Reader(["en"], gpu=False)  # Initialize OCR
+    # Convert each page of the PDF to an image
+    pages = convert_from_path(pdf_path, dpi=dpi)
 
-        for page_number in range(len(document)):
-            page = document[page_number]
+    full_text = ""
+    for page in pages:
+        # Extract text from each image using pytesseract
+        page_text = pytesseract.image_to_string(page)
+        full_text += page_text + "\n"
 
-            # Try direct text extraction
-            page_text = page.get_text()
-            if page_text.strip():
-                text += page_text + "\n"
-                continue
-
-            # Extract images from the page
-            images = page.get_images(full=True)
-            if images:
-                for img_index, img in enumerate(images):
-                    xref = img[0]
-                    pix = fitz.Pixmap(document, xref)
-                    if pix.n < 5:  # GRAY or RGB
-                        pix_image = Image.frombytes(
-                            "RGB", [pix.width, pix.height], pix.samples)
-                    else:  # CMYK: Convert to RGB
-                        pix_image = Image.frombytes(
-                            "RGB", [pix.width, pix.height], pix.samples, "raw", pix.colorspace, 0, 1)
-
-                    # Convert image to array for OCR
-                    img_array = np.array(pix_image)
-                    ocr_result = reader.readtext(
-                        img_array, detail=0)  # Extract text
-                    page_ocr_text = " ".join(ocr_result).strip()
-
-                    if page_ocr_text:
-                        text += page_ocr_text + "\n"
-                        logging.info(
-                            f"Extracted text from image on page {page_number + 1}, image {img_index + 1}.")
-
-        document.close()
-
-        if not text.strip():
-            logging.warning(
-                f"No extractable text or embedded data found in image-based PDF: {pdf_path}")
-        else:
-            logging.info(
-                f"Processed image-based PDF using fitz and OCR: {pdf_path}")
-
-        return text.strip()
-    except Exception as e:
-        logging.error(
-            f"Failed to process image-based PDF with fitz and OCR: {e}")
-        raise RuntimeError(f"Error processing image-based PDF: {e}")
+    return full_text
 
 
 def extract_tables_from_pdf(pdf_path):
