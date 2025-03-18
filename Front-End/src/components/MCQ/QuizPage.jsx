@@ -105,6 +105,11 @@ const QuizPage = () => {
     }
   };
 
+  const handleQuestionSelect = (index) => {
+    updateTimeSpent(currentQuestionIndex); // Update time before switching
+    setCurrentQuestionIndex(index);
+  };
+
   //  Handle quiz submission
   const handleSubmit = async () => {
     updateTimeSpent(currentQuestionIndex);
@@ -290,7 +295,7 @@ const QuizPage = () => {
           {questions.map((_, index) => (
             <button
               key={index}
-              onClick={() => setCurrentQuestionIndex(index)}
+              onClick={() => handleQuestionSelect(index)}
               className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-bold ${
                 currentQuestionIndex === index
                   ? "bg-blue-500 text-white"

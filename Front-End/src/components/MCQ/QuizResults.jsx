@@ -59,6 +59,15 @@ const QuizResults = () => {
     }
   };
 
+  const formatTime = (seconds) => {
+    if (seconds < 60) {
+      return `${seconds.toFixed(1)} sec`; // Show seconds for values < 60
+    }
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes} min ${remainingSeconds} sec`; // Show MM:SS for values >= 60
+  };
+
   if (loading) {
     return (
       <div className="mt-0 sm:mt-20">
@@ -121,9 +130,9 @@ const QuizResults = () => {
             <span className="text-indigo-600">{results.summary.accuracy}%</span>
           </p>
           <p className="text-lg font-semibold text-gray-700 text-center">
-            Total Time:{" "}
+            ⏱️ Total Time::{" "}
             <span className="text-indigo-600">
-              {results.summary.total_time} sec
+              {formatTime(results.summary.total_time)} sec
             </span>
           </p>
           <div className="flex justify-between mb-4 p-2 bg-gray-100 rounded-lg">
@@ -159,6 +168,11 @@ const QuizResults = () => {
                 >
                   {response.difficulty.charAt(0).toUpperCase() +
                     response.difficulty.slice(1)}
+                </span>
+                <span
+                  className={`absolute top-2 left-2 text-s px-3 py-1 rounded-full`}
+                >
+                  Time Spent on this question: {formatTime(response.time_taken)}
                 </span>
 
                 <h3 className="text-xl font-bold text-gray-800 mt-6">
