@@ -15,7 +15,7 @@ const VocabularyMasteryModal = ({ isOpen, onClose }) => {
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(20);
   const [isLoading, setIsLoading] = useState(true);
-  const username = "New User"; // Hardcoded username for now
+  const username = "Gokul Abisheak"; // Hardcoded username for now
   const [showSharingModal, setShowSharingModal] = useState(false);
 
   useEffect(() => {
