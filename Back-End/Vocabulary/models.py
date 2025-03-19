@@ -32,3 +32,13 @@ class User(BaseModel):
     class Config:
         allow_population_by_field_name = True
         json_encoders = {ObjectId: str}
+
+
+class LeaderboardEntry(BaseModel):
+    id: str = Field(alias="_id")  # MongoDB _id mapped to id
+    username: str  # User's name
+    score: int  # Total score
+
+    class Config:
+        allow_population_by_field_name = True
+        json_encoders = {ObjectId: str}

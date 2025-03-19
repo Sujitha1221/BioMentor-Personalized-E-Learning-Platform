@@ -115,7 +115,7 @@ const Header = () => {
                 <ActiveLink to={"/Q&A-home"}>Q & A</ActiveLink>
               </li>
               <li>
-                <ActiveLink to="/blogs">Vocabulary</ActiveLink>
+                <ActiveLink to="/vocabulary-memorization">Vocabulary Memorization</ActiveLink>
               </li>
               <li>
                 <ActiveLink to="/summarize">Summarize</ActiveLink>

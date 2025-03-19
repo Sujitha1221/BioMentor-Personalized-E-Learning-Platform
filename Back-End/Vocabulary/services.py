@@ -6,20 +6,18 @@ from utils.review_quality import word_accuracy
 from bson import ObjectId
 
 async def assign_daily_questions():
-    """Assign 20 random flashcards from MongoDB."""
-    cursor = db["flashcards"].aggregate([{"$sample": {"size": 20}}])
-    questions = await cursor.to_list(length=20)
+    """Assign exactly 10 random flashcards from MongoDB."""
+    cursor = db["flashcards"].aggregate([{"$sample": {"size": 10}}])
+    questions = await cursor.to_list(length=10)
 
-    # ✅ Convert ObjectId to string
+    # Convert ObjectId to string
     for q in questions:
         q["_id"] = str(q["_id"])
 
     return questions
 
 async def get_daily_questions(user_id):
-    """Fetch daily vocabulary words for a user based on spaced repetition."""
-    from datetime import datetime
-
+    """Fetch up to 10 daily vocabulary words for a user based on spaced repetition."""
     user = await db["users"].find_one({"_id": ObjectId(user_id)})
     if not user:
         return {"error": "User not found"}
@@ -27,29 +25,43 @@ async def get_daily_questions(user_id):
     today = datetime.utcnow().date()
     due_questions = []
 
+    # Debugging step: Check what user["history"] contains
+    print("User history:", user.get("history", []))
+
+    # Ensure history is a list
+    if not isinstance(user.get("history", []), list):
+        return {"error": "History is not a list"}
+
     # Collect words due for review
-    for entry in user["history"]:
-        if datetime.strptime(entry["next_review"], "%Y-%m-%d").date() <= today:
-            due_questions.append(entry["question_id"])
+    for entry in user.get("history", []):
+        if isinstance(entry, dict) and "next_review" in entry:
+            if datetime.strptime(entry["next_review"], "%Y-%m-%d").date() <= today:
+                due_questions.append(ObjectId(entry["question_id"]))
 
-    # Fetch words from MongoDB
-    questions = await db["flashcards"].find({"_id": {"$in": [ObjectId(qid) for qid in due_questions]}}).to_list(len(due_questions))
+    # Fetch due words from MongoDB
+    questions = await db["flashcards"].find({"_id": {"$in": due_questions}}).to_list(len(due_questions))
 
-    # If fewer than 20, add new ones
-    if len(questions) < 20:
-        seen_ids = [q["_id"] for q in questions]
+    # Convert _id to string
+    seen_ids = {str(q["_id"]) for q in questions}
+
+    # If fewer than 10, fetch additional new ones
+    remaining_slots = max(0, 10 - len(questions))
+    if remaining_slots > 0:
         cursor = db["flashcards"].aggregate([
-            {"$match": {"_id": {"$nin": seen_ids}}},
-            {"$sample": {"size": 20 - len(questions)}}
+            {"$match": {"_id": {"$nin": list(seen_ids)}}},
+            {"$sample": {"size": remaining_slots}}
         ])
-        new_questions = await cursor.to_list(length=20 - len(questions))
+        new_questions = await cursor.to_list(length=remaining_slots)
         questions.extend(new_questions)
 
+    # Strictly limit to 10 questions
+    questions = questions[:10]
+
+    # Convert ObjectId to string for JSON serialization
     for q in questions:
-        q["_id"] = str(q["_id"])  # Convert ObjectId to string
+        q["_id"] = str(q["_id"])
 
     return {"questions": questions}
-
 
 async def update_progress(user_id, question_id, user_answer):
     """Update spaced repetition progress for a specific user."""
@@ -75,8 +87,17 @@ async def update_progress(user_id, question_id, user_answer):
         }
         await db["users"].insert_one(user)
 
+    # ✅ Ensure history is a list before iterating
+    if not isinstance(user.get("history", []), list):
+        return {"error": "User history is not a list"}
+
+    print("User history:", user["history"])  # Debugging step
+
     # Check if question exists in user history
-    history_entry = next((h for h in user["history"] if h["question_id"] == str(question_id)), None)
+    history_entry = next(
+        (h for h in user["history"] if isinstance(h, dict) and h.get("question_id") == str(question_id)), 
+        None
+    )
 
     if history_entry is None:
         # If first time seeing the word, create a new entry
@@ -119,3 +140,55 @@ async def update_progress(user_id, question_id, user_answer):
         "review_score": review_score,
         "next_review": history_entry["next_review"]
     }
+
+
+async def add_score(username: str, score: int):
+    """Insert or update the user's score and return their new rank."""
+    
+    # Check if the user already exists
+    existing_entry = await db["leaderboard"].find_one({"username": username})
+
+    if existing_entry:
+        # If the new score is higher, update it
+        if score > existing_entry["score"]:
+            await db["leaderboard"].update_one(
+                {"username": username},
+                {"$set": {"score": score}}
+            )
+    else:
+        # Insert a new leaderboard entry
+        await db["leaderboard"].insert_one({
+            "username": username,
+            "score": score
+        })
+
+    # Calculate rank
+    return await get_rank(username)
+
+async def get_rank(username: str):
+    """Get the rank of a user based on their score."""
+
+    # Get sorted leaderboard
+    leaderboard = await db["leaderboard"].find().sort("score", -1).to_list(None)
+
+    # Ensure ObjectId is converted to string for JSON serialization
+    for entry in leaderboard:
+        entry["_id"] = str(entry["_id"])
+
+    # Find user's rank
+    rank = next((index + 1 for index, entry in enumerate(leaderboard) if entry["username"] == username), None)
+
+    return {
+        "rank": rank,
+        "top_5": leaderboard[:5]  # Get top 5 scores
+    }
+
+async def get_top_5():
+    """Retrieve the top 5 scores from the leaderboard."""
+    top_scores = await db["leaderboard"].find().sort("score", -1).limit(5).to_list(None)
+
+    # Convert ObjectId to string for proper JSON serialization
+    for entry in top_scores:
+        entry["_id"] = str(entry["_id"])
+
+    return {"top_5": top_scores}
