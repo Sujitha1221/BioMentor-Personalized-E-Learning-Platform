@@ -6,6 +6,7 @@ from generate_answers import generate_structured_answer, generate_essay_answer
 from evaluate_answers import evaluate_user_answer
 from answer_evaluation_tool import get_student_analytic_details, convert_objectid
 from exam_practice import get_questions_by_student_id, compare_with_passpaper_answer
+from predict_question_acceptability import moderate_question
 from fastapi.middleware.cors import CORSMiddleware
 from duckduckgo_search import DDGS  
 
@@ -51,6 +52,11 @@ def generate_answer(request: QuestionRequest):
     """
     logging.info(f"Received request to generate answer: {request.dict()}")
     question_type = request.type.lower()  # Normalize type to lowercase
+
+    is_acceptable, moderation_message = moderate_question(request.question)
+    if not is_acceptable:
+        logging.warning(f"Question moderated: {moderation_message}")
+        raise HTTPException(status_code=400, detail=moderation_message)
     
     try:
         if question_type == "structured":
@@ -92,6 +98,11 @@ def evaluate_answer(request: EvaluationRequest):
     API endpoint to evaluate a user's answer based on the question type.
     """
     logging.info(f"Received request to evaluate answer: {request.dict()}")
+    
+    is_acceptable, moderation_message = moderate_question(request.question)
+    if not is_acceptable:
+        logging.warning(f"Question moderated: {moderation_message}")
+        raise HTTPException(status_code=400, detail=moderation_message)
     
     try:
         # Call the `evaluate_user_answer` function

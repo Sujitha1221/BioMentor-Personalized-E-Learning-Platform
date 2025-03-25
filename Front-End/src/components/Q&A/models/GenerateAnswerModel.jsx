@@ -38,8 +38,8 @@ const GenerateAnswerModel = ({ onBack }) => {
       setAnswer(response.data.answer);
       setRelatedWebsites(response.data.related_websites || []);
     } catch (error) {
-      console.error("Error generating answer:", error);
-      setAlert({message:"Error generating answer:", error, type:"error"});
+      console.error("Error generating answer:", error.response.data.detail);
+      setAlert({message:"Error generating answer: " + error.response.data.detail, error, type:"error"});
       //alert("Failed to generate answer. Please try again.");
     } finally {
       setLoading(false);
