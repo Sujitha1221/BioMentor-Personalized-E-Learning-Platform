@@ -48,7 +48,6 @@ genai.configure(api_key=GENAI_API_KEY)
 
 # List available models
 models = genai.list_models()
-print("Available models:", [m.name for m in models])
 
 gemini_model = genai.GenerativeModel('gemini-1.5-pro-latest')
 
@@ -119,7 +118,7 @@ def safe_generate(prompt, generator, max_length=50):
     probs = F.softmax(logits, dim=-1)
 
     if torch.isnan(probs).any() or torch.isinf(probs).any():
-        print("Error: NaN or Inf detected in probabilities!")
+        logging.error("NaN or Inf detected in probabilities!")
 
     return generator(prompt, max_length=adjusted_max_length, truncation=True, num_return_sequences=1)
 

@@ -52,17 +52,17 @@ def load_or_create_faiss(notes_df):
     model = SentenceTransformer(MODEL_NAME)
 
     if os.path.exists(FAISS_INDEX_PATH):
-        print("Loading existing FAISS index...")
+        logging.info("Loading existing FAISS index...")
         index = faiss.read_index(FAISS_INDEX_PATH)
 
         # Check if FAISS has the same number of records as the dataset
         if index.ntotal == len(notes_df):
-            print("FAISS index is up-to-date. No need to recompute embeddings.")
+            logging.info("FAISS index is up-to-date. No need to recompute embeddings.")
             return index
 
-        print("Detected new study materials. Updating FAISS index...")
+        logging.info("Detected new study materials. Updating FAISS index...")
     else:
-        print("Creating new FAISS index...")
+        logging.info("Creating new FAISS index...")
 
     # Convert all study materials into embeddings (only in memory, not saved)
     notes_texts = notes_df["Text Content"].tolist()
@@ -77,7 +77,7 @@ def load_or_create_faiss(notes_df):
     # Save FAISS index (but not embeddings)
     faiss.write_index(index, FAISS_INDEX_PATH)
 
-    print(f"FAISS index updated | {index.ntotal} entries")
+    logging.info(f"FAISS index updated | {index.ntotal} entries")
     return index
 
 notes_df = load_notes()  
@@ -528,4 +528,4 @@ if __name__ == "__main__":
 
     # Compute averages
     averages = get_student_analytic_details("sajeesiva06@gmail.com")
-    print("Student Analytic Details:", averages)
+    logging.info("Student Analytic Details:", averages)
