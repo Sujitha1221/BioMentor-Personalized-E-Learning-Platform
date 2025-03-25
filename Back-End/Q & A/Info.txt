@@ -1,91 +1,124 @@
-Proper Order to Set Up a Python Environment for NLP and AI Projects
+
+✅ Proper Order to Set Up a Python Environment for NLP and AI Projects
 
 This guide outlines the correct sequence for setting up a Python environment with necessary dependencies for NLP and AI-related projects.
 
- 1. Install Python and Virtual Environment Tools
+---
+
+1. ✅ Install Python and Virtual Environment Tools
+
 Before setting up the virtual environment, ensure Python and `venv` are installed.
 
- Linux
- Install Python and `venv`
-
+Linux:
+```bash
 sudo apt update && sudo apt upgrade -y
 sudo apt install python3 python3-venv python3-pip -y
+```
 
- Mac
- Install Python (if not installed)
-
+macOS:
+```bash
 brew install python
+```
 
- Windows
+Windows:
 Ensure Python is installed from the [official Python website](https://www.python.org/).
 
+---
 
- 2. Set Up a Virtual Environment
+2. ✅ Set Up a Virtual Environment
+
 Creating a virtual environment ensures isolation for project dependencies.
 
- Linux/Mac
- Create and Activate Virtual Environment
-
+Linux/macOS:
+```bash
 python3 -m venv venv
 source venv/bin/activate
+```
 
- Deactivate Virtual Environment
-
-deactivate
-
-
- Windows (PowerShell)
- Create and Activate Virtual Environment
-
+Windows (PowerShell):
+```bash
 python -m venv venv
-.\venv\Scripts\Activate
+.
+env\Scripts\Activate
+```
 
- Deactivate Virtual Environment
-
+Deactivate the environment (all platforms):
+```bash
 deactivate
+```
 
+---
 
- 3. Install Required Python Packages
+3. ✅ Install Required Python Packages
+
 After activating the virtual environment, install the necessary dependencies.
 
- Install Dependencies
-
-pip install pymongo matplotlib google-generativeai 
+```bash
+pip install pymongo matplotlib google-generativeai
 pip install transformers sentence-transformers spacy scikit-learn rapidfuzz language-tool-python
 pip install pandas sentence-transformers faiss-cpu transformers flask
+```
 
-
- Install Dependencies from a Requirements File
-If a `requirements.txt` file is available, install dependencies using:
-
+Or install from a `requirements.txt` file:
+```bash
 pip install -r requirements.txt
+```
 
+---
 
+4. ✅ Install spaCy Model
 
+Install the English NLP model for spaCy:
 
- 4. Install spaCy Model
-To download and install the `en_core_web_sm` model for spaCy, use:
-
+```bash
 python -m spacy download en_core_web_sm
+```
 
+---
 
+5. ✅ Running Key Scripts
 
-
- 5. Running Key Scripts
-
- Start a FastAPI Application
-To launch a FastAPI-based application, use:
-
+▶️ Start the FastAPI Application:
+```bash
 uvicorn question_and_answer_api:app --reload
+```
 
-
- Running Answer Evaluation Tool
-To execute a Python script for evaluating answers, use:
-
+▶️ Run the Answer Evaluation Tool:
+```bash
 python answer_evaluation_tool.py
+```
 
+---
 
+6. ✅ Run Test Cases
 
+To run automated test cases written using `pytest`:
 
-Following these steps ensures a properly configured Python environment for NLP and AI-related projects.
+🔹 Install `pytest` (if not installed):
+```bash
+pip install pytest
+```
 
+🔹 Run All Tests:
+```bash
+pytest tests/
+```
+
+🔹 Run a Specific Test File:
+```bash
+pytest tests/test_generate_answers.py
+```
+
+🔹 Run with Verbose Output:
+```bash
+pytest -v
+```
+
+🔹 Run a Specific Test Function:
+```bash
+pytest tests/test_generate_answers.py::test_generate_structured_answer
+```
+
+---
+
+✅ Following these steps ensures your environment is fully ready for developing, testing, and running NLP and AI projects.
