@@ -6,6 +6,7 @@ from evaluate_answers import save_evaluation, evaluate_answer_hybrid
 import pandas as pd
 import random
 from dotenv import load_dotenv
+from fastapi import HTTPException
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
