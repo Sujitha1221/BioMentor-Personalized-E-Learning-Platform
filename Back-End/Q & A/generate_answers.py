@@ -4,12 +4,13 @@ import torch
 import re
 import os
 from sentence_transformers import SentenceTransformer
-from transformers import pipeline
+from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
 import faiss
 import pandas as pd
 import torch.nn.functional as F
 from dotenv import load_dotenv
 import google.generativeai as genai
+from huggingface_hub import login
 
 # Configure logging
 logging.basicConfig(
@@ -29,11 +30,28 @@ embedder = SentenceTransformer('sentence-transformers/multi-qa-mpnet-base-dot-v1
 index = faiss.read_index('DB/faiss_index.bin')
 
 # Load the LLaMA model for text generation
-logging.info("Loading text generation model...")
-generator = pipeline("text-generation", model="D:/SLIIT/Research/Finetune - Structure and Essay/Merged_model")
+# logging.info("Loading text generation model...")
+# generator = pipeline("text-generation", model="D:/SLIIT/Research/Finetune - Structure and Essay/Merged_model")
 
 # Load environment variables from .env file
 load_dotenv()
+
+# Authenticate using token from environment variable
+HF_TOKEN = os.getenv("HF_TOKEN")
+if not HF_TOKEN:
+    raise ValueError("HF token not found! Please set HF_TOKEN in .env file.")
+
+login(token=HF_TOKEN)
+
+# Load the private model from Hugging Face Hub
+logging.info("Loading text generation model from Hugging Face...")
+
+# Load model and tokenizer manually with auth
+# generator = pipeline("text-generation", model="Sajeevan2001/BioMentorQA", use_auth_token=True)
+tokenizer = AutoTokenizer.from_pretrained("Sajeevan2001/BioMentorQA", token=HF_TOKEN)
+model = AutoModelForCausalLM.from_pretrained("Sajeevan2001/BioMentorQA", token=HF_TOKEN)
+
+generator = pipeline("text-generation", model=model, tokenizer=tokenizer)
 
 # Retrieve API key
 GENAI_API_KEY = os.getenv("GENAI_API_KEY")
@@ -43,7 +61,6 @@ if not GENAI_API_KEY:
     raise ValueError("API Key not found! Please set GENAI_API_KEY in .env file.")
 
 # Initialize Gemini API
-# GENAI_API_KEY = "AIzaSyDXtkKGjt_OFVDrqB-FOQLUlRE0eZwYElA"
 genai.configure(api_key=GENAI_API_KEY)
 
 # List available models
