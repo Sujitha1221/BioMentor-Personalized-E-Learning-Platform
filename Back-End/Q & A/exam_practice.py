@@ -8,8 +8,12 @@ import random
 from dotenv import load_dotenv
 from fastapi import HTTPException
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler()]
+)
 
 # Load environment variables from .env file
 load_dotenv()
