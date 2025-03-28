@@ -19,3 +19,5 @@ gradio_client
 better-profanity
 vaderSentiment
 pytest
+gunicorn
+requests
