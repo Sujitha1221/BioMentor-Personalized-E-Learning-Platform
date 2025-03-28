@@ -1,0 +1,124 @@
+
+✅ Proper Order to Set Up a Python Environment for NLP and AI Projects
+
+This guide outlines the correct sequence for setting up a Python environment with necessary dependencies for NLP and AI-related projects.
+
+---
+
+1. ✅ Install Python and Virtual Environment Tools
+
+Before setting up the virtual environment, ensure Python and `venv` are installed.
+
+Linux:
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install python3 python3-venv python3-pip -y
+```
+
+macOS:
+```bash
+brew install python
+```
+
+Windows:
+Ensure Python is installed from the [official Python website](https://www.python.org/).
+
+---
+
+2. ✅ Set Up a Virtual Environment
+
+Creating a virtual environment ensures isolation for project dependencies.
+
+Linux/macOS:
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+Windows (PowerShell):
+```bash
+python -m venv venv
+.
+env\Scripts\Activate
+```
+
+Deactivate the environment (all platforms):
+```bash
+deactivate
+```
+
+---
+
+3. ✅ Install Required Python Packages
+
+After activating the virtual environment, install the necessary dependencies.
+
+```bash
+pip install pymongo matplotlib google-generativeai
+pip install transformers sentence-transformers spacy scikit-learn rapidfuzz language-tool-python
+pip install pandas sentence-transformers faiss-cpu transformers flask
+```
+
+Or install from a `requirements.txt` file:
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+4. ✅ Install spaCy Model
+
+Install the English NLP model for spaCy:
+
+```bash
+python -m spacy download en_core_web_sm
+```
+
+---
+
+5. ✅ Running Key Scripts
+
+▶️ Start the FastAPI Application:
+```bash
+uvicorn question_and_answer_api:app --reload
+```
+
+▶️ Run the Answer Evaluation Tool:
+```bash
+python answer_evaluation_tool.py
+```
+
+---
+
+6. ✅ Run Test Cases
+
+To run automated test cases written using `pytest`:
+
+🔹 Install `pytest` (if not installed):
+```bash
+pip install pytest
+```
+
+🔹 Run All Tests:
+```bash
+pytest tests/
+```
+
+🔹 Run a Specific Test File:
+```bash
+pytest tests/test_generate_answers.py
+```
+
+🔹 Run with Verbose Output:
+```bash
+pytest -v
+```
+
+🔹 Run a Specific Test Function:
+```bash
+pytest tests/test_generate_answers.py::test_generate_structured_answer
+```
+
+---
+
+✅ Following these steps ensures your environment is fully ready for developing, testing, and running NLP and AI projects.

@@ -62,9 +62,9 @@ const CompareAnswerModel = ({ onBack }) => {
 
       setShowModal(true);
     } catch (error) {
-      console.error("Error comparing answer:", error);
+      console.error("Error comparing answer:", error.response.data.detail);
       //alert("Failed to compare answer. Please try again.");
-      setAlert({message:"Failed to compare answer. Please try again.", type:"error"});
+      setAlert({message:"Failed to compare answer: " + error.response.data.detail, type:"error"});
     } finally {
       setLoading(false);
     }

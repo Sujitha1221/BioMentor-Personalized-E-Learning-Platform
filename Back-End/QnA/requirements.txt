@@ -15,3 +15,9 @@ fastapi
 spacy
 duckduckgo_search
 python-dotenv
+gradio_client
+better-profanity
+vaderSentiment
+pytest
+gunicorn
+requests

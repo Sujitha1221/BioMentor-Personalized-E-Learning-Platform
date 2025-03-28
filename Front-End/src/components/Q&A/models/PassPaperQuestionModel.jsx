@@ -91,6 +91,7 @@ const PassPaperQuestionModel = ({ isOpen, onClose }) => {
 
     } catch (error) {
       console.error("Error evaluating answer:", error);
+      setAlert({message:"Failed to submit answer: " + error.response.data.detail, error, type:"error"});
       //setAlert({ message: "Failed to submit answer. Try again.", type: "error" });
     } finally {
       setLoading(false);

@@ -127,3 +127,11 @@ def refresh_token(data: dict):
         logging.error(" Invalid or expired refresh token")
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
 
+@app.get("/user_exists_by_email")
+def check_user_exists_by_email(email: EmailStr):
+    """
+    Check if a user exists using an email address.
+    """
+    existing_user = users_collection.find_one({"email": email})
+    exists = True if existing_user else False
+    return {"exists": exists}
