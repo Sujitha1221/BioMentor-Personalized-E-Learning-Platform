@@ -7,6 +7,7 @@ from evaluate_answers import evaluate_user_answer
 from answer_evaluation_tool import get_student_analytic_details, convert_objectid
 from exam_practice import get_questions_by_student_id, compare_with_passpaper_answer
 from predict_question_acceptability import moderate_question
+from check_user_availability import check_user_availability
 from fastapi.middleware.cors import CORSMiddleware
 from duckduckgo_search import DDGS  
 
@@ -31,6 +32,7 @@ app.add_middleware(
 
 # Define a generate answer request schema for the API
 class QuestionRequest(BaseModel):
+    student_id: str
     question: str
     type: str  
 
@@ -50,6 +52,10 @@ def generate_answer(request: QuestionRequest):
     """
     API endpoint to generate an answer based on the question type.
     """
+    available, message = check_user_availability(request.student_id)
+    if not available:
+        raise HTTPException(status_code=404, detail="User not found.")
+    
     logging.info(f"Received request to generate answer: {request.dict()}")
     question_type = request.type.lower()  # Normalize type to lowercase
 
@@ -98,6 +104,10 @@ def evaluate_answer(request: EvaluationRequest):
     API endpoint to evaluate a user's answer based on the question type.
     """
     logging.info(f"Received request to evaluate answer: {request.dict()}")
+
+    available, message = check_user_availability(request.student_id)
+    if not available:
+        raise HTTPException(status_code=404, detail="User not found.")
     
     is_acceptable, moderation_message = moderate_question(request.question)
     if not is_acceptable:
@@ -139,6 +149,11 @@ def student_analytics(request: StudentEvaluationRequest):
     API endpoint to get detailed analytics for a specific student.
     """
     logging.info(f"Received request for student analytics: {request.dict()}")
+
+    available, message = check_user_availability(request.student_id)
+    if not available:
+        raise HTTPException(status_code=404, detail="User not found.")
+    
     try:
         # Get the analytic details for the student
         analytics = get_student_analytic_details(request.student_id)
@@ -179,6 +194,10 @@ def get_student_question(student_id: str):
     """
     logging.info(f"Fetching question for student_id: {student_id}")
 
+    available, message = check_user_availability(student_id)
+    if not available:
+        raise HTTPException(status_code=404, detail="User not found.")
+
     try:
         record = get_questions_by_student_id(student_id)
         return {
@@ -195,6 +214,10 @@ def evaluate_student_answer(request: EvaluationRequest):
     Evaluate a student's answer using the stored question.
     """
     logging.info(f"Received request to evaluate answer: {request.dict()}")
+    
+    available, message = check_user_availability(request.student_id)
+    if not available:
+        raise HTTPException(status_code=404, detail="User not found.")
     
     try:
         # Call the `evaluate_user_answer` function
