@@ -6,6 +6,7 @@ import LoadingScreen from "../LoadingScreen/LoadingScreen";
 import logo from "../../../src/assets/Logo.png";
 import Hero from "./Hero/Hero";
 import PassPaperQuestionModel from "./models/PassPaperQuestionModel";
+import { FRONTEND_BASE_URL } from "../util/config";
 
 const QuestionAndAnsweringHomePage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -174,7 +175,7 @@ const QuestionAndAnsweringHomePage = () => {
                 <motion.button
                   onClick={() =>
                     (window.location.href =
-                      "http://localhost:3000/Q&A-dashboard")
+                      `${FRONTEND_BASE_URL}/Q&A-dashboard`)
                   }
                   className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-[#140342]
               font-semibold rounded-lg 
@@ -187,7 +188,7 @@ const QuestionAndAnsweringHomePage = () => {
               </motion.div>
               {/* <button
                 className="bg-blue-600 text-white px-6 py-3 rounded-lg mt-6 hover:bg-blue-800"
-                onClick={() => window.location.href = "http://localhost:3000/Q&A-dashboard"}
+                onClick={() => window.location.href = `${FRONTEND_BASE_URL}/Q&A-dashboard`}
               >
                 Open Q&A Dashboard
               </button> */}
@@ -235,7 +236,7 @@ const QuestionAndAnsweringHomePage = () => {
             >
               <motion.button
                 onClick={() =>
-                  (window.location.href = "http://localhost:3000/Q&A-history")
+                  (window.location.href = `${FRONTEND_BASE_URL}/Q&A-history`)
                 }
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-[#140342]
               font-semibold rounded-lg 
@@ -248,7 +249,7 @@ const QuestionAndAnsweringHomePage = () => {
             </motion.div>
             {/* <button
               className="bg-blue-600 text-white px-6 py-3 rounded-lg mt-6 hover:bg-blue-800"
-              onClick={() => window.location.href = "http://localhost:3000/Q&A-history"}
+              onClick={() => window.location.href = `${FRONTEND_BASE_URL}/Q&A-history`}
             >
               View Answer History
             </button> */}
@@ -356,7 +357,7 @@ const QuestionAndAnsweringHomePage = () => {
                 <motion.button
                   onClick={() =>
                     (window.location.href =
-                      "http://localhost:3000/Q&A-materials")
+                      `${FRONTEND_BASE_URL}/Q&A-materials`)
                   }
                   className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-[#140342]
               font-semibold rounded-lg 
@@ -369,7 +370,7 @@ const QuestionAndAnsweringHomePage = () => {
               </motion.div>
               {/* <button
                 className="bg-indigo-600 text-white px-6 py-3 rounded-lg mt-6 hover:bg-indigo-800"
-                onClick={() => window.location.href = "http://localhost:3000/Q&A-materials"}
+                onClick={() => window.location.href = `${FRONTEND_BASE_URL}/Q&A-materials`}
               >
                 Get Your Study Plan
               </button> */}
