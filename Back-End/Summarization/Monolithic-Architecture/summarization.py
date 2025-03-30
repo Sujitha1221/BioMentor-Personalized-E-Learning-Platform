@@ -35,7 +35,7 @@ app.add_middleware(
 try:
     logger.info("Initializing RAG Model...")
     rag_model = RAGModel(
-        model_path='D:/Downloads/RP/Summarization/flan_t5_finetuned_model',
+        model_path = 'DharaneSegar/flant5-bio-summarization',
         embedding_model_name='all-MiniLM-L6-v2',
         dataset_paths=[
             '../../../Model-Training/Summarization/bio_summary_keywords.csv',
