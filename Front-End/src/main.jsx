@@ -20,10 +20,10 @@ import QuizPage from "./components/MCQ/QuizPage.jsx";
 import QuizResults from "./components/MCQ/QuizResults.jsx";
 import QuizHistory from "./components/MCQ/QuizHistory.jsx";
 import PerformanceDashboard from "./components/MCQ/PerformanceDashboard.jsx";
-import TopicBasedQuizzes from "./components/MCQ/TopicBasedQuiz/TopicBasedQuizzes.jsx";
-import TopicBasedQuizPage from "./components/MCQ/TopicBasedQuiz/TopicBasedQuizPage.jsx";
+import UnitBasedQuizzes from "./components/MCQ/TopicBasedQuiz/TopicBasedQuizzes.jsx";
+import UnitQuizPage from "./components/MCQ/TopicBasedQuiz/TopicBasedQuizPage.jsx";
 import ScrollToTop from "./components/ScrollToTop/ScrollToTop.jsx";
-import TopicBasedQuizResults from "./components/MCQ/TopicBasedQuiz/TopicBasedQuizResults.jsx";
+import UnitQuizResults from "./components/MCQ/TopicBasedQuiz/TopicBasedQuizResults.jsx";
 
 // Protected Route Component
 const ProtectedRoute = ({ element }) => {
@@ -102,15 +102,15 @@ const router = createBrowserRouter([
       },
       {
         path: "topic-quizzes",
-        element: <ProtectedRoute element={<TopicBasedQuizzes />} />,
+        element: <ProtectedRoute element={<UnitBasedQuizzes />} />,
       },
       {
-        path: "topic_quiz",
-        element: <ProtectedRoute element={<TopicBasedQuizPage />} />,
+        path: "unit_quiz",
+        element: <ProtectedRoute element={<UnitQuizPage />} />,
       },
       {
-        path: "topic_quiz/results",
-        element: <ProtectedRoute element={<TopicBasedQuizResults />} />,
+        path: "unit_quiz/results",
+        element: <ProtectedRoute element={<UnitQuizResults />} />,
       },
     ],
   },

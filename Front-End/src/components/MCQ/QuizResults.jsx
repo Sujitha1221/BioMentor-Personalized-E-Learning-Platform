@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import api from "../axios/api"; // Import API handler
 import QuizLoadingScreen from "./loadingPage/QuizLoadingScreen"; // Import loading screen component
+import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 
 const difficultyColors = {
   easy: "bg-green-200 text-green-800",
@@ -103,13 +104,13 @@ const QuizResults = () => {
   return (
     <div className="min-h-screen flex flex-col items-center mt-0 sm:mt-20 bg-gradient-to-br from-gray-100 to-gray-300 p-6">
       <motion.div
-        className="max-w-3xl w-full bg-white p-8 rounded-2xl shadow-xl border border-gray-300"
+        className="max-w-5xl w-full bg-white p-8 rounded-2xl shadow-xl border border-gray-300"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
         <h2 className="text-4xl font-extrabold text-center text-green-600">
-          Quiz Results
+          🌿Quiz Results
         </h2>
 
         {/* Summary Section */}
@@ -119,7 +120,7 @@ const QuizResults = () => {
             <span className="text-indigo-600">{results.attempt_number}</span>
           </p>
           <p className="text-lg font-semibold text-gray-700 text-center mt-2">
-            Correct Answers:{" "}
+            ✅ Correct Answers:{" "}
             <span className="text-green-600">
               {results.summary.correct_answers}
             </span>{" "}
@@ -208,15 +209,20 @@ const QuizResults = () => {
                 {/* Show feedback */}
                 <div className="mt-3 text-lg font-semibold">
                   {isCorrect ? (
-                    <p className="text-green-600">✅ Correct Answer!</p>
-                  ) : (
-                    <p className="text-red-600">
-                      ❌ Incorrect! The correct answer is{" "}
-                      <span className="font-bold text-green-500">
-                        {response.correct_answer}.{" "}
-                        {response.options[response.correct_answer]}
-                      </span>
+                    <p className="text-green-600 flex items-center">
+                      <FaCheckCircle className="mr-2" /> Correct Answer!
                     </p>
+                  ) : (
+                    <div className="mt-3 text-lg font-semibold flex items-start gap-2 text-red-600">
+                      <FaTimesCircle className="mt-1 text-xl" />
+                      <span>
+                        Incorrect! The correct answer is:{" "}
+                        <span className="text-green-700 font-bold">
+                          {response.correct_answer}.{" "}
+                          {response.options[response.correct_answer]}
+                        </span>
+                      </span>
+                    </div>
                   )}
                 </div>
               </motion.div>
@@ -227,7 +233,7 @@ const QuizResults = () => {
         {/* Back Button */}
         <button
           onClick={() => navigate("/mcq-home")}
-          className="mt-8 w-full bg-indigo-700 hover:bg-indigo-900 text-white py-3 rounded-lg font-semibold transition"
+          className="mt-8 w-full bg-green-700 hover:bg-green-900 text-white py-3 rounded-lg font-semibold transition"
         >
           Back to Home
         </button>

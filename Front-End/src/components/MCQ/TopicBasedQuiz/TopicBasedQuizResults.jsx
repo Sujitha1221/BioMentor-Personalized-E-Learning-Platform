@@ -5,40 +5,37 @@ import api from "../../axios/api.js";
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import QuizLoadingScreen from "../loadingPage/QuizLoadingScreen";
 
-const QuizResults = () => {
+const UnitQuizResults = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const userId = JSON.parse(localStorage.getItem("user"))?.user_id;
-  const quizId = location.state?.quizId;
   const token = localStorage.getItem("token");
+  const quizId = location.state?.quizId;
 
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!userId || !quizId) {
+    if (!quizId || !token) {
       navigate("/");
       return;
     }
     fetchQuizResults();
-  }, [userId, quizId]);
+  }, [quizId]);
 
   const fetchQuizResults = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/topic/quiz_topic/results/${quizId}`, {
-        params: { user_id: userId },
+      const res = await api.get(`/topic/unit_quiz/results/${quizId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setResults(response.data);
-    } catch (error) {
-      console.error("Error fetching quiz results:", error);
+      setResults(res.data);
+    } catch (err) {
+      console.error("Error fetching unit quiz results:", err);
     } finally {
       setLoading(false);
     }
   };
-
   if (loading) {
     return (
       <div className="mt-0 sm:mt-20">
@@ -64,32 +61,33 @@ const QuizResults = () => {
   }
 
   return (
-    <div className="min-h-screen mt-0 sm:mt-20 p-10 bg-gradient-to-br from-gray-100 to-gray-300 text-gray-900">
+    <div className="min-h-screen mt-0 sm:mt-20 p-10 bg-gradient-to-br from-green-50 to-green-200 text-gray-900">
       <motion.div
-        className="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-xl border border-gray-300"
+        className="max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-xl border border-gray-300"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <h2 className="text-4xl font-extrabold text-center text-indigo-700">
-          📜 Quiz Results
+        <h2 className="text-4xl font-extrabold text-center text-green-700">
+          🌿 {results.unit_name} - Results
         </h2>
 
         <div className="mt-6 bg-gray-100 p-4 rounded-lg shadow">
           <p className="text-lg font-semibold text-gray-700 text-center">
-            📅 Submission Date:
-            <span className="text-indigo-600">
+            📅 Submitted At:
+            <span className="text-green-600">
               {" "}
               {new Date(results.submitted_at).toLocaleString()}
             </span>
           </p>
           <p className="text-lg font-semibold text-gray-700 text-center">
-            🎯 Score: <span className="text-green-600">{results.score}</span> /{" "}
-            {results.responses.length}
+            ✅ Correct:{" "}
+            <span className="text-green-600">{results.correct_count}</span> /{" "}
+            {results.total_questions}
           </p>
         </div>
 
-        {/* Questions & Answers Section */}
+        {/* Questions & Feedback */}
         <div className="mt-8 space-y-6">
           {results.responses.map((response, index) => {
             const {
@@ -115,20 +113,18 @@ const QuizResults = () => {
                 <div className="mt-3 space-y-2">
                   {Object.entries(options).map(([letter, option]) => {
                     const isSelected = selected_answer === letter;
-                    const isCorrectAnswer = correct_answer === letter;
+                    const isCorrect = correct_answer === letter;
 
                     return (
                       <p
                         key={letter}
-                        className={`px-4 py-2 rounded-lg text-lg font-medium transition-all
-                          ${
-                            isCorrectAnswer
-                              ? "bg-green-500 text-white shadow-md"
-                              : isSelected
-                              ? "bg-red-500 text-white shadow-md"
-                              : "bg-gray-200 text-gray-800"
-                          }
-                        `}
+                        className={`px-4 py-2 rounded-lg text-lg font-medium transition-all ${
+                          isCorrect
+                            ? "bg-green-500 text-white shadow-md"
+                            : isSelected
+                            ? "bg-red-500 text-white shadow-md"
+                            : "bg-gray-200 text-gray-800"
+                        }`}
                       >
                         {letter}. {option}
                       </p>
@@ -136,20 +132,21 @@ const QuizResults = () => {
                   })}
                 </div>
 
-                {/* Show feedback */}
                 <div className="mt-3 text-lg font-semibold flex items-center">
                   {is_correct ? (
                     <p className="text-green-600 flex items-center">
                       <FaCheckCircle className="mr-2" /> Correct Answer!
                     </p>
                   ) : (
-                    <p className="text-red-600 flex items-center">
-                      <FaTimesCircle className="mr-2" /> Incorrect! The correct
-                      answer is:
-                      <span className="font-bold text-green-500 ml-2">
-                        {correct_answer}. {options[correct_answer]}
+                    <div className="mt-3 text-lg font-semibold flex items-start gap-2 text-red-600">
+                      <FaTimesCircle className="mt-1 text-xl" />
+                      <span>
+                        Incorrect! The correct answer is:{" "}
+                        <span className="text-green-700 font-bold">
+                          {correct_answer}. {options[correct_answer]}
+                        </span>
                       </span>
-                    </p>
+                    </div>
                   )}
                 </div>
               </motion.div>
@@ -157,10 +154,9 @@ const QuizResults = () => {
           })}
         </div>
 
-        {/* Back Button */}
         <button
           onClick={() => navigate("/mcq-home")}
-          className="mt-8 w-full bg-indigo-700 hover:bg-indigo-900 text-white py-3 rounded-lg font-semibold transition"
+          className="mt-8 w-full bg-green-700 hover:bg-green-900 text-white py-3 rounded-lg font-semibold transition"
         >
           Back to Home
         </button>
@@ -169,4 +165,4 @@ const QuizResults = () => {
   );
 };
 
-export default QuizResults;
+export default UnitQuizResults;

@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import {
+  Clock,
+  ArrowRight,
+  ArrowLeft,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react";
 import api from "../axios/api";
 import SubmitConfirmationModal from "./models/SubmitConfirmationModal";
 
@@ -203,15 +210,15 @@ const QuizPage = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        {/*  Timer */}
-        <div className="text-center text-xl font-bold text-red-600">
-          ⏳ Time Left: {Math.floor(timer / 60)}:
+        <div className="text-center text-xl font-bold text-red-600 flex justify-center items-center gap-2">
+          <Clock className="w-5 h-5" /> Time Left: {Math.floor(timer / 60)}:
           {String(timer % 60).padStart(2, "0")}
         </div>
+
         {/*  Question Progress */}
         <div className="w-full bg-gray-300 h-2 rounded-full my-4">
           <motion.div
-            className="bg-purple-500 h-2 rounded-full"
+            className="bg-[#140342] h-2 rounded-full"
             style={{
               width: `${
                 ((currentQuestionIndex + 1) / questions.length) * 100
@@ -237,7 +244,7 @@ const QuizPage = () => {
           </span>
         </div>
 
-        <h2 className="text-3xl font-extrabold mb-4 text-center tracking-wider text-indigo-700">
+        <h2 className="text-3xl font-extrabold mb-4 text-center tracking-wider text-[#140342]">
           Question {currentQuestionIndex + 1} of {questions.length}
         </h2>
         <p className="text-lg font-semibold text-center mb-6 text-gray-700">
@@ -256,8 +263,8 @@ const QuizPage = () => {
                 className={`w-full px-5 py-3 rounded-lg border transition-all duration-300 text-lg font-semibold 
                   ${
                     answers[currentQuestionIndex] === letter
-                      ? "bg-purple-500 border-purple-700 text-white shadow-lg"
-                      : "bg-indigo-100 hover:bg-indigo-200 border-indigo-300 text-indigo-800"
+                      ? "bg-[#140342] border-blue-900 text-white shadow-lg"
+                      : "bg-indigo-100 hover:bg-indigo-200 border-indigo-300 text-[#140342]"
                   }`}
               >
                 {letter}. {option}
@@ -270,30 +277,29 @@ const QuizPage = () => {
         <div className="flex justify-between mt-8">
           <button
             onClick={handlePrevious}
-            className={`px-6 py-3 rounded-lg font-semibold text-lg transition duration-300 
-              ${
-                currentQuestionIndex === 0
-                  ? "bg-gray-400 opacity-50 cursor-not-allowed"
-                  : "bg-indigo-200 hover:bg-indigo-300 text-indigo-800"
-              }`}
             disabled={currentQuestionIndex === 0}
+            className={`px-6 py-3 rounded-lg font-semibold text-lg flex gap-2 items-center ${
+              currentQuestionIndex === 0
+                ? "bg-gray-400 opacity-50 cursor-not-allowed"
+                : "bg-indigo-200 hover:bg-indigo-300 text-blue-900"
+            }`}
           >
-            Previous
+            <ArrowLeft className="w-4 h-4" /> Previous
           </button>
 
           {currentQuestionIndex < questions.length - 1 ? (
             <button
               onClick={handleNext}
-              className="px-6 py-3 rounded-lg bg-purple-500 hover:bg-purple-600 font-semibold text-lg shadow-lg text-white transition duration-300"
+              className="px-6 py-3 rounded-lg bg-[#140342] hover:bg-[#140342] font-semibold text-lg shadow-lg text-white flex items-center gap-2"
             >
-              Next
+              Next <ArrowRight className="w-4 h-4" />
             </button>
           ) : (
             <button
               onClick={() => setShowSubmitModal(true)}
-              className="px-6 py-3 rounded-lg bg-green-500 hover:bg-green-600 font-semibold text-lg shadow-lg text-white transition duration-300"
+              className="px-6 py-3 rounded-lg bg-green-500 hover:bg-green-600 font-semibold text-lg shadow-lg text-white flex items-center gap-2"
             >
-              Submit Quiz
+              <CheckCircle className="w-4 h-4" /> Submit Quiz
             </button>
           )}
         </div>
@@ -309,7 +315,7 @@ const QuizPage = () => {
               onClick={() => handleQuestionSelect(index)}
               className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-bold ${
                 currentQuestionIndex === index
-                  ? "bg-blue-500 text-white"
+                  ? "bg-[#140342] text-white"
                   : answers[index]
                   ? "bg-green-500 text-white"
                   : "bg-gray-300 hover:bg-gray-400"
