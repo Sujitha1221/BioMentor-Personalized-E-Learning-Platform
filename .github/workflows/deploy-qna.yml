@@ -1,0 +1,35 @@
+name: Deploy QnA Service to Azure VM
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Back-End/QnA/**'
+
+jobs:
+  deploy-qna:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AZURE_QNA_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.AZURE_QNA_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy QnA to Azure
+        run: |
+          ssh ${{ secrets.AZURE_QNA_USER }}@${{ secrets.AZURE_QNA_HOST }} << 'EOF'
+            cd /home/azureuser/BioMentor-Personalized-E-Learning-Platform
+            git pull origin main
+            cd Back-End/QnA
+            source venv/bin/activate
+            pip install -r requirements.txt
+            python -m spacy download en_core_web_sm
+            sudo systemctl restart qna
+          EOF
