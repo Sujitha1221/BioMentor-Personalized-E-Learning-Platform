@@ -16,12 +16,19 @@ const GenerateAnswerModel = ({ onBack }) => {
   const [copied, setCopied] = useState(false);
   const [showLinks, setShowLinks] = useState(false);
   const [alert, setAlert] = useState({message:"", type:""});
+  const [studentId,setStudentId] = useState("");
 
   const handleGenerateAnswer = async () => {
     if (!question) {
       //alert("Please enter a question!");
       setAlert({message:"Please enter a question!", type:"warning"});
       return;
+    }
+
+    let storedStudentId = localStorage.getItem("user");
+    if (storedStudentId) {
+      storedStudentId = JSON.parse(storedStudentId).email;
+      setStudentId(storedStudentId);
     }
 
     setLoading(true);
@@ -31,6 +38,7 @@ const GenerateAnswerModel = ({ onBack }) => {
 
     try {
       const response = await axios.post(`${QA_URL}/generate-answer`, {
+        student_id: storedStudentId,
         question,
         type: questionType,
       });
@@ -38,8 +46,8 @@ const GenerateAnswerModel = ({ onBack }) => {
       setAnswer(response.data.answer);
       setRelatedWebsites(response.data.related_websites || []);
     } catch (error) {
-      console.error("Error generating answer:", error);
-      setAlert({message:"Error generating answer:", error, type:"error"});
+      console.error("Error generating answer:", error.response.data.detail);
+      setAlert({message:"Error generating answer: " + error.response.data.detail, error, type:"error"});
       //alert("Failed to generate answer. Please try again.");
     } finally {
       setLoading(false);

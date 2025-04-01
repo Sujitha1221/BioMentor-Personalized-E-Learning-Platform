@@ -25,7 +25,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:3000", "http://localhost:3000"],  # Adjust this to your frontend URL for better security
+    allow_origins=["*"],  # Adjust this to your frontend URL for better security
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
@@ -127,3 +127,11 @@ def refresh_token(data: dict):
         logging.error(" Invalid or expired refresh token")
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
 
+@app.get("/user_exists_by_email")
+def check_user_exists_by_email(email: EmailStr):
+    """
+    Check if a user exists using an email address.
+    """
+    existing_user = users_collection.find_one({"email": email})
+    exists = True if existing_user else False
+    return {"exists": exists}

@@ -1,8 +1,8 @@
 import axios from "axios";
-
+import { MCQ_URL} from "../util/config"
 // Base URL of your FastAPI backend
 const api = axios.create({
-  baseURL: "http://127.0.0.1:8003", // Change this if needed
+  baseURL: MCQ_URL, 
 });
 
 // Attach access token to all requests
