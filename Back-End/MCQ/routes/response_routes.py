@@ -648,3 +648,33 @@ def check_user_quiz_history(user_id: str):
     except Exception as e:
         logging.error(f" Error checking user quiz history: {str(e)}")
         return HTTPException(status_code=500, detail=str(e))
+
+# API Route to Fetch Leaderboard
+@router.get("/leaderboard")
+def get_leaderboard():
+    """
+    Generates a leaderboard of top users based on their latest accuracy.
+    """
+    try:
+        users = users_collection.find({"performance.last_10_quizzes": {"$exists": True, "$ne": []}})
+
+        leaderboard = []
+        for user in users:
+            quizzes = user.get("performance", {}).get("last_10_quizzes", [])
+            if not quizzes:
+                continue
+            latest_accuracy = quizzes[-1]["accuracy"]
+            leaderboard.append({
+                "user_id": str(user["_id"]),
+                "name": user.get("username", ""),  # Optional: You can store name/email for display
+                "accuracy": round(latest_accuracy, 2)
+            })
+
+        # Sort and return top 10
+        leaderboard = sorted(leaderboard, key=lambda x: x["accuracy"], reverse=True)[:10]
+        return {"leaderboard": leaderboard}
+
+    except Exception as e:
+        logging.error(f"Failed to fetch leaderboard: {e}")
+        raise HTTPException(status_code=500, detail="Error retrieving leaderboard.")
+
