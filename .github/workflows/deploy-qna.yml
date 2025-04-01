@@ -3,7 +3,7 @@ name: Deploy QnA Service to Azure VM
 on:
   push:
     branches:
-      - 'IT21204302/Sajeevan'
+      - main
     paths:
       - 'Back-End/QnA/**'
 
