@@ -4,9 +4,10 @@ import logging
 import faiss
 import numpy as np
 import pandas as pd
+import re
 from bson import ObjectId
 from database.database import quizzes_collection
-from sentence_transformers import SentenceTransformer
+from utils.model_loader import embedding_model
 from sklearn.metrics.pairwise import cosine_similarity
 
 # Track seen questions to avoid duplicates
@@ -15,9 +16,6 @@ seen_questions = set()
 # Logging configuration
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-# Load Sentence Transformer model
-embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-
 # Load FAISS index and dataset
 index = faiss.read_index("dataset/question_embeddings.index")
 embeddings_matrix = np.load("dataset/question_embeddings.npy")
@@ -25,27 +23,45 @@ dataset = pd.read_csv("dataset/question_dataset_with_clusters.csv")
 
 # Method to retrieve diverse context questions to generate new questions
 def retrieve_context_questions(query_text, top_k=3):
-    """Retrieve diverse MCQs from different clusters for better question variety."""
+    """Retrieve diverse MCQs from different clusters and difficulty levels for better generation context."""
     query_vector = embedding_model.encode([query_text]).astype(np.float32)
 
     if index.ntotal == 0:
         logging.warning("⚠ FAISS index is empty! No previous questions available.")
         return pd.DataFrame()
 
-    D, I = index.search(query_vector, k=min(top_k * 3, index.ntotal))  # Retrieve 3x top-k
+    # Retrieve 3x top_k for diversity filtering
+    D, I = index.search(query_vector, k=min(top_k * 3, index.ntotal))
 
     valid_indices = [i for i in I[0] if 0 <= i < len(dataset)]
     retrieved_questions = dataset.iloc[valid_indices]
 
     unique_clusters = set()
+    used_difficulties = set()
     context_questions = []
 
     for _, row in retrieved_questions.iterrows():
-        if row["Cluster"] not in unique_clusters:
+        cluster = row["Cluster"]
+        difficulty = row.get("Difficulty Level", "").lower()
+
+        if cluster not in unique_clusters and difficulty not in used_difficulties:
             context_questions.append(row)
-            unique_clusters.add(row["Cluster"])
+            unique_clusters.add(cluster)
+            used_difficulties.add(difficulty)
+
         if len(context_questions) >= top_k:
             break
+
+    if not context_questions:
+        logging.warning("⚠ No diverse context questions found.")
+
+    else:
+        logging.info("🧠 Context Questions Selected:")
+        for row in context_questions:
+            logging.info(
+                f" - Cluster: {row['Cluster']}, Difficulty: {row.get('Difficulty Level', 'N/A')}, "
+                f"Q: {row['Question Text'][:60]}..."
+            )
 
     return pd.DataFrame(context_questions)
 
@@ -193,7 +209,7 @@ def get_irt_based_difficulty_distribution(user_id, total_questions):
     }
 
 # fetch last 2 quizzes of a particular user
-def get_seen_questions(user_id, limit=2):
+def get_seen_questions(user_id, limit=1):
     """
     Retrieve previously seen questions efficiently.
     Instead of fetching all quizzes, we only fetch the last `limit` quizzes.
@@ -268,3 +284,7 @@ def is_duplicate_faiss(new_question, index, threshold=0.85):
 
     return False  # No duplicate detected
  
+def clean_correct_answer(raw):
+    letters = re.findall(r"[A-E]", raw.upper())
+    return ", ".join(sorted(set(letters)))
+
