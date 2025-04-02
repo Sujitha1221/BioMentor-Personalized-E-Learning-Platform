@@ -25,3 +25,4 @@ fpdf
 deep_translator
 pytesseract
 pdf2image
+pytest
