@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'Back-End/Summarization/Monolithic-Architecture'
+      - 'Back-End/Summarization/Monolithic-Architecture/**'
 
 jobs:
   deploy-summarization:
@@ -25,27 +25,11 @@ jobs:
       - name: Deploy Summarization to Azure VM
         run: |
           ssh ${{ secrets.AZURE_SUMMARIZATION_USER }}@${{ secrets.AZURE_SUMMARIZATION_HOST }} << 'EOF'
-            # Navigate to project directory
             cd /home/azureuser/BioMentor-Personalized-E-Learning-Platform
             git pull origin main
-
-            # Navigate to Summarization service
             cd Back-End/Summarization/Monolithic-Architecture
-
-            # Activate virtual environment
             source venv/bin/activate
-
-            # Install Python dependencies
             pip install -r requirements.txt
-
-            # Install required system packages
-            sudo apt-get update
             sudo apt-get install -y tesseract-ocr poppler-utils
-
-            # Reload and restart the service
-            sudo systemctl daemon-reload
             sudo systemctl restart summarize.service
-
-            # Check status
-            sudo systemctl status summarize.service --no-pager
           EOF
