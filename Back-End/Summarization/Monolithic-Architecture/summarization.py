@@ -147,6 +147,7 @@ async def download_notes(file_name: str):
     """
     return await get_pdf_file(file_name)
 
+
 if __name__ == "__main__":
     import uvicorn
     logger.info("Starting FastAPI server...")
