@@ -20,7 +20,6 @@ with open("logging_config.yaml", "r") as file:
 
 logger = logging.getLogger("myapp")
 
-
 app = FastAPI()
 
 app.add_middleware(
@@ -30,6 +29,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # Initialize RAG Model
 try:
