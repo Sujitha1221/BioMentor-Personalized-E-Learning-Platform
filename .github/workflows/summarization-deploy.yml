@@ -3,7 +3,7 @@ name: Deploy Summarization Service to Azure VM
 on:
   push:
     branches:
-      - IT21068478/Dharane
+      - main
     paths:
       - 'Back-End/Summarization/Monolithic-Architecture/**'
 
