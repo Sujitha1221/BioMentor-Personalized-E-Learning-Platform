@@ -3,6 +3,7 @@ import faiss
 import numpy as np
 import pandas as pd
 import logging
+import yake
 from pymongo import MongoClient
 from datetime import datetime
 from bson import ObjectId
@@ -259,6 +260,17 @@ def generate_feedback_report(student_id):
     logging.info(f"Feedback Report for student_id {student_id}: {report}")
     return report
 
+kw_extractor = yake.KeywordExtractor(lan="en", n=1, top=2)
+
+def extract_topic(question):
+    """
+    Extract the most relevant keywords from a question using YAKE.
+    """
+    keywords = kw_extractor.extract_keywords(question)
+    if not keywords:
+        return question.split(" ")[-1]
+    return ", ".join([kw for kw, _ in keywords])
+
 # Generate Adaptive Feedback and Recommendations
 def generate_recommendations(student_id):
     """
@@ -286,7 +298,7 @@ def generate_recommendations(student_id):
 
         # Add learning path suggestions
         if missing_keywords:
-            topic = eval["question"].split(" ")[-1]  # Assume topic is the last word in the question
+            topic = extract_topic(eval["question"])
             learning_path.append(f"Review materials on: {topic} - Missing keywords: {', '.join(missing_keywords)}")
 
         # Generate personalized exercises

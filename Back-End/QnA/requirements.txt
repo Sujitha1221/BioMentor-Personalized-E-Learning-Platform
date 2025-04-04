@@ -21,3 +21,4 @@ vaderSentiment
 pytest
 gunicorn
 requests
+yake
