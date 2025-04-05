@@ -4,11 +4,15 @@ import faiss
 import numpy as np
 import pandas as pd
 import time
+import os
+from dotenv import load_dotenv
 from utils.text_extraction import extract_mcqs
 from utils.quiz_generation_methods import assign_difficulty_parameter, assign_discrimination_parameter, retrieve_context_questions,is_similar_to_same_quiz_questions, is_similar_to_past_quiz_questions, fetch_questions_from_db, is_duplicate_faiss, clean_correct_answer
 from routes.response_routes import estimate_student_ability
 from utils.model_loader import embedding_model
 from sklearn.metrics.pairwise import cosine_similarity
+
+load_dotenv()
 
 # Load FAISS index and dataset
 index = faiss.read_index("dataset/question_embeddings.index")
@@ -16,7 +20,7 @@ embeddings_matrix = np.load("dataset/question_embeddings.npy")
 dataset = pd.read_csv("dataset/question_dataset_with_clusters.csv")
 
 # Google Colab API Endpoint
-COLAB_API_URL = "https://8b13-34-143-240-36.ngrok-free.app/generate_mcq"
+COLAB_API_URL = os.getenv("COLAB_API_BASE_URL", "") + "/generate_mcq"
 
 mcq_cache = {}
 
