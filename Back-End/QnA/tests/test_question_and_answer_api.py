@@ -2,7 +2,7 @@ import os
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
-
+from bson import ObjectId
 from question_and_answer_api import app
 
 client = TestClient(app)
@@ -14,11 +14,13 @@ def test_root_health_check():
     assert response.json() == {"message": "Question and Answer API is running!"}
 
 
-@patch("question_and_answer_api.moderate_question", return_value=(True, "OK"))
-@patch("question_and_answer_api.generate_structured_answer", return_value="Structured answer here.")
+@patch("generate_answers.generate_structured_answer", return_value="Structured answer here.")
+@patch("predict_question_acceptability.moderate_question", return_value=(True, "OK"))
 @patch("question_and_answer_api.get_related_websites", return_value=["https://example.com"])
-def test_generate_structured_answer(mock_web, mock_gen, mock_mod):
+@patch("question_and_answer_api.check_user_availability", return_value=(True, "User found."))
+def test_generate_structured_answer(mock_user, mock_web, mock_mod, mock_gen):
     payload = {
+        "student_id": "sajeesiva06@gmail.com",
         "question": "What is osmosis?",
         "type": "structured"
     }
@@ -27,11 +29,13 @@ def test_generate_structured_answer(mock_web, mock_gen, mock_mod):
     assert "answer" in response.json()
 
 
-@patch("question_and_answer_api.moderate_question", return_value=(True, "OK"))
-@patch("question_and_answer_api.generate_essay_answer", return_value="Essay answer here.")
+@patch("generate_answers.generate_essay_answer", return_value="Essay answer here.")
+@patch("predict_question_acceptability.moderate_question", return_value=(True, "OK"))
 @patch("question_and_answer_api.get_related_websites", return_value=["https://example.com"])
-def test_generate_essay_answer(mock_web, mock_gen, mock_mod):
+@patch("question_and_answer_api.check_user_availability", return_value=(True, "User found."))
+def test_generate_essay_answer(mock_user, mock_web, mock_mod, mock_gen):
     payload = {
+        "student_id": "sajeesiva06@gmail.com",
         "question": "Explain the process of digestion in humans.",
         "type": "essay"
     }
@@ -40,10 +44,11 @@ def test_generate_essay_answer(mock_web, mock_gen, mock_mod):
     assert "answer" in response.json()
 
 
-@patch("question_and_answer_api.moderate_question", return_value=(True, "OK"))
 @patch("question_and_answer_api.evaluate_user_answer")
+@patch("predict_question_acceptability.moderate_question", return_value=(True, "OK"))
 @patch("question_and_answer_api.get_related_websites", return_value=["https://example.com"])
-def test_evaluate_answer(mock_web, mock_eval, mock_mod):
+@patch("question_and_answer_api.check_user_availability", return_value=(True, "User found."))
+def test_evaluate_answer(mock_user, mock_web, mock_mod, mock_eval):
     mock_eval.return_value = {
         "question": "What is DNA?",
         "question_type": "structured",
@@ -65,8 +70,12 @@ def test_evaluate_answer(mock_web, mock_eval, mock_mod):
 
 
 @patch("question_and_answer_api.get_student_analytic_details")
-def test_student_analytics(mock_analytics):
-    mock_analytics.return_value = {
+@patch("question_and_answer_api.convert_objectid")
+@patch("question_and_answer_api.check_user_availability", return_value=(True, "User found."))
+def test_student_analytics(mock_user, mock_convert, mock_analytics):
+    # Sample data with ObjectId replaced by a string
+    raw_data = {
+        "_id": ObjectId("507f1f77bcf86cd799439011"),  # Simulating
         "evaluations": [],
         "average_scores": {},
         "score_trends": {},
@@ -77,13 +86,29 @@ def test_student_analytics(mock_analytics):
         "matched_study_materials": []
     }
 
-    response = client.post("/student-analytics", json={"student_id": "stu001"})
+    # 🛠 Mock get_student_analytic_details to return raw ObjectId-containing data
+    mock_analytics.return_value = raw_data
+
+    # 🛠 Mock convert_objectid to return a version with stringified ObjectId
+    mock_convert.return_value = {
+        "_id": str(raw_data["_id"]),
+        "evaluations": [],
+        "average_scores": {},
+        "score_trends": {},
+        "feedback_report": {},
+        "recommendations": {},
+        "group_analysis": {},
+        "class_average": {},
+        "matched_study_materials": []
+    }
+
+    response = client.post("/student-analytics", json={"student_id": "sajeesiva06@gmail.com"})
     assert response.status_code == 200
     assert response.json()["status"] == "success"
 
-
-@patch("question_and_answer_api.get_questions_by_student_id")
-def test_get_student_question(mock_get):
+@patch("exam_practice.get_questions_by_student_id")
+@patch("question_and_answer_api.check_user_availability", return_value=(True, "User found."))
+def test_get_student_question(mock_user, mock_get):
     mock_get.return_value = {
         "Structured_Question": {"Question": "Define cell.", "Answer": "Basic unit of life."},
         "Essay_Question": {"Question": "Explain respiration.", "Answer": "Breakdown of glucose."},
