@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import api from "../axios/api"; // Import API handler
 import QuizLoadingScreen from "./loadingPage/QuizLoadingScreen"; // Import loading screen component
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
@@ -14,7 +16,7 @@ const difficultyColors = {
 const QuizResults = () => {
   const location = useLocation();
   const navigate = useNavigate();
-
+  const printRef = useRef();
   const userId = location.state?.userId;
   const quizId = location.state?.quizId;
   const attemptNumber = location.state?.attemptNumber; // Passed from history page
@@ -27,12 +29,12 @@ const QuizResults = () => {
 
   useEffect(() => {
     if (userId && quizId && attemptNumber) {
-      fetchAttemptResults(); // Fetch from backend if responseId exists
+      fetchAttemptResults(); // Fetch from backend if userId, quizId, and attemptNumber are available
     } else {
       setResults(null);
       setLoading(false);
     }
-  }, [userId && quizId && attemptNumber]);
+  }, [userId, quizId, attemptNumber]); // ✅ Proper dependency array
 
   // Function to fetch attempt results from the backend
   const fetchAttemptResults = async () => {
@@ -69,6 +71,107 @@ const QuizResults = () => {
     return `${minutes} min ${remainingSeconds} sec`; // Show MM:SS for values >= 60
   };
 
+  // PDF generator:
+  const handleGeneratePDF = () => {
+    if (!results?.responses) return;
+
+    const pdf = new jsPDF({
+      unit: "mm",
+      format: "a4",
+      orientation: "portrait",
+    });
+    const pw = pdf.internal.pageSize.getWidth();
+    const ph = pdf.internal.pageSize.getHeight();
+    const margin = 10;
+    const maxW = pw - margin * 2;
+    const lh = 7; // line height in mm
+    let y = margin;
+
+    // — Header —
+    pdf.setFontSize(16);
+    pdf.text(`Quiz Results — Attempt ${results.attempt_number}`, margin, y);
+    y += lh * 1.5;
+    pdf.setFontSize(12);
+    pdf.text(
+      `Score: ${results.summary.correct_answers} / ${results.summary.total_questions} (${results.summary.accuracy}%)`,
+      margin,
+      y
+    );
+    y += lh * 2;
+
+    results.responses.forEach((resp, idx) => {
+      // 1) Question lines
+      pdf.setFont(undefined, "bold");
+      const qLines = pdf.splitTextToSize(
+        `Question ${idx + 1} : ${resp.question_text}`,
+        maxW
+      );
+      const qH = qLines.length * lh;
+
+      // 2) Options lines
+      pdf.setFont(undefined, "normal");
+      let optsLineCount = 0;
+      ["A", "B", "C", "D", "E"].forEach((L) => {
+        const t = resp.options[L] || "";
+        optsLineCount += t ? pdf.splitTextToSize(t, maxW - 8).length : 0;
+      });
+      // +1 for "Answer options:" label
+      const optsH = optsLineCount * lh + lh;
+
+      // 3) Correct answer as one block
+      const caFull = `Correct answer: ${resp.correct_answer}. ${
+        resp.options[resp.correct_answer] || ""
+      }`;
+      const caLines = pdf.splitTextToSize(caFull, maxW);
+      const caH = caLines.length * lh;
+
+      // total height of this question‐block
+      const blockH =
+        qH +
+        lh + // question bottom padding
+        optsH +
+        lh + // options + bottom padding
+        caH +
+        lh * 1.5; // correct answer + extra bottom padding
+
+      // — page break if needed —
+      if (y + blockH > ph - margin) {
+        pdf.addPage();
+        y = margin;
+      }
+
+      // — draw question —
+      pdf.setFont(undefined, "bold");
+      pdf.text(qLines, margin, y);
+      y += qH + lh;
+
+      // — draw options header —
+      pdf.text("Answer options:", margin, y);
+      y += lh;
+
+      // — draw each option —
+      pdf.setFont(undefined, "normal");
+      ["A", "B", "C", "D", "E"].forEach((L) => {
+        const t = resp.options[L];
+        if (!t) return;
+        const wrapped = pdf.splitTextToSize(t, maxW - 8);
+        pdf.text(`${L}:`, margin + 2, y);
+        pdf.text(wrapped, margin + 10, y);
+        y += wrapped.length * lh;
+      });
+
+      // spacer before correct answer
+      y += lh;
+
+      // — draw correct answer in one wrapped block —
+      pdf.setFont(undefined, "bold");
+      pdf.text(caLines, margin, y);
+      y += caH + lh * 1.5;
+    });
+
+    pdf.save(`quiz-results-attempt-${results.attempt_number}.pdf`);
+  };
+
   if (loading) {
     return (
       <div className="mt-0 sm:mt-20">
@@ -81,7 +184,7 @@ const QuizResults = () => {
     return (
       <div className="text-center p-10">
         <p className="text-red-600 font-semibold text-xl">
-          ⚠️ Quiz results not found.
+          ⚠️ Unable to load quiz results. Please try again later.
         </p>
         <button
           onClick={() => navigate("/mcq-home")}
@@ -104,6 +207,7 @@ const QuizResults = () => {
   return (
     <div className="min-h-screen flex flex-col items-center mt-0 sm:mt-20 bg-gradient-to-br from-gray-100 to-gray-300 p-6">
       <motion.div
+        ref={printRef}
         className="max-w-5xl w-full bg-white p-8 rounded-2xl shadow-xl border border-gray-300"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -131,7 +235,7 @@ const QuizResults = () => {
             <span className="text-indigo-600">{results.summary.accuracy}%</span>
           </p>
           <p className="text-lg font-semibold text-gray-700 text-center">
-            ⏱️ Total Time::{" "}
+            ⏱️ Total Time:{" "}
             <span className="text-indigo-600">
               {formatTime(results.summary.total_time)} sec
             </span>
@@ -147,6 +251,18 @@ const QuizResults = () => {
               Hard: {difficultyCounts.hard}
             </span>
           </div>
+        </div>
+
+        {/* PDF Button */}
+        <div className="text-center mt-4">
+          <button
+            onClick={handleGeneratePDF}
+            title="Download your quiz results as a PDF file"
+            aria-label="Download quiz results as PDF"
+            className="mt-3 sm:mt-0 px-4 py-2 bg-[#140342] text-white rounded-lg hover:bg-[#140342] transition-all"
+          >
+            📄 Download Quiz Results (PDF)
+          </button>
         </div>
 
         {/* Questions & Answers Section */}
