@@ -145,7 +145,7 @@ def update_user_performance(user_id, responses):
         result = users_collection.update_one({"_id": ObjectId(user_id)}, {"$set": {"performance": performance}})
         
         if result.matched_count == 0:
-            logging.error(f" No matching user found for ID {user_id}. Performance update failed.")
+            logging.error(f"No matching user found for ID {user_id}. Performance update failed.")
             raise ValueError(f"Failed to update performance: No matching user found for ID {user_id}.")
 
         if result.modified_count == 0:
@@ -167,7 +167,7 @@ def submit_quiz(data: SubmitQuizRequest,current_user: str = Depends(get_current_
         quiz_id = data.quiz_id
         responses = data.responses  
         
-        logging.info(f"📩 Received quiz submission: User {user_id}, Quiz {quiz_id}, Responses Count: {len(responses)}")
+        logging.info(f"Received quiz submission: User {user_id}, Quiz {quiz_id}, Responses Count: {len(responses)}")
 
         existing_user = users_collection.find_one({"_id": ObjectId(user_id)})
         if not existing_user:
@@ -188,13 +188,18 @@ def submit_quiz(data: SubmitQuizRequest,current_user: str = Depends(get_current_
         if str(quiz.get("user_id")) != str(user_id):
             raise HTTPException(status_code=403, detail="This quiz was not created for the provided user.")
         
-        logging.info(f"📋 Validating responses for User {user_id} on Quiz {quiz_id}")
+        logging.info(f"Validating responses for User {user_id} on Quiz {quiz_id}")
         submitted_at = time.time()
         #  Find previous attempts correctly
         previous_attempts = responses_collection.count_documents({"user_id": user_id, "quiz_id": quiz_id})
         attempt_number = 1 if previous_attempts == 0 else previous_attempts + 1  #  Initialize correctly
+        
+        MAX_ATTEMPTS = 3
+        if previous_attempts >= MAX_ATTEMPTS:
+            logging.warning(f"❌ User {user_id} has reached the maximum number of attempts for quiz {quiz_id}.")
+            raise HTTPException(status_code=403, detail="You have reached the maximum number of attempts for this quiz.")
 
-        logging.info(f"🔁 User {user_id} is submitting attempt {attempt_number} for quiz {quiz_id}.")
+        logging.info(f"User {user_id} is submitting attempt {attempt_number} for quiz {quiz_id}.")
         
         correct_count = 0  # Track correct answers
         total_time = 0      # Track total quiz time

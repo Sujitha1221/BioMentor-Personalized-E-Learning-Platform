@@ -285,6 +285,6 @@ def is_duplicate_faiss(new_question, index, threshold=0.85):
     return False  # No duplicate detected
  
 def clean_correct_answer(raw):
-    letters = re.findall(r"[A-E]", raw.upper())
-    return ", ".join(sorted(set(letters)))
-
+    # Match only full A–E options surrounded by word boundaries
+    letters = re.findall(r"\b[A-E]\b", raw.upper())
+    return sorted(set(letters))
