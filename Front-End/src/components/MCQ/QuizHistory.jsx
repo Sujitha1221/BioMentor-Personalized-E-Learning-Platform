@@ -17,6 +17,7 @@ const QuizHistory = () => {
   const user = JSON.parse(localStorage.getItem("user"));
   const token = localStorage.getItem("token");
   const userId = user?.user_id;
+  const MAX_ATTEMPTS = 3;
 
   useEffect(() => {
     if (!userId || !token) {
@@ -192,13 +193,28 @@ const QuizHistory = () => {
                     </motion.li>
                   ))}
               </ul>
-              <motion.button
-                onClick={() => openRetryModal(quiz.quiz_id)}
-                className="mt-4 sm:mt-6 px-5 py-3 flex items-center justify-center bg-green-700 text-white text-lg font-bold rounded-lg hover:bg-green-800 transition-all w-full sm:w-auto"
-                whileHover={{ scale: 1.05 }}
-              >
-                <FaRedo className="mr-2" /> Retry Quiz
-              </motion.button>
+              <div className="mt-4 sm:mt-6 w-full sm:w-auto">
+                <motion.button
+                  onClick={() => openRetryModal(quiz.quiz_id)}
+                  className={`px-5 py-3 flex items-center justify-center text-white text-lg font-bold rounded-lg w-full sm:w-auto transition-all ${
+                    quiz.attempts.length >= MAX_ATTEMPTS
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-green-700 hover:bg-green-800"
+                  }`}
+                  whileHover={{
+                    scale: quiz.attempts.length < MAX_ATTEMPTS ? 1.05 : 1,
+                  }}
+                  disabled={quiz.attempts.length >= MAX_ATTEMPTS}
+                >
+                  <FaRedo className="mr-2" />
+                  Retry Quiz
+                </motion.button>
+                {quiz.attempts.length >= MAX_ATTEMPTS && (
+                  <p className="mt-2 text-red-600 font-medium">
+                    ❌ Retry limit reached (max {MAX_ATTEMPTS} attempts)
+                  </p>
+                )}
+              </div>
             </motion.div>
           ))}
         </div>

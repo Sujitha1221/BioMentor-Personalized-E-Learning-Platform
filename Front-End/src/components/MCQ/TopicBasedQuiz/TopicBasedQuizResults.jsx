@@ -198,7 +198,7 @@ const UnitQuizResults = () => {
             aria-label="Download quiz results as PDF"
             className="mt-3 sm:mt-0 px-4 py-2 bg-[#140342] text-white rounded-lg hover:bg-[#140342] transition-all"
           >
-            📄 Download Quiz Results (PDF)
+            📄 Download Quiz (PDF)
           </button>
         </div>
 
