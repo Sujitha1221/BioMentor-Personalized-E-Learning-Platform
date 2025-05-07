@@ -114,7 +114,7 @@ const PerformanceDashboard = () => {
               return (
                 <>
                   <h3 className="text-2xl font-bold text-green-700">
-                    🔥 Consistency King
+                    🔥 Consistency Champion
                   </h3>
                   <p className="text-gray-700">
                     You're taking quizzes like clockwork!
@@ -205,10 +205,15 @@ const PerformanceDashboard = () => {
 
         {dashboardData?.leaderboard?.length > 0 ? (
           <ul className="space-y-4">
-            {dashboardData.leaderboard.map((user, index) => {
+            {dashboardData.leaderboard.map((userItem, index) => {
               const rankEmoji = ["🥇", "🥈", "🥉"][index] || `#${index + 1}`;
-              const userName = user.name || `User ${user.user_id.slice(-4)}`;
-              const accuracy = user.accuracy;
+              const isCurrentUser = userItem.user_id === user.user_id; // Check if this is the logged-in user
+              const userName = userItem.name
+                ? `${userItem.name}${isCurrentUser ? " (You)" : ""}`
+                : `User ${userItem.user_id.slice(-4)}${
+                    isCurrentUser ? " (You)" : ""
+                  }`;
+              const accuracy = userItem.accuracy;
 
               return (
                 <li
