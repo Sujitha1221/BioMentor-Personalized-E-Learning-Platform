@@ -20,7 +20,6 @@ with open("logging_config.yaml", "r") as file:
 
 logger = logging.getLogger("myapp")
 
-
 app = FastAPI()
 
 app.add_middleware(
@@ -31,11 +30,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Initialize RAG Model
 try:
     logger.info("Initializing RAG Model...")
     rag_model = RAGModel(
-        model_path = 'DharaneSegar/flant5-bio-summarization',
+        model_path='DharaneSegar/flant5-bio-summarization',
         embedding_model_name='all-MiniLM-L6-v2',
         dataset_paths=[
             '../../../Model-Training/Summarization/bio_summary_keywords.csv',
@@ -147,6 +147,8 @@ async def download_notes(file_name: str):
     """
     return await get_pdf_file(file_name)
 
+
+# start application
 if __name__ == "__main__":
     import uvicorn
     logger.info("Starting FastAPI server...")

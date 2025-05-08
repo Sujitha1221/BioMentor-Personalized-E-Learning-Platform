@@ -1,5 +1,4 @@
 import logging
-import io
 from gtts import gTTS
 
 # Configure logging

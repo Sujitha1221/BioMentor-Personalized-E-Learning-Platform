@@ -21,3 +21,5 @@ vaderSentiment
 pytest
 gunicorn
 requests
+yake
+accelerate

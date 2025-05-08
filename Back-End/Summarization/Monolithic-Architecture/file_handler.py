@@ -48,12 +48,12 @@ def generate_pdf(structured_notes: str, topic: str) -> bytes:
     pdf.set_font("Arial", "B", 16)
     pdf.cell(0, 10, txt=f"{topic}", ln=True, align="C")
 
-
     # Change to a normal font for content
     pdf.set_font("Arial", size=12)
 
     # Ensure proper UTF-8 encoding for special characters
-    structured_notes = structured_notes.encode("utf-8", "ignore").decode("utf-8")
+    structured_notes = structured_notes.encode(
+        "utf-8", "ignore").decode("utf-8")
 
     # Write multi-line text; FPDF's multi_cell wraps text automatically
     for line in structured_notes.split("\n"):
