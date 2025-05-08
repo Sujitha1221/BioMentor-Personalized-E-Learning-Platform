@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from utils.text_extraction import extract_mcqs
 from utils.quiz_generation_methods import assign_difficulty_parameter, assign_discrimination_parameter, retrieve_context_questions,is_similar_to_same_quiz_questions, is_similar_to_past_quiz_questions, fetch_questions_from_db, is_duplicate_faiss, clean_correct_answer
 from routes.response_routes import estimate_student_ability
-from utils.model_loader import embedding_model
+from utils.model_loader import embedding_model, llm
 from sklearn.metrics.pairwise import cosine_similarity
 
 load_dotenv()
@@ -19,8 +19,8 @@ index = faiss.read_index("dataset/question_embeddings.index")
 embeddings_matrix = np.load("dataset/question_embeddings.npy")
 dataset = pd.read_csv("dataset/question_dataset_with_clusters.csv")
 
-# Google Colab API Endpoint
-COLAB_API_URL = os.getenv("COLAB_API_BASE_URL", "") + "/generate_mcq"
+def build_llama2_chat_prompt(instruction: str) -> str:
+    return f"<s>[INST] {instruction.strip()} [/INST]"
 
 mcq_cache = {}
 
@@ -60,7 +60,7 @@ def generate_mcq(difficulty, user_id, max_retries=3, existing_questions=None):
             
             remaining = 3 - len(valid_mcqs)
 
-            prompt = f"""
+            instruction  = f"""
             Generate {remaining} **{difficulty}** level multiple-choice biology question{'s' if remaining > 1 else ''}.
 
             Each question must follow this format:
@@ -78,26 +78,27 @@ def generate_mcq(difficulty, user_id, max_retries=3, existing_questions=None):
 
             #  Add context if available
             if context_list:
+                context_block = "\n".join(context_list)
                 prompt = f"""
-                Generate a **{difficulty}** level MCQ that is **different** from these:
+                Generate a {difficulty}** level MCQ that is **different** from these:
 
-                {''.join(context_list)}
+                {context_block}
 
-                **Follow This Format:**
-                {prompt}
+                **Follow This Format exactly:**
+                {instruction.strip()}
                 """
+            prompt = build_llama2_chat_prompt(instruction)
 
             #  Send API request (Improved Error Handling)
             try:
-                response = requests.post(COLAB_API_URL, json={"prompt": prompt}, timeout=30)
-                response.raise_for_status()  # Handle HTTP errors
-                data = response.json()
-                raw_output = data.get("raw_output", "")
-                logging.warning(f"⚠ RAW API RESPONSE: {raw_output}")
+                output = llm(prompt, max_tokens=512, temperature=0.8, top_p=0.95)
+                raw_output = output["choices"][0]["text"]
+                logging.warning(f"⚠ RAW LOCAL MODEL RESPONSE: {raw_output}")
 
             except (requests.exceptions.RequestException, ValueError) as e:
-                logging.error(f"⚠ API Error: {e}")
+                logging.error(f"⚠ Local model error: {e}")
                 retries += 1
+                time.sleep(1)
                 continue
         
             extracted_mcqs = extract_mcqs(prompt, raw_output)
@@ -126,6 +127,7 @@ def generate_mcq(difficulty, user_id, max_retries=3, existing_questions=None):
                 # Validation checks
                 if any([
                     "error" in question_data,
+                    "Question" in question_text, 
                     "<Insert your question>" in question_text,
                     "Generate a" in question_text,
                     len(options) != 5,
@@ -195,7 +197,7 @@ def generate_mcq_based_on_performance(user_id, difficulty, max_retries=5, existi
             ] if not context_questions.empty else []
 
             remaining = 3 - len(valid_mcqs)
-            prompt = f"""
+            instruction = f"""
             Generate {remaining} **{difficulty}** level multiple-choice biology question{'s' if remaining > 1 else ''}.
             
             **User's Estimated Ability Level (IRT Theta):** {theta}
@@ -215,19 +217,19 @@ def generate_mcq_based_on_performance(user_id, difficulty, max_retries=5, existi
 
             if context_list:
                 context_block = "\n".join(context_list)
-                prompt = f"""
+                instruction  = f"""
                 Generate a **{difficulty}** level MCQ that is **different** from these:
 
                 {context_block}
 
-                **Follow This Format:**
-                {prompt}
+                **Follow This Format exactly:**
+                {instruction.strip()}
                 """
+            prompt = build_llama2_chat_prompt(instruction)
 
-            response = requests.post(COLAB_API_URL, json={"prompt": prompt}, timeout=30)
-            data = response.json()
-            raw_output = data.get("raw_output", "")
-            logging.warning(f"\u26a0 RAW API RESPONSE: {raw_output}")
+            output = llm(prompt, max_tokens=512, temperature=0.8, top_p=0.95)
+            raw_output = output["choices"][0]["text"]
+            logging.warning(f"⚠ RAW LOCAL MODEL RESPONSE: {raw_output}")
 
             extracted_mcqs = extract_mcqs(prompt, raw_output)
 
@@ -249,6 +251,7 @@ def generate_mcq_based_on_performance(user_id, difficulty, max_retries=5, existi
                     question in batch_generated_questions,
                     question in existing_questions,
                     "error" in question,
+                    "Question" in question, 
                     "<Insert your question>" in question,
                     "Generate a" in question
                 ]):

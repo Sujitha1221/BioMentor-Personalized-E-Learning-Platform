@@ -2,6 +2,8 @@ import re
 
 def extract_mcqs(prompt, raw_output):
     raw_output = raw_output.replace(prompt, "").strip()
+    raw_output = re.sub(r"</?s>|</?INST>|><INST>", "", raw_output, flags=re.IGNORECASE)
+
     lines = [line.strip() for line in raw_output.split("\n") if line.strip()]
 
     mcqs = []
@@ -36,7 +38,8 @@ def extract_mcqs(prompt, raw_output):
 
         # Waiting for the question after a header
         if waiting_for_question:
-            question = re.sub(r"^(?:Question\s*)?\d+[\.\:\)]\s*", "", line.strip(" ?:")).strip(" .:")
+            question = re.sub(r"^(?:Question\s*)?\d+[\.\:\)]\s*", "", line).rstrip(" .:")
+
             if question:
                 current_mcq["question"] = question
                 waiting_for_question = False
@@ -48,8 +51,26 @@ def extract_mcqs(prompt, raw_output):
             q_match = re.match(r"^(?:Question\s*)?\d+[\.\:\)]\s*(.+)", line, re.IGNORECASE)
         if q_match:
             flush()
-            question = re.sub(r"^(?:Question\s*)?\d+[\.\:\)]\s*", "", q_match.group(1).strip(" ?:")).strip(" .:")
+            question = re.sub(r"^(?:Question\s*)?\d+[\.\:\)]\s*", "", q_match.group(1)).rstrip(" .:")
             current_mcq = {"question": question, "options": {}, "correct_answer": None}
+            continue
+        
+        # New format: "### Question X"
+        if re.match(r"^###\s*Question\s*\d+", line, re.IGNORECASE):
+            flush()
+            current_mcq = {"question": None, "options": {}, "correct_answer": None}
+            waiting_for_question = True
+            continue
+        
+        match_easy_intro = re.match(r"^The .* level multiple-choice .* question .* is[:\-]?\s*(.+)?$", line, re.IGNORECASE)
+        if match_easy_intro:
+            flush()
+            current_mcq = {"question": None, "options": {}, "correct_answer": None}
+            possible_question = match_easy_intro.group(1)
+            if possible_question:
+                current_mcq["question"] = possible_question.strip(" .:")
+            else:
+                waiting_for_question = True  # Wait for next line if question is not in same line
             continue
 
         # Bullet-style questions: "- What is...?"
@@ -70,7 +91,7 @@ def extract_mcqs(prompt, raw_output):
                 for j in range(i - 1, -1, -1):
                     prev = lines[j]
                     if not re.match(r"^[A-Ea-e][\)\.\:\-]?\s+", prev) and not prev.lower().startswith("correct answer"):
-                        question = re.sub(r"^(?:Question\s*)?\d+[\.\:\)]\s*", "", prev.strip(" ?:")).strip(" .:")
+                        question = re.sub(r"^(?:Question\s*)?\d+[\.\:\)]\s*", "", prev).strip(" .:")
                         if question:
                             current_mcq["question"] = question
                         break
