@@ -137,7 +137,7 @@ def generate_unit_quiz(
         "questions": sampled_questions
     }
 
-@router.post("/unit_quiz/submit/{user_id}")
+@router.post("/quiz/submit/{user_id}")
 def submit_unit_quiz(
     user_id: str,
     request: SubmitUnitQuizRequest,

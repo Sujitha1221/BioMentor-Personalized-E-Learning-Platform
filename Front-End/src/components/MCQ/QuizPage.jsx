@@ -29,6 +29,7 @@ const QuizPage = () => {
   const [startTime, setStartTime] = useState(Date.now());
   const [unanswered, setUnanswered] = useState([]);
   const [timer, setTimer] = useState(2700); // 45 minutes timer
+  const [speaking, setSpeaking] = useState(false);
 
   const user = JSON.parse(localStorage.getItem("user"));
   const token = localStorage.getItem("token");
@@ -57,6 +58,40 @@ const QuizPage = () => {
     } catch (error) {
       console.error("Error fetching quiz:", error);
       navigate("/mcq-home");
+    }
+  };
+
+  const speakText = (text) => {
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel(); // stop any previous speech
+
+      const utterance = new SpeechSynthesisUtterance(text);
+
+      utterance.onstart = () => setSpeaking(true);
+      utterance.onend = () => setSpeaking(false);
+      utterance.onerror = () => setSpeaking(false);
+
+      window.speechSynthesis.speak(utterance);
+    } else {
+      alert("Sorry, your browser doesn't support text-to-speech.");
+    }
+  };
+
+  const handleSpeak = () => {
+    const questionText = currentQuestion.question_text;
+    const optionsText = filteredOptions
+      .map((option, idx) => `Option ${optionsMap[idx]}: ${option}`)
+      .join(". ");
+    const textToRead = `Question ${
+      currentQuestionIndex + 1
+    }. ${questionText}. ${optionsText}`;
+    speakText(textToRead);
+  };
+
+  const stopSpeaking = () => {
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+      setSpeaking(false);
     }
   };
 
@@ -113,6 +148,8 @@ const QuizPage = () => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex((prev) => prev + 1);
     }
+    window.speechSynthesis.cancel();
+    setSpeaking(false);
   };
 
   const handlePrevious = () => {
@@ -120,11 +157,15 @@ const QuizPage = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex((prev) => prev - 1);
     }
+    window.speechSynthesis.cancel();
+    setSpeaking(false);
   };
 
   const handleQuestionSelect = (index) => {
     updateTimeSpent(currentQuestionIndex); // Update time before switching
     setCurrentQuestionIndex(index);
+    window.speechSynthesis.cancel();
+    setSpeaking(false);
   };
 
   //  Handle quiz submission
@@ -233,23 +274,47 @@ const QuizPage = () => {
             transition={{ duration: 0.5 }}
           />
         </div>
-        <div className="relative">
-          <span
-            className={`absolute top-2 right-2 text-xs px-3 py-1 rounded-full font-semibold ${
-              difficultyColors[currentQuestion?.difficulty] ||
-              "bg-gray-200 text-gray-800"
-            }`}
-          >
-            {currentQuestion?.difficulty || "Unknown"}
-          </span>
+        <div className="relative w-full">
+          {/* Difficulty Tag */}
+          <div className="flex justify-end mt-2 sm:mt-0 sm:absolute sm:top-2 sm:right-2">
+            <span
+              className={`text-xs px-3 py-1 rounded-full font-semibold ${
+                difficultyColors[currentQuestion?.difficulty] ||
+                "bg-gray-200 text-gray-800"
+              }`}
+            >
+              {currentQuestion?.difficulty || "Unknown"}
+            </span>
+          </div>
+
+          {/* Question Number */}
+          <h2 className="text-3xl font-extrabold mb-4 text-center tracking-wider text-[#140342]">
+            Question {currentQuestionIndex + 1} of {questions.length}
+          </h2>
         </div>
 
-        <h2 className="text-3xl font-extrabold mb-4 text-center tracking-wider text-[#140342]">
-          Question {currentQuestionIndex + 1} of {questions.length}
-        </h2>
-        <p className="text-lg font-semibold text-center mb-6 text-gray-700">
-          {currentQuestion.question_text}
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4">
+          <p className="text-lg font-semibold text-center text-gray-700 w-full sm:text-center sm:flex-1">
+            {currentQuestion.question_text}
+          </p>
+          <div className="mt-3 sm:mt-0 sm:ml-4 flex justify-center sm:justify-end w-full sm:w-auto whitespace-nowrap">
+            {speaking ? (
+              <button
+                onClick={stopSpeaking}
+                className="flex items-center gap-2 bg-red-200 hover:bg-red-300 text-red-800 px-4 py-2 rounded-md font-semibold"
+              >
+                🛑 Stop
+              </button>
+            ) : (
+              <button
+                onClick={handleSpeak}
+                className="flex items-center gap-2 bg-[#140342] text-white px-4 py-2 rounded-md font-semibold"
+              >
+                🔊 Speak
+              </button>
+            )}
+          </div>
+        </div>
 
         {/*  Answer Choices */}
         <div className="mt-4 space-y-3">
@@ -274,11 +339,11 @@ const QuizPage = () => {
         </div>
 
         {/*  Navigation Buttons */}
-        <div className="flex justify-between mt-8">
+        <div className="flex flex-col sm:flex-row justify-between gap-3 mt-8">
           <button
             onClick={handlePrevious}
             disabled={currentQuestionIndex === 0}
-            className={`px-6 py-3 rounded-lg font-semibold text-lg flex gap-2 items-center ${
+            className={`w-full sm:w-auto px-6 py-3 rounded-lg font-semibold text-lg flex gap-2 items-center justify-center ${
               currentQuestionIndex === 0
                 ? "bg-gray-400 opacity-50 cursor-not-allowed"
                 : "bg-indigo-200 hover:bg-indigo-300 text-blue-900"
@@ -290,14 +355,14 @@ const QuizPage = () => {
           {currentQuestionIndex < questions.length - 1 ? (
             <button
               onClick={handleNext}
-              className="px-6 py-3 rounded-lg bg-[#140342] hover:bg-[#140342] font-semibold text-lg shadow-lg text-white flex items-center gap-2"
+              className="w-full sm:w-auto px-6 py-3 rounded-lg bg-[#140342] hover:bg-[#140342] font-semibold text-lg shadow-lg text-white flex items-center justify-center gap-2"
             >
               Next <ArrowRight className="w-4 h-4" />
             </button>
           ) : (
             <button
               onClick={() => setShowSubmitModal(true)}
-              className="px-6 py-3 rounded-lg bg-green-500 hover:bg-green-600 font-semibold text-lg shadow-lg text-white flex items-center gap-2"
+              className="w-full sm:w-auto px-6 py-3 rounded-lg bg-green-500 hover:bg-green-600 font-semibold text-lg shadow-lg text-white flex items-center justify-center gap-2"
             >
               <CheckCircle className="w-4 h-4" /> Submit Quiz
             </button>
