@@ -1,0 +1,41 @@
+services:
+  api_gateway:
+    build: ./api_gateway
+    depends_on:
+      - text_extraction_service
+      - summarization_service
+      - voice_service
+      - file_service
+    ports:
+      - "8080:8080" 
+    volumes:
+      - ./uploads:/app/uploads  
+
+  text_extraction_service:
+    build: ./text_extraction_service
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./uploads:/app/uploads 
+
+  summarization_service:
+    build: ./summarization_service
+    ports:
+      - "8002:8002"
+    volumes:
+      - D:/Downloads/RP/Summarization/flan_t5_finetuned_model:/app/flan_t5_finetuned_model
+      - D:/Downloads/RP/Summarization/RP/Model-Training/Summarization:/app/datasets
+
+  voice_service:
+    build: ./voice_service
+    ports:
+      - "8003:8003"
+
+  file_service:
+    build: ./file_service
+    ports:
+      - "8004:8004"
+    volumes:
+      - ./uploads:/app/uploads 
+
+
