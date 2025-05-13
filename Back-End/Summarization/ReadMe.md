@@ -102,7 +102,6 @@ Summarization/
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/BioMentor-Personalized-E-Learning-Platform.git
-cd BioMentor-Personalized-E-Learning-Platform/Back-End/Summarization/Monolithic-Architecture
 ```
 
 ## 🖥️ Running the Services
