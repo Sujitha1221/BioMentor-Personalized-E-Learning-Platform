@@ -1,0 +1,13 @@
+pandas 
+numpy 
+sentence-transformers 
+faiss-cpu 
+transformers 
+autocorrect 
+language-tool-python
+fastapi 
+uvicorn 
+pydantic
+colorlog
+
+
