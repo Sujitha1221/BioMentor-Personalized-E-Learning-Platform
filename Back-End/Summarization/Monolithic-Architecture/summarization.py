@@ -109,10 +109,11 @@ async def summarize_text(request: Request, text: str = Form(...), word_count: in
 async def generate_notes(
     request: Request,
     topic: str = Form(...),
-    lang: str = Form(None)  # Optional: "ta" (Tamil) or "si" (Sinhala)
+    lang: str = Form(None)  # Optional: "ta" or "si"
 ):
     """
     Endpoint to generate structured notes for a given topic.
+    Returns structured notes, download link, and voice file.
     """
     response = await generate_notes_function(request, topic, lang, rag_model)
 
