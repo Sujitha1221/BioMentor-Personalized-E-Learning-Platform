@@ -416,14 +416,27 @@ async def generate_notes_function(request: Request, topic, lang, rag_model):
                 }
 
             else:
-                # For Tamil or Sinhala, do NOT generate/return PDF
+                # For Tamil or Sinhala, save as .txt file
+                lang_display = "Tamil" if lang == "ta" else "Sinhala"
+                full_text = f"{topic} - {lang_display} \n\n{structured_notes}"
+
+                txt_bytes = full_text.encode("utf-8")
+                txt_filename = f"notes_{topic.replace(' ', '_')}_{lang}.txt"
+
+                file_store[txt_filename] = txt_bytes
+                logger.info(f"Text file stored in memory: {txt_filename}")
+
+                # Handle disconnected client
                 if await request.is_disconnected():
                     return None
 
                 # Cleanup task
                 del ongoing_tasks[task_id]
 
-                return {"structured_notes": structured_notes}
+                return {
+                    "structured_notes": structured_notes,
+                    "download_link": f"/download-notes/{txt_filename}"
+                }
 
         except asyncio.CancelledError:
             logger.warning(
