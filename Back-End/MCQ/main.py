@@ -4,6 +4,7 @@ from routes.mcq_routes import router as mcq_router
 from routes.adaptive_quiz_routes import router as adaptive_quiz_router
 from routes.response_routes import router as response_router
 from routes.topic_based_quiz_routes import router as topic_router
+from routes.explanation_routes import router as explanation_router
 
 app = FastAPI()
 
@@ -21,6 +22,7 @@ app.include_router(mcq_router, prefix="/mcqs", tags=["MCQ Generation"])
 app.include_router(adaptive_quiz_router, prefix="/quiz", tags=["Adaptive MCQ Generation"])
 app.include_router(response_router, prefix="/responses", tags=["User Responses"])
 app.include_router(topic_router, prefix="/topic", tags=["Topic based quiz"])
+app.include_router(explanation_router, prefix="/explanations", tags=["MCQ Explanation"])
 
 @app.get("/")
 def home():
