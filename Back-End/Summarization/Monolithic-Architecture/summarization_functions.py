@@ -403,6 +403,16 @@ async def generate_notes_function(request: Request, topic, lang, rag_model):
                 file_store[pdf_filename] = pdf_bytes
                 logger.info(f"PDF Stored: {pdf_filename}")
 
+                try:
+                    import io
+                    audio_buffer = io.BytesIO()
+                    text_to_speech(structured_notes, audio_buffer)
+                    audio_filename = f"notes_{topic.replace(' ', '_')}_{lang}.mp3"
+                    file_store[audio_filename] = audio_buffer.getvalue()
+                    logger.info(f"Audio file stored: {audio_filename}")
+                except Exception as e:
+                    logger.warning(f"Voice generation failed: {e}")
+
                 # Handle disconnected client
                 if await request.is_disconnected():
                     return None
@@ -412,18 +422,33 @@ async def generate_notes_function(request: Request, topic, lang, rag_model):
 
                 return {
                     "structured_notes": structured_notes,
-                    "download_link": f"/download-notes/{pdf_filename}"
+                    "download_link": f"/download-notes/{pdf_filename}",
+                    "voice_file": f"/download-notes/{audio_filename}"
                 }
 
+
             else:
-                # For Tamil or Sinhala, do NOT generate/return PDF
+                # For Tamil or Sinhala, save as .txt file
+                lang_display = "Tamil" if lang == "ta" else "Sinhala"
+                full_text = f"{topic} - {lang_display} \n\n{structured_notes}"
+
+                txt_bytes = full_text.encode("utf-8")
+                txt_filename = f"notes_{topic.replace(' ', '_')}_{lang}.txt"
+
+                file_store[txt_filename] = txt_bytes
+                logger.info(f"Text file stored in memory: {txt_filename}")
+
+                # Handle disconnected client
                 if await request.is_disconnected():
                     return None
 
                 # Cleanup task
                 del ongoing_tasks[task_id]
 
-                return {"structured_notes": structured_notes}
+                return {
+                    "structured_notes": structured_notes,
+                    "download_link": f"/download-notes/{txt_filename}"
+                }
 
         except asyncio.CancelledError:
             logger.warning(
