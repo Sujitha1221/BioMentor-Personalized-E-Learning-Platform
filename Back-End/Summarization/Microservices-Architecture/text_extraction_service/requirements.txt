@@ -1,0 +1,14 @@
+tqdm
+python-docx
+python-pptx
+autocorrect 
+pymupdf 
+tabula-py 
+pillow 
+numpy 
+easyocr 
+pandas
+fastapi 
+uvicorn 
+pydantic 
+colorlog
