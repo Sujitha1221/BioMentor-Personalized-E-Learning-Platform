@@ -2,9 +2,10 @@ import logging
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Optional
+import pandas as pd
 from generate_answers import generate_structured_answer, generate_essay_answer
 from evaluate_answers import evaluate_user_answer
-from answer_evaluation_tool import get_student_analytic_details, convert_objectid
+from answer_evaluation_tool import get_student_analytic_details, convert_objectid,  generate_mind_map
 from exam_practice import get_questions_by_student_id, compare_with_passpaper_answer
 from predict_question_acceptability import moderate_question
 from check_user_availability import check_user_availability
@@ -247,6 +248,42 @@ def evaluate_student_answer(request: EvaluationRequest):
         # Handle unexpected errors
         logging.error(f"Unexpected error while evaluating answer: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="An unexpected error occurred: " + str(e))
+    
+@app.post("/student-mind-map")
+def student_mind_map(request: StudentEvaluationRequest):
+    """
+    Generate a node-link graph structure grouped by topic for mind map rendering.
+    """
+    logging.info(f"Received request to generate mind map for student: {request.student_id}")
+
+    available, message = check_user_availability(request.student_id)
+    if not available:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    try:
+        analytics = get_student_analytic_details(request.student_id)
+
+        if not analytics or "matched_study_materials" not in analytics:
+            raise HTTPException(status_code=404, detail="No matched notes found for student.")
+
+        matched_notes = pd.DataFrame(analytics["matched_study_materials"])
+        if matched_notes.empty:
+            raise HTTPException(status_code=404, detail="No relevant notes found to generate mind map.")
+
+        mind_map = generate_mind_map(request.student_id)
+
+        return {
+            "status": "success",
+            "student_id": request.student_id,
+            "mind_map": mind_map
+        }
+
+    except HTTPException as http_exc:
+        raise http_exc  # Reraise FastAPI-aware exceptions
+
+    except Exception as e:
+        logging.error(f"Failed to generate mind map for {request.student_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to generate mind map.")
     
 @app.get("/")
 def root():

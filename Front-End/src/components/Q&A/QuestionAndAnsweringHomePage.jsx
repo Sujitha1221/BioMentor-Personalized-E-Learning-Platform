@@ -174,8 +174,8 @@ const QuestionAndAnsweringHomePage = () => {
               >
                 <motion.button
                   onClick={() =>
-                    (window.location.href =
-                      `${FRONTEND_BASE_URL}/Q&A-dashboard`)
+                  (window.location.href =
+                    `${FRONTEND_BASE_URL}/Q&A-dashboard`)
                   }
                   className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-[#140342]
               font-semibold rounded-lg 
@@ -356,8 +356,8 @@ const QuestionAndAnsweringHomePage = () => {
               >
                 <motion.button
                   onClick={() =>
-                    (window.location.href =
-                      `${FRONTEND_BASE_URL}/Q&A-materials`)
+                  (window.location.href =
+                    `${FRONTEND_BASE_URL}/Q&A-materials`)
                   }
                   className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-[#140342]
               font-semibold rounded-lg 
@@ -462,6 +462,74 @@ const QuestionAndAnsweringHomePage = () => {
                 <div className="absolute -top-4 right-4 bg-gray-900 text-white p-2 rounded-full shadow-lg">
                   <img src={logo} alt="Logo" className="w-7 h-7 mx-auto" />
                 </div>
+              </div>
+            </div>
+          </div>
+          <div className="p-4 md:p-8 bg-gray-100 flex flex-col items-center justify-center gap-6 md:mt-20">
+            <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center text-center md:text-left">
+              {/* Left Section: Mind Map Illustration */}
+              <div className="hidden md:flex justify-center md:mt-10">
+                <div className="bg-white p-6 md:p-8 rounded-2xl shadow-lg w-64 md:w-80 text-center relative transform hover:scale-105 transition duration-300 ease-in-out">
+                  <img
+                    src="https://cdn-icons-png.flaticon.com/512/4359/4359961.png"
+                    alt="Mind Map"
+                    className="w-24 h-24 mx-auto mb-4 rounded-full border-4 border-purple-500"
+                  />
+                  <h3 className="text-xl font-semibold">Visualize Weak Areas</h3>
+                  <p className="text-gray-500 text-sm">
+                    Explore a mind map of your weak concepts and focus areas.
+                  </p>
+                  <div className="flex justify-center gap-3 mt-4">
+                    <button className="text-purple-500 text-lg">🧠</button>
+                    <button className="text-orange-500 text-lg">🔍</button>
+                  </div>
+                  <span className="bg-purple-500 text-white px-3 py-1 rounded-md text-xs mt-4 inline-block">
+                    MIND MAP VIEW
+                  </span>
+                  <div className="absolute -top-4 right-4 bg-gray-900 text-white p-2 rounded-full shadow-lg">
+                    <img src={logo} alt="Logo" className="w-7 h-7 mx-auto" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Section: Mind Map Modal Button */}
+              <div className="flex flex-col items-center md:items-start order-2 md:order-1">
+                <div className="p-6 bg-white rounded-full shadow-md flex items-center justify-center w-16 h-16 mb-4">
+                  <span className="text-3xl">🧠</span>
+                </div>
+                <h1 className="text-4xl font-semibold">Visual Mind Map of Your Weak Areas</h1>
+                <p className="text-gray-600 text-lg mt-4">
+                  Understand your learning gaps better with a structured tree layout. Explore weak topics and related keywords visually.
+                </p>
+                <div className="mt-4 flex gap-2 flex-wrap justify-center md:justify-start">
+                  {["VISUALIZATION", "FOCUS TOPICS", "SUBTOPIC TRACKING", "GRAPH MAPPING"].map((tag) => (
+                    <span
+                      key={tag}
+                      className="text-sm px-3 py-1 bg-gray-200 rounded-md text-gray-700"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <motion.div
+                  className="mt-10 flex flex-wrap justify-center gap-4 sm:gap-6"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                >
+                  <motion.button
+                    onClick={() =>
+                    (window.location.href =
+                      `${FRONTEND_BASE_URL}/mind-map`)
+                    }
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-[#140342]
+    font-semibold rounded-lg hover:bg-[#140342] hover:text-white hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    Open Mind Map
+                  </motion.button>
+                </motion.div>
               </div>
             </div>
           </div>

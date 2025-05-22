@@ -464,6 +464,50 @@ def recommend_study_materials(student_id, notes_df, index, model, top_k=3):
 
     return matched_notes
 
+def generate_mind_map(student_id):
+    """
+    Generate a node-link graph structure grouped by topic for mind map rendering.
+    """
+    try:
+        report = generate_feedback_report(student_id)
+        weak_keywords = set(report.get("missing_keywords", []))
+
+        # Load matched study materials
+        analytics = get_student_analytic_details(student_id)
+        materials = analytics.get("matched_study_materials", [])
+
+        nodes = [{"id": "Weak Areas", "label": "📌 Weak Areas"}]
+        links = []
+
+        # Track added topics and keywords
+        topic_node_ids = set()
+        keyword_node_ids = set()
+        topic_keyword_map = {}
+
+        for material in materials:
+            topic = material.get("Topic", "General")
+            topic_id = f"Topic:{topic}"
+
+            if topic_id not in topic_node_ids:
+                nodes.append({"id": topic_id, "label": topic})
+                links.append({"source": "Weak Areas", "target": topic_id})
+                topic_node_ids.add(topic_id)
+                topic_keyword_map[topic_id] = set()
+
+            # Map keywords to topics if found in material content
+            content = material.get("Text Content", "").lower()
+            for keyword in weak_keywords:
+                if keyword.lower() in content and keyword not in topic_keyword_map[topic_id]:
+                    if keyword not in keyword_node_ids:
+                        nodes.append({"id": keyword, "label": keyword})
+                        keyword_node_ids.add(keyword)
+                    links.append({"source": topic_id, "target": keyword})
+                    topic_keyword_map[topic_id].add(keyword)
+
+        return {"nodes": nodes, "links": links}
+    except Exception as e:
+        logging.error(f"Error generating mind map: {e}", exc_info=True)
+        return {"nodes": [], "links": []}
 
 # Example Usage
 if __name__ == "__main__":
