@@ -303,8 +303,9 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
       if (response.data?.concepts?.length > 0) {
         setConcepts(response.data.concepts);
         setContentType("concepts");
-        setAlert({ message: "Concepts extracted!", type: "success" });
+        setAlert({ message: "Concepts loaded successfully!", type: "success" });
       } else {
+        setConcepts([]);
         setAlert({ message: "No concepts found.", type: "warning" });
       }
     } catch (error) {
@@ -319,20 +320,28 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
   };
 
   const handleFetchConceptVideos = async () => {
-    if (!summary || summary === "Your summarized text will appear here...")
+    if (!topic || topic.trim() === "") {
+      setAlert({ message: "Enter a topic first!", type: "error" });
       return;
+    }
 
     setIsConceptLoading(true);
     try {
       const response = await axios.post(`${SUMMARIZE_URL}/concept-videos`, {
-        text: summary,
+        mode: "query",
+        text: topic,
       });
 
       if (response.data?.videos?.length > 0) {
         setVideoSuggestions(response.data.videos);
         setContentType("videos");
+        setAlert({
+          message: "Concept videos loaded successfully!",
+          type: "success",
+        });
       } else {
         setVideoSuggestions([]);
+        setAlert({ message: "No videos found.", type: "warning" });
       }
     } catch (error) {
       console.error("Error fetching concept videos:", error);

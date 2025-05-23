@@ -334,15 +334,20 @@ const UploadModal = ({ isOpen, onClose }) => {
       const response = await axios.post(`${SUMMARIZE_URL}/concept-breakdown`, {
         text: summary,
       });
+
       if (response.data?.concepts?.length > 0) {
         setConcepts(response.data.concepts);
         setViewMode("concepts");
-        setAlert({ message: "Concepts extracted!", type: "success" });
+        setAlert({
+          message: "Concepts extracted successfully!",
+          type: "success",
+        });
       } else {
         setConcepts([]);
         setAlert({ message: "No concepts found.", type: "warning" });
       }
     } catch (error) {
+      console.error("Error fetching concepts:", error);
       setAlert({ message: "Failed to extract concepts.", type: "error" });
     } finally {
       setIsConceptLoading(false);
@@ -350,22 +355,28 @@ const UploadModal = ({ isOpen, onClose }) => {
   };
 
   const handleFetchConceptVideos = async () => {
-    if (!summary || summary === "Your summarized text will appear here...")
+    if (!summary || summary === "Your summarized text will appear here...") {
+      setAlert({ message: "Generate a summary first!", type: "error" });
       return;
+    }
 
     setIsConceptLoading(true);
     try {
       const response = await axios.post(`${SUMMARIZE_URL}/concept-videos`, {
+        mode: "summary",
         text: summary,
       });
+
       if (response.data?.videos?.length > 0) {
         setVideoSuggestions(response.data.videos);
         setViewMode("videos");
+        setAlert({ message: "Videos loaded successfully!", type: "success" });
       } else {
         setVideoSuggestions([]);
         setAlert({ message: "No videos found.", type: "warning" });
       }
     } catch (error) {
+      console.error("Error fetching concept videos:", error);
       setAlert({ message: "Failed to load video suggestions.", type: "error" });
     } finally {
       setIsConceptLoading(false);
@@ -379,7 +390,6 @@ const UploadModal = ({ isOpen, onClose }) => {
       className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50"
       onClick={handleClose} // Clicking outside modal closes it
     >
-      {isLoading && <ModalLoadingScreen />} {/* Full-page spinner */}
       {alert.message && (
         <AlertMessage
           message={alert.message}
