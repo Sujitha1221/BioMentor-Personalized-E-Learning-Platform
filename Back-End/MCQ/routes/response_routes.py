@@ -13,6 +13,7 @@ from pymongo.errors import PyMongoError
 from utils.user_mgmt_methods import get_current_user
 import traceback
 from utils.verification import verify_mcq_with_llm
+from datetime import datetime, timedelta
 
 router = APIRouter()
 
@@ -856,3 +857,54 @@ def get_leaderboard():
     except Exception as e:
         logging.error(f"Failed to fetch leaderboard: {e}")
         raise HTTPException(status_code=500, detail="Error retrieving leaderboard.")
+
+# API Route to Fetch User Streak
+@router.get("/user_streak/{user_id}")
+def get_user_streak(user_id: str, current_user: str = Depends(get_current_user)):
+    if current_user != user_id:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+
+    user_data = users_collection.find_one({"_id": ObjectId(user_id)})
+
+    if not user_data or "performance" not in user_data:
+        return {"streak": 0, "longest_streak": 0}
+
+    quizzes = user_data["performance"].get("last_10_quizzes", [])
+    if not quizzes:
+        return {"streak": 0, "longest_streak": 0}
+
+    # Extract and sort unique quiz dates
+    quiz_dates = sorted(
+        set(datetime.fromtimestamp(q["timestamp"]).date() for q in quizzes),
+        reverse=True
+    )
+
+    # Compute current streak
+    today = datetime.utcnow().date()
+    streak = 0
+    for i, date in enumerate(quiz_dates):
+        if i == 0:
+            if date == today:
+                streak += 1
+            elif date == today - timedelta(days=1):
+                streak += 1
+            else:
+                break
+        else:
+            expected = quiz_dates[i - 1] - timedelta(days=1)
+            if date == expected:
+                streak += 1
+            else:
+                break
+
+    # Optional: calculate longest streak
+    longest_streak = 1
+    temp_streak = 1
+    for i in range(1, len(quiz_dates)):
+        if quiz_dates[i] == quiz_dates[i - 1] - timedelta(days=1):
+            temp_streak += 1
+            longest_streak = max(longest_streak, temp_streak)
+        else:
+            temp_streak = 1
+
+    return {"streak": streak, "longest_streak": longest_streak}
