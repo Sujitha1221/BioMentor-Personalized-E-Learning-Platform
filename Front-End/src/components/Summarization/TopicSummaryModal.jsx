@@ -14,6 +14,7 @@ import axios from "axios";
 import AlertMessage from "../Alert/Alert";
 import ModalLoadingScreen from "../LoadingScreen/ModalLoadingScreen";
 import { SUMMARIZE_URL } from "../util/config";
+import { jsPDF } from "jspdf";
 
 const TopicSummaryModal = ({ isOpen, onClose }) => {
   const [topic, setTopic] = useState("");
@@ -33,6 +34,8 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
   const [alert, setAlert] = useState({ message: "", type: "" });
   const [copied, setCopied] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [concepts, setConcepts] = useState([]);
+  const [isConceptLoading, setIsConceptLoading] = useState(false);
 
   const audioRef = useRef(null);
 
@@ -274,6 +277,35 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
     setPlaybackSpeed(speed);
   };
 
+  const handleFetchConcepts = async () => {
+    if (!summary || summary === "Your summarized text will appear here...") {
+      setAlert({ message: "Generate a summary first!", type: "error" });
+      return;
+    }
+
+    setIsConceptLoading(true);
+    try {
+      const response = await axios.post(`${SUMMARIZE_URL}/concept-breakdown`, {
+        text: summary,
+      });
+
+      if (response.data?.concepts?.length > 0) {
+        setConcepts(response.data.concepts);
+        setAlert({ message: "Concepts extracted!", type: "success" });
+      } else {
+        setAlert({ message: "No concepts found.", type: "warning" });
+      }
+    } catch (error) {
+      console.error("Error fetching concepts:", error);
+      setAlert({
+        message: "Failed to extract concepts. Please try again.",
+        type: "error",
+      });
+    } finally {
+      setIsConceptLoading(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -281,7 +313,7 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
       className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50"
       onClick={handleClose} // Clicking outside modal closes it
     >
-      {isLoading && <ModalLoadingScreen />}
+      {(isLoading || isConceptLoading) && <ModalLoadingScreen />}
       {alert.message && (
         <AlertMessage
           message={alert.message}
@@ -399,7 +431,7 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
           </div>
 
           {/* Download Summary */}
-          <div className="flex justify-center mt-3">
+          <div className="flex flex-wrap justify-center gap-4 mt-3">
             <motion.button
               onClick={handleDownloadSummary}
               className={`flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#00FF84] bg-[#00FF84] text-[#140342] font-semibold rounded-lg 
@@ -410,7 +442,85 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
             >
               <FaDownload /> Download Summary
             </motion.button>
+            <motion.button
+              onClick={handleFetchConcepts}
+              className={`flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-white bg-[#140342] font-semibold rounded-lg 
+              transition-transform duration-300 hover:scale-105 hover:bg-[#32265a] ${
+                !isSummaryGenerated ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              disabled={!isSummaryGenerated || isConceptLoading}
+            >
+              🧠 Keyword Concepts
+            </motion.button>
           </div>
+
+          {concepts.length > 0 && (
+            <div className="mt-6 border-t pt-4 relative">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-lg font-semibold text-[#140342]">
+                  🔍 Extracted Concepts:
+                </h3>
+                <button
+                  onClick={() => {
+                    const doc = new jsPDF();
+                    doc.setFontSize(12);
+                    let y = 10;
+                    concepts.forEach(({ term, definition }, index) => {
+                      doc.setFont("helvetica", "bold");
+                      doc.text(`${index + 1}. ${term}`, 10, y);
+                      y += 6;
+                      doc.setFont("helvetica", "normal");
+                      const lines = doc.splitTextToSize(definition, 180);
+                      lines.forEach((line) => {
+                        if (y > 280) {
+                          doc.addPage();
+                          y = 10;
+                        }
+                        doc.text(line, 10, y);
+                        y += 6;
+                      });
+                      y += 4;
+                    });
+                    doc.save("concepts.pdf");
+                  }}
+                  className="flex items-center gap-2 text-sm px-4 py-2 bg-gray-200 p-2 rounded-md transition duration-300 hover:bg-gray-400"
+                >
+                  <FaDownload />
+                </button>
+              </div>
+
+              <ul className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                {concepts.map((item, index) => {
+                  const wikiUrl = `https://en.wikipedia.org/wiki/${item.term.replace(
+                    / /g,
+                    "_"
+                  )}`;
+                  return (
+                    <li
+                      key={index}
+                      className="bg-gray-50 p-3 rounded-lg shadow"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <a
+                            href={wikiUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm font-bold text-blue-800 hover:underline"
+                          >
+                            🔗 {item.term}
+                          </a>
+                          <p className="text-sm text-gray-700 mt-1">
+                            {item.definition}
+                          </p>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
 
           {/* Audible Summary */}
           <div className="mt-4">
