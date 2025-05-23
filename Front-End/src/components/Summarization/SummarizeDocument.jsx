@@ -92,6 +92,18 @@ const SummarizeDocument = () => {
                 label: "Customizable Word Count",
                 desc: "Adjust the number of words in your summary as needed.",
               },
+              {
+                icon: (
+                  <ClipboardDocumentListIcon className="w-8 h-8 text-blue-500" />
+                ),
+                label: "Concept Breakdown",
+                desc: "Identify and define important keywords from your content.",
+              },
+              {
+                icon: <SpeakerWaveIcon className="w-8 h-8 text-violet-500" />,
+                label: "Relevant Videos",
+                desc: "Discover educational videos based on your summary or topic.",
+              },
             ].map(({ icon, label, desc }) => (
               <div key={label} className="flex items-start space-x-3">
                 {icon}

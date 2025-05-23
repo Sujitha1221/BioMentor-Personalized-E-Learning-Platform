@@ -63,12 +63,22 @@ const features = [
   {
     icon: <FiVolume2 className="text-red-500 mr-2 w-10 h-10" />,
     label: "Audible Summary",
-    desc: "Listen to the summary for a hands-free learning experience.",
+    desc: "Listen to your summary for a hands-free learning experience.",
   },
   {
     icon: <FiSliders className="text-teal-500 mr-2 w-10 h-10" />,
     label: "Customizable Length",
-    desc: "Adjust the summary length with customizable word count options.",
+    desc: "Adjust the summary word count to your preference.",
+  },
+  {
+    icon: <FiCheck className="text-indigo-500 mr-2 w-10 h-10" />,
+    label: "Concept Breakdown",
+    desc: "Identify and define key biology concepts instantly.",
+  },
+  {
+    icon: <FiAward className="text-pink-500 mr-2 w-10 h-10" />,
+    label: "Video Suggestions",
+    desc: "Get curated biology videos for deeper topic understanding.",
   },
 ];
 
