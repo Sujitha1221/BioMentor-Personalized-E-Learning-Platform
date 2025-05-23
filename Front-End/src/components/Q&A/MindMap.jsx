@@ -81,14 +81,55 @@ const MindMap = ({ data }) => {
     },
   };
 
+  const colorPalette = [
+    "#60a5fa", // blue
+    "#a78bfa", // purple
+    "#34d399", // green
+    "#f87171", // red
+    "#fbbf24", // amber
+    "#38bdf8", // sky
+    "#f472b6", // pink
+    "#c084fc", // violet
+    "#4ade80", // emerald
+    "#facc15", // yellow
+  ];
+
+  // Map topic label to a color index
+  const topicColorMap = {};
+  let colorIndex = 0;
+
+  data.nodes.forEach((node) => {
+    if (node.id.startsWith("Topic:")) {
+      const label = node.label;
+      if (!topicColorMap[label]) {
+        topicColorMap[label] = colorPalette[colorIndex % colorPalette.length];
+        colorIndex++;
+      }
+    }
+  });
+
+  // Optional: Fallback hash-based color generator
+  const stringToColor = (str) => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const color = '#' + ((hash >> 24) & 0xFF).toString(16).padStart(2, '0') +
+      ((hash >> 16) & 0xFF).toString(16).padStart(2, '0') +
+      ((hash >> 8) & 0xFF).toString(16).padStart(2, '0');
+    return color;
+  };
+
   const enhancedNodes = filteredData.nodes.map((node) => {
-    let color = "#facc15";
-    if (node.id === "Weak Areas") color = "#f472b6";
-    else if (node.id.startsWith("Topic:Molecular Biology")) color = "#60a5fa";
-    else if (node.id.startsWith("Topic:Evolution")) color = "#a78bfa";
-    else if (node.id.startsWith("Topic:Introduction")) color = "#34d399";
+    let color = "#facc15"; // default
+    if (node.id === "Weak Areas") {
+      color = "#f472b6";
+    } else if (node.id.startsWith("Topic:")) {
+      color = topicColorMap[node.label] || stringToColor(node.label);
+    }
     return { ...node, color };
   });
+
 
   return (
     <div>
