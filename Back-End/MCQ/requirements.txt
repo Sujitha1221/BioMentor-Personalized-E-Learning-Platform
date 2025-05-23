@@ -13,3 +13,10 @@ requests
 passlib
 python-jose
 bcrypt
+accelerate
+pytest 
+pytest-asyncio
+pytest-mock
+httpx
+llama-cpp-python
+google-generativeai

@@ -1,201 +1,233 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import api from "../../axios/api.js";
-import LoadingScreen from "../loadingPage/LoadingScreen";
 import SubmitConfirmationModal from "../models/ConfirmationModal.jsx";
+import api from "../../axios/api.js";
 
-const TopicBasedQuizPage = () => {
-  const location = useLocation();
+const UnitQuizPage = () => {
+  const { quizId, unitName, questions } = useLocation().state || {};
   const navigate = useNavigate();
-
   const userId = JSON.parse(localStorage.getItem("user"))?.user_id;
-  const { quizId, topicName } = location.state || {};
   const token = localStorage.getItem("token");
 
-  const [quiz, setQuiz] = useState(null);
   const [answers, setAnswers] = useState({});
-  const [loading, setLoading] = useState(true);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
 
-  useEffect(() => {
-    if (!quizId) {
-      navigate("/topic-quizzes");
-      return;
+  const speakText = (text) => {
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.onstart = () => setSpeaking(true);
+      utterance.onend = () => setSpeaking(false);
+      utterance.onerror = () => setSpeaking(false);
+
+      window.speechSynthesis.speak(utterance);
+    } else {
+      alert("Sorry, your browser doesn't support text-to-speech.");
     }
-    fetchQuiz();
-  }, [quizId]);
+  };
 
-  const fetchQuiz = async () => {
-    try {
-      const response = await api.get(`/topic/topic_quiz/${quizId}`, {
-        params: { user_id: userId },
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setQuiz(response.data);
-    } catch (error) {
-      console.error("Error fetching quiz:", error);
-      navigate("/topic-quizzes");
-    } finally {
-      setLoading(false);
+  const handleSpeak = () => {
+    const questionText = currentQuestion.question_text;
+    const optionsText = Object.entries(currentQuestion.options)
+      .map(([key, value]) => `Option ${key}: ${value}`)
+      .join(". ");
+    const textToRead = `Question ${
+      currentQuestionIndex + 1
+    }. ${questionText}. ${optionsText}`;
+    speakText(textToRead);
+  };
+
+  const stopSpeaking = () => {
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+      setSpeaking(false);
     }
   };
 
   const handleAnswerSelect = (answer) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [currentQuestionIndex]: answer,
-    }));
+    setAnswers((prev) => ({ ...prev, [currentQuestionIndex]: answer }));
   };
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const responses = quiz.questions.map((q, index) => ({
+      const responses = questions.map((q, index) => ({
         question_text: q.question_text,
         selected_answer: answers[index] || "Not Answered",
       }));
-      const requestData = {
-        user_id: userId,
-        quiz_id: quizId,
-        responses,
-      };
-
-      await api.post(`/topic/questions/submit`, requestData, {
-        headers: { Authorization: `Bearer ${token}` },
+  
+      const response = await api.post(
+        `/topic/quiz/submit/${userId}`,
+        {
+          // user_id: userId,
+          quiz_id: quizId,
+          responses,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+  
+      console.log("✅ Quiz submitted:", response.data);
+  
+      // Navigate to results page
+      navigate("/unit_quiz/results", {
+        state: {
+          quizId,
+          unitName,
+        },
       });
-
-      navigate(`/topic_quiz/results`, { state: { quizId, topicName } });
-    } catch (error) {
-      console.error("Error submitting quiz:", error);
+    } catch (err) {
+      console.error("❌ Error submitting quiz:", err);
+      alert("Failed to submit quiz. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
+  
 
-  const checkUnansweredQuestions = () => {
-    const unanswered = quiz.questions.filter(
-      (_, index) => !answers[index]
-    ).length;
-    return unanswered > 0;
-  };
+  const confirmSubmit = () => setShowSubmitModal(true);
+  const checkUnanswered = () =>
+    questions.filter((_, i) => !answers[i]).length > 0;
 
-  const confirmSubmit = () => {
-    setShowSubmitModal(true);
-  };
-
-  if (loading) {
-    return <LoadingScreen />;
-  }
-
-  const currentQuestion = quiz.questions[currentQuestionIndex];
-  const totalQuestions = quiz.questions.length;
+  const currentQuestion = questions[currentQuestionIndex];
 
   return (
-    <div className="min-h-screen mt-0 sm:mt-20 flex flex-col sm:flex-row bg-gradient-to-br from-gray-100 to-gray-200 text-gray-900 p-4 sm:p-5">
-      {/* Left: Question Section */}
-      <div className="w-full sm:w-3/4 flex flex-col justify-between bg-white p-6 rounded-lg shadow-lg mx-auto">
+    <div className="min-h-screen mt-0 sm:mt-20 flex flex-col sm:flex-row p-4 sm:p-6 bg-gradient-to-br from-green-100 to-green-200 text-gray-900">
+      <motion.div
+        className="w-full sm:w-3/4 bg-white p-8 rounded-2xl shadow-xl border border-gray-300"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         <motion.h1
-          className="text-2xl sm:text-3xl font-extrabold text-indigo-700 text-center mb-4 sm:mb-6"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
+          className="text-2xl sm:text-3xl font-bold text-green-700 mb-6"
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
         >
-          📝 {topicName} Quiz
+          📘 {unitName} Quiz
         </motion.h1>
 
-        {/* Question */}
-        <div>
-          <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3">
-            {currentQuestionIndex + 1}. {currentQuestion.question_text}
+        <div className="relative w-full">
+          <h3 className="text-3xl font-extrabold mb-4 text-center tracking-wider text-[#140342]">
+            Question {currentQuestionIndex + 1} of {questions.length}
           </h3>
-          <div className="space-y-2 sm:space-y-3">
-            {Object.entries(currentQuestion.options).map(([letter, option]) => (
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4">
+          <p className="text-lg font-semibold text-center text-gray-700 w-full sm:text-center sm:flex-1">
+            {currentQuestion.question_text}
+          </p>
+          <div className="mt-3 sm:mt-0 sm:ml-4 flex justify-center sm:justify-end w-full sm:w-auto whitespace-nowrap">
+            {speaking ? (
               <button
-                key={letter}
-                onClick={() => handleAnswerSelect(letter)}
-                className={`block w-full px-4 py-2 rounded-lg border transition-all text-left text-sm sm:text-base ${
-                  answers[currentQuestionIndex] === letter
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-200 hover:bg-gray-300"
-                }`}
+                onClick={stopSpeaking}
+                className="flex items-center gap-2 bg-red-200 hover:bg-red-300 text-red-800 px-4 py-2 rounded-md font-semibold"
               >
-                {letter}. {option}
+                🛑 Stop
               </button>
-            ))}
+            ) : (
+              <button
+                onClick={handleSpeak}
+                className="flex items-center gap-2 bg-[#140342] text-white px-4 py-2 rounded-md font-semibold"
+              >
+                🔊 Speak
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Navigation Buttons */}
-        <div className="flex justify-between mt-6">
+        <div className="mt-4 space-y-3">
+          {Object.entries(currentQuestion.options).map(([key, option]) => (
+            <motion.button
+              key={key}
+              onClick={() => handleAnswerSelect(key)}
+              whileTap={{ scale: 0.95 }}
+              className={`w-full px-5 py-3 rounded-lg border transition-all duration-300 text-lg font-semibold 
+                ${
+                  answers[currentQuestionIndex] === key
+                    ? "bg-[#140342] border-blue-900 text-white shadow-lg"
+                    : "bg-indigo-100 hover:bg-indigo-200 border-indigo-300 text-[#140342]"
+                }`}
+            >
+              {key}. {option}
+            </motion.button>
+          ))}
+        </div>
+
+        <div className="flex flex-col sm:flex-row justify-between gap-3 mt-8">
           <button
+            disabled={currentQuestionIndex === 0}
             onClick={() =>
               setCurrentQuestionIndex((prev) => Math.max(prev - 1, 0))
             }
-            disabled={currentQuestionIndex === 0}
-            className={`px-4 py-2 sm:px-6 sm:py-3 rounded-lg font-semibold text-sm sm:text-lg transition-all ${
+            className={`w-full sm:w-auto px-6 py-3 rounded-lg font-semibold text-lg flex gap-2 items-center justify-center ${
               currentQuestionIndex === 0
-                ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                : "bg-indigo-500 text-white hover:bg-indigo-700"
+                ? "bg-gray-400 opacity-50 cursor-not-allowed"
+                : "bg-indigo-200 hover:bg-indigo-300 text-blue-900"
             }`}
           >
             Previous
           </button>
 
-          {currentQuestionIndex < totalQuestions - 1 ? (
+          {currentQuestionIndex < questions.length - 1 ? (
             <button
               onClick={() => setCurrentQuestionIndex((prev) => prev + 1)}
-              className="px-4 py-2 sm:px-6 sm:py-3 rounded-lg bg-indigo-600 hover:bg-indigo-800 text-white font-semibold text-sm sm:text-lg transition-all"
+              className="w-full sm:w-auto px-6 py-3 rounded-lg bg-[#140342] hover:bg-[#140342] font-semibold text-lg shadow-lg text-white flex items-center justify-center gap-2"
             >
               Next
             </button>
           ) : (
             <button
               onClick={confirmSubmit}
-              className="px-4 py-2 sm:px-6 sm:py-3 rounded-lg bg-green-600 hover:bg-green-800 text-white font-semibold text-sm sm:text-lg transition-all"
+              className="w-full sm:w-auto px-6 py-3 rounded-lg bg-green-500 hover:bg-green-600 font-semibold text-lg shadow-lg text-white flex items-center justify-center gap-2"
             >
               Submit Quiz
             </button>
           )}
         </div>
-      </div>
+      </motion.div>
 
-      {/* Right: Question Navigation Panel */}
-      <div className="w-full sm:w-1/4 mt-6 sm:mt-0 sm:ml-6 bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-        <h2 className="text-lg sm:text-xl font-semibold text-gray-800 text-center mb-4">
+      <div className="w-full sm:w-1/4 mt-6 sm:mt-0 sm:ml-6 bg-white p-6 rounded-lg shadow-lg">
+        <h2 className="text-lg font-semibold text-gray-800 text-center mb-4">
           Questions
         </h2>
         <div className="grid grid-cols-5 sm:grid-cols-4 gap-2">
-          {quiz.questions.map((_, index) => (
+          {questions.map((_, i) => (
             <button
-              key={index}
-              onClick={() => setCurrentQuestionIndex(index)}
+              key={i}
+              onClick={() => setCurrentQuestionIndex(i)}
               className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-bold ${
-                currentQuestionIndex === index
-                  ? "bg-blue-500 text-white"
-                  : answers[index]
+                currentQuestionIndex === i
+                  ? "bg-[#140342] text-white"
+                  : answers[i]
                   ? "bg-green-500 text-white"
                   : "bg-gray-300 hover:bg-gray-400"
               }`}
             >
-              {index + 1}
+              {i + 1}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Submit Confirmation Modal */}
       <SubmitConfirmationModal
         isOpen={showSubmitModal}
         onClose={() => setShowSubmitModal(false)}
         onConfirm={handleSubmit}
-        hasUnanswered={checkUnansweredQuestions()}
+        hasUnanswered={checkUnanswered()}
         isSubmitting={isSubmitting}
       />
     </div>
   );
 };
 
-export default TopicBasedQuizPage;
+export default UnitQuizPage;

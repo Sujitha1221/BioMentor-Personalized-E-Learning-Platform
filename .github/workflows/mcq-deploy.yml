@@ -1,0 +1,34 @@
+name: Deploy MCQ Service to Azure VM
+
+on:
+  push:
+    branches:
+      - IT21264634/Sujitha
+    paths:
+      - 'Back-End/MCQ/**'
+
+jobs:
+  deploy-mcq:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AZURE_MCQ_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.AZURE_MCQ_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy MCQ Backend to Azure VM
+        run: |
+          ssh ${{ secrets.AZURE_MCQ_USER }}@${{ secrets.AZURE_MCQ_HOST }} << 'EOF'
+            cd /home/azureuser/BioMentor-Personalized-E-Learning-Platform
+            git pull origin IT21264634/Sujitha
+            cd Back-End/MCQ
+            source venv/bin/activate
+            pip install -r requirements.txt
+            sudo systemctl restart biomentor-mcq
+          EOF
