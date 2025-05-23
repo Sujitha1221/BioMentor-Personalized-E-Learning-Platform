@@ -1,3 +1,4 @@
+from sklearn.feature_extraction.text import TfidfVectorizer
 import io
 import asyncio
 import hashlib
@@ -14,6 +15,12 @@ from fastapi.responses import StreamingResponse
 import nltk
 from nltk import pos_tag
 import requests
+import os
+import re
+from dotenv import load_dotenv
+from googleapiclient.discovery import build
+load_dotenv()
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 
 nltk.download("averaged_perceptron_tagger_eng")
 nltk.download("universal_tagset")
@@ -527,6 +534,8 @@ async def get_pdf_file(file_name: str):
                              headers={"Content-Disposition": f"attachment; filename={file_name}"})
 
 # Extract noun keywords
+
+
 def extract_keywords_with_definitions(text: str):
     words = text.split()
     tagged = pos_tag(words, tagset="universal")
@@ -551,3 +560,62 @@ def extract_keywords_with_definitions(text: str):
             continue
 
     return results
+
+
+def extract_core_topic(text, sentence_limit=2):
+    """
+    Extracts the core topic from the first few sentences of the text using TF-IDF.
+    """
+    # Simple sentence splitting
+    sentences = re.split(r'(?<=[.!?])\s+', text.strip())
+    intro = " ".join(sentences[:sentence_limit])
+
+    vectorizer = TfidfVectorizer(stop_words='english', max_features=5)
+    X = vectorizer.fit_transform([intro])
+    keywords = vectorizer.get_feature_names_out()
+
+    return keywords[0] if len(keywords) > 0 else "biology"
+
+
+def search_youtube_videos(topic, max_results=3):
+    """
+    Searches YouTube for educational videos based on a given topic.
+    """
+    try:
+        youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
+        query = f"{topic} class 10 OR class 12 OR biology lecture OR NCERT OR for students"
+
+        request = youtube.search().list(
+            q=query,
+            part="snippet",
+            type="video",
+            maxResults=10  # fetch more to filter better
+        )
+        response = request.execute()
+
+        def is_student_friendly(item):
+            title = item["snippet"]["title"].lower()
+            channel = item["snippet"]["channelTitle"].lower()
+            return any(kw in title for kw in [
+                "class", "student", "ncert", "lecture", "basics", "biology", "chapter", "explanation"
+            ]) or any(kw in channel for kw in [
+                "education", "academy", "learn", "school", "tutorial"
+            ])
+
+        filtered = []
+        for item in response.get("items", []):
+            if is_student_friendly(item):
+                filtered.append({
+                    "title": item["snippet"]["title"],
+                    "link": f"https://www.youtube.com/watch?v={item['id']['videoId']}",
+                    "channel": item["snippet"]["channelTitle"],
+                    "thumbnail": item["snippet"]["thumbnails"]["default"]["url"]
+                })
+            if len(filtered) >= max_results:
+                break
+
+        return filtered
+
+    except Exception as e:
+        logging.error(f"Error fetching YouTube videos: {e}")
+        return []

@@ -9,6 +9,8 @@ from summarization_functions import get_summary_file
 from summarization_functions import get_audio_file
 from summarization_functions import get_pdf_file
 from summarization_functions import extract_keywords_with_definitions
+from summarization_functions import search_youtube_videos
+from summarization_functions import extract_core_topic
 
 from rag import RAGModel
 import yaml
@@ -163,6 +165,23 @@ async def concept_breakdown(request: Request):
 
     results = extract_keywords_with_definitions(text)
     return {"concepts": results}
+
+@app.post("/concept-videos")
+async def get_student_videos(request: Request):
+    try:
+        data = await request.json()
+        text = data.get("text", "").strip()
+        if not text:
+            return JSONResponse(content={"videos": [], "error": "No input text provided"}, status_code=400)
+
+        core_topic = extract_core_topic(text)
+        logging.info(f"Core topic extracted: {core_topic}")
+        videos = search_youtube_videos(core_topic)
+        return {"core_topic": core_topic, "videos": videos}
+
+    except Exception as e:
+        logging.error(f"API error: {e}")
+        return JSONResponse(content={"videos": [], "error": str(e)}, status_code=500)
 
 
 # start application
