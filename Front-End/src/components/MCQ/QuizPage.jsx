@@ -30,6 +30,7 @@ const QuizPage = () => {
   const [unanswered, setUnanswered] = useState([]);
   const [timer, setTimer] = useState(2700); // 45 minutes timer
   const [speaking, setSpeaking] = useState(false);
+  const [showVerificationNotice, setShowVerificationNotice] = useState(false);
 
   const user = JSON.parse(localStorage.getItem("user"));
   const token = localStorage.getItem("token");
@@ -42,6 +43,21 @@ const QuizPage = () => {
       fetchQuizData();
     }
   }, [quizId, questions, navigate]);
+
+  useEffect(() => {
+    if (!questions || questions.length === 0) return;
+
+    const hasUnverified = questions.some((q) => q.is_verified === false);
+    setShowVerificationNotice(hasUnverified);
+
+    // Auto-hide after 6 seconds
+    if (hasUnverified) {
+      const timeout = setTimeout(() => {
+        setShowVerificationNotice(false);
+      }, 6000);
+      return () => clearTimeout(timeout); // clean up
+    }
+  }, [questions]);
 
   const fetchQuizData = async () => {
     try {
@@ -292,6 +308,17 @@ const QuizPage = () => {
             Question {currentQuestionIndex + 1} of {questions.length}
           </h2>
         </div>
+        {showVerificationNotice && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-sm text-gray-500 text-center mt-[-10px] mb-4 italic"
+          >
+            ⚠ Some answers are still being verified.
+          </motion.p>
+        )}
 
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4">
           <p className="text-lg font-semibold text-center text-gray-700 w-full sm:text-center sm:flex-1">

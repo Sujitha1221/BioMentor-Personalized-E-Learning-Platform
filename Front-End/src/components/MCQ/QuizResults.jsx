@@ -323,23 +323,35 @@ const QuizResults = () => {
                 </div>
 
                 {/* Show feedback */}
-                <div className="mt-3 text-lg font-semibold">
+                <div className="mt-3 text-lg font-semibold space-y-2">
                   {isCorrect ? (
                     <p className="text-green-600 flex items-center">
                       <FaCheckCircle className="mr-2" /> Correct Answer!
                     </p>
                   ) : (
-                    <div className="mt-3 text-lg font-semibold flex items-start gap-2 text-red-600">
+                    <div className="text-red-600 flex items-start gap-2">
                       <FaTimesCircle className="mt-1 text-xl" />
                       <span>
-                        Incorrect! The correct answer is:{" "}
+                        Incorrect. Model’s answer was:
                         <span className="text-green-700 font-bold">
-                          {response.correct_answer}.{" "}
-                          {response.options[response.correct_answer]}
+                          {" "}
+                          {response.claimed_answer}.{" "}
+                          {response.options[response.claimed_answer]}
                         </span>
                       </span>
                     </div>
                   )}
+                  {/* Show verified answer only if different */}
+                  {response.verified_answer &&
+                    response.verified_answer !== response.claimed_answer && (
+                      <div className="text-sm text-yellow-600">
+                        Verified Answer:{" "}
+                        <span className="font-semibold">
+                          {response.verified_answer}.{" "}
+                          {response.options[response.verified_answer]}
+                        </span>
+                      </div>
+                    )}
                 </div>
               </motion.div>
             );
