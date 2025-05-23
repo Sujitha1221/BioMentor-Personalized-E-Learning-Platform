@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import MindMap from "../MindMap";
+import MindMap from "./MindMap";
 import axios from "axios";
-import { QA_URL } from "../../util/config";
-import ModalLoadingScreen from "../../LoadingScreen/ModalLoadingScreen";
+import { QA_URL } from "../util/config";
+import LoadingScreen from "../LoadingScreen/LoadingScreen";
 import { useNavigate } from "react-router-dom";
 
 const MindMapPage = () => {
@@ -53,7 +53,7 @@ const MindMapPage = () => {
         </div>
 
         {loading ? (
-          <ModalLoadingScreen />
+          <LoadingScreen />
         ) : mindMapData ? (
           <div className="overflow-x-auto">
             <MindMap data={mindMapData} />
