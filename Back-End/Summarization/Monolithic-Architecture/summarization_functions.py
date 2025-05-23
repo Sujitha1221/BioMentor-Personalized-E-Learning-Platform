@@ -536,30 +536,69 @@ async def get_pdf_file(file_name: str):
 # Extract noun keywords
 
 
+def is_scientific_term(term: str) -> bool:
+    """
+    Check if the term is relevant to scientific/biomedical domains using Wikipedia categories.
+    """
+    try:
+        response = requests.get(
+            "https://en.wikipedia.org/w/api.php",
+            params={
+                "action": "query",
+                "prop": "categories",
+                "format": "json",
+                "titles": term,
+                "cllimit": "max"
+            }
+        )
+        data = response.json()
+        pages = data.get("query", {}).get("pages", {})
+        for page in pages.values():
+            for cat in page.get("categories", []):
+                cat_title = cat.get("title", "").lower()
+                if any(kw in cat_title for kw in ["biology", "anatomy", "neuro", "science", "medical", "physiology", "health"]):
+                    return True
+    except Exception as e:
+        print(f"Error checking scientific term for {term}: {e}")
+    return False
+
+
 def extract_keywords_with_definitions(text: str):
+    """
+    Extract keywords (nouns) from text and return Wikipedia definitions
+    for those that are scientifically relevant.
+    """
     words = text.split()
     tagged = pos_tag(words, tagset="universal")
 
-    nouns = sorted(set([
+    candidate_nouns = sorted(set([
         word.strip(".,():;-").capitalize()
         for word, tag in tagged
         if tag == "NOUN" and len(word) > 4
     ]))
 
     results = []
-    for word in nouns:
+    for word in candidate_nouns:
         try:
+            if not is_scientific_term(word):
+                continue
+
             url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{word}"
             response = requests.get(url)
             data = response.json()
+
             if response.status_code == 200 and data.get("type") != "disambiguation":
                 summary = data.get("extract")
                 if summary:
-                    results.append({"term": word, "definition": summary})
-        except Exception:
+                    results.append({
+                        "term": word,
+                        "definition": summary
+                    })
+        except Exception as e:
+            print(f"Error processing {word}: {e}")
             continue
 
-    return results
+    return results  # ✅ Add this line
 
 
 def extract_core_topic(text, sentence_limit=2):
