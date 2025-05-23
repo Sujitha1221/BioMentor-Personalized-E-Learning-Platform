@@ -1,4 +1,3 @@
-from utils.dangerous_keywords import DANGEROUS_KEYWORDS
 import logging
 import pandas as pd
 from sentence_transformers import SentenceTransformer
@@ -15,11 +14,18 @@ import nltk
 import asyncio
 from deep_translator import GoogleTranslator
 import textwrap
+import re
+import logging
+from transformers import pipeline
 
 
+# Setup
 nltk.download("words")
 nltk.download("wordnet")
 ENGLISH_WORDS = set(words.words())
+profanity.load_censor_words()
+zero_shot = pipeline("zero-shot-classification",
+                     model="facebook/bart-large-mnli")
 
 
 # Configure logging
@@ -104,51 +110,63 @@ class RAGModel:
             raise
 
     @staticmethod
+    def is_valid_word(word):
+        return word in ENGLISH_WORDS or wordnet.synsets(word)
+
+    @staticmethod
     def contains_inappropriate_content(query):
         """
-        Detects inappropriate content using:
-        - Profanity detection (`better-profanity`)
-        - Keyword matching (manual list of dangerous topics)
-        - Sentiment analysis (to catch highly negative messages)
-        - Checks if the query contains valid English words
+        Full inappropriate content detection:
+        - Profanity
+        - Highly negative sentiment
+        - Gibberish
+        - Harmful intent (violence, self-harm, etc.)
         """
+        query = query.strip()
 
-        def is_valid_word(word):
-            """Checks if a word is a valid English or scientific term."""
-            return word in ENGLISH_WORDS or wordnet.synsets(word)
-
-        # Step 1: Check for explicit words using `better-profanity`
+        # Step 1: Profanity
         if profanity.contains_profanity(query):
             logging.warning(f"Inappropriate language detected: {query}")
-            return "Your input contains inappropriate words. Please rephrase."
+            return "Your query contains explicit or offensive language. Please rephrase it respectfully."
 
-        # Step 2: Check for harmful intent using keyword matching
-        for keyword in DANGEROUS_KEYWORDS:
-            if re.search(rf"\b{re.escape(keyword)}\b", query, re.IGNORECASE):
-                logging.warning(f"Query flagged for dangerous intent: {query}")
-                return (
-                    "Your topic/keyword is flagged as inappropriate or unsafe. Please rephrase."
-                )
-
-        # Step 3: Check for highly negative sentiment (e.g., self-harm, extreme anger)
+        # Step 2: Highly negative sentiment
         sentiment_score = TextBlob(query).sentiment.polarity
-        if sentiment_score < -0.6:  # Negative sentiment threshold
+        if sentiment_score < -0.6:
             logging.warning(f"Highly negative sentiment detected: {query}")
-            return "Your topic/keyword seems inappropriate. Please rephrase."
+            return "Your message appears emotionally negative or harmful. Please use constructive language."
 
-        # Step 4: Check if query contains only valid English words
-        # Extract words from query
+        # Step 3: Gibberish or non-English detection
         query_words = re.findall(r"\b\w+\b", query.lower())
-
         invalid_words = [
-            word for word in query_words if not is_valid_word(word)]
-        if invalid_words:
+            word for word in query_words if not RAGModel.is_valid_word(word)]
+        if len(invalid_words) > len(query_words) * 0.4:
             logging.warning(
                 f"Query contains gibberish or non-English words: {query}")
-            return "Your query contains invalid or gibberish words. Please enter proper Biology-related terms."
+            return "Your input includes too many invalid or unrecognized terms. Please use clear biology-related language."
 
-        # If all checks pass, return False (query is safe)
-        return False
+        # Step 4: Harmful intent detection (zero-shot classification)
+        try:
+            candidate_labels = [
+                "self-harm", "violence", "drug abuse", "hate speech",
+                "sexual content", "nonsense", "biology", "educational"
+            ]
+            result = zero_shot(query, candidate_labels, multi_label=True)
+            for label, score in zip(result["labels"], result["scores"]):
+                if label not in ["biology", "educational"] and score > 0.85:
+                    logging.warning(
+                        f"Query flagged as '{label}' with score {score:.2f}: {query}")
+                    return {
+                        "self-harm": "Your input seems related to self-harm or suicide. Please rephrase or seek support.",
+                        "violence": "Your input contains references to violence. Please rephrase appropriately.",
+                        "drug abuse": "Your query appears to involve drug-related content. Please focus on scientific context.",
+                        "hate speech": "Your input contains potentially hateful language. Please express your thoughts respectfully.",
+                        "sexual content": "Your question includes inappropriate sexual content. Please maintain a professional tone.",
+                        "nonsense": "Your input appears to be nonsensical or irrelevant. Please clarify your question."
+                    }.get(label, "Your question seems inappropriate or unsafe. Please rephrase.")
+        except Exception as e:
+            logging.error(f"Zero-shot classification failed: {e}")
+
+        return False  # Query passed all checks
 
     def retrieve_relevant_content(self, query, k=3):
         """

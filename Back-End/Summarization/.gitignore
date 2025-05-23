@@ -9,5 +9,9 @@ __pycache__/
 # Virtual environment (inside Back-End/Monolithic-Architecture/)
 /Monolithic-Architecture/venv/
 /Monolithic-Architecture/__pycache__/
+/Monolithic-Architecture/uploads/
+/Monolithic-Architecture/.env
+
+
 
 
