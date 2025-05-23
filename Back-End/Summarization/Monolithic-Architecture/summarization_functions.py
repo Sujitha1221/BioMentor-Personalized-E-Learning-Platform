@@ -11,6 +11,12 @@ import hashlib
 import asyncio
 import yaml
 from fastapi.responses import StreamingResponse
+import nltk
+from nltk import pos_tag
+import requests
+
+nltk.download("averaged_perceptron_tagger_eng")
+nltk.download("universal_tagset")
 
 
 with open("logging_config.yaml", "r") as file:
@@ -426,7 +432,6 @@ async def generate_notes_function(request: Request, topic, lang, rag_model):
                     "voice_file": f"/download-notes/{audio_filename}"
                 }
 
-
             else:
                 # For Tamil or Sinhala, save as .txt file
                 lang_display = "Tamil" if lang == "ta" else "Sinhala"
@@ -520,3 +525,29 @@ async def get_pdf_file(file_name: str):
     return StreamingResponse(io.BytesIO(file_store[file_name]),
                              media_type="application/pdf",
                              headers={"Content-Disposition": f"attachment; filename={file_name}"})
+
+# Extract noun keywords
+def extract_keywords_with_definitions(text: str):
+    words = text.split()
+    tagged = pos_tag(words, tagset="universal")
+
+    nouns = sorted(set([
+        word.strip(".,():;-").capitalize()
+        for word, tag in tagged
+        if tag == "NOUN" and len(word) > 4
+    ]))
+
+    results = []
+    for word in nouns:
+        try:
+            url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{word}"
+            response = requests.get(url)
+            data = response.json()
+            if response.status_code == 200 and data.get("type") != "disambiguation":
+                summary = data.get("extract")
+                if summary:
+                    results.append({"term": word, "definition": summary})
+        except Exception:
+            continue
+
+    return results

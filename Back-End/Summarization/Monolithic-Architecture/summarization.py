@@ -8,6 +8,8 @@ from summarization_functions import generate_notes_function
 from summarization_functions import get_summary_file
 from summarization_functions import get_audio_file
 from summarization_functions import get_pdf_file
+from summarization_functions import extract_keywords_with_definitions
+
 from rag import RAGModel
 import yaml
 import logging
@@ -147,6 +149,20 @@ async def download_notes(file_name: str):
     Endpoint to download the generated notes PDF file.
     """
     return await get_pdf_file(file_name)
+
+
+@app.post("/concept-breakdown")
+async def concept_breakdown(request: Request):
+    """
+    Extracts keyword concepts from a given summary and returns them as JSON.
+    """
+    data = await request.json()
+    text = data.get("text", "")
+    if not text.strip():
+        return {"error": "Text input is required."}
+
+    results = extract_keywords_with_definitions(text)
+    return {"concepts": results}
 
 
 # start application
