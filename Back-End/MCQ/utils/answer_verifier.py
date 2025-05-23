@@ -1,3 +1,4 @@
+import time
 import logging
 from database.database import quizzes_collection
 from utils.verification import verify_mcq_with_llm
@@ -7,19 +8,18 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
 )
 
-
 def verify_quiz_answers_async(quiz_id):
     quiz = quizzes_collection.find_one({"quiz_id": quiz_id})
     if not quiz:
-        logging.error(f"[VERIFIER] Quiz {quiz_id} not found.")
+        logging.error(f"[VERIFIER] ❌ Quiz {quiz_id} not found.")
         return
 
-    logging.info(f"[VERIFIER] Starting verification for Quiz {quiz_id}")
+    logging.info(f"[VERIFIER] 🔍 Starting verification for Quiz {quiz_id}")
     updated = False
 
     for i, q in enumerate(quiz["questions"]):
         if q.get("is_verified"):
-            logging.info(f"[VERIFIER] Q{i+1}: Already verified. Skipping.")
+            logging.info(f"[VERIFIER] Q{i+1}: ✅ Already verified. Skipping.")
             continue
 
         question_text = q["question_text"]
@@ -30,32 +30,30 @@ def verify_quiz_answers_async(quiz_id):
             "D": q.get("option4", ""),
             "E": q.get("option5", ""),
         }
-
         claimed = q.get("correct_answer", "N/A")
-        logging.info(
-            f"[VERIFIER] Q{i+1}: Verifying '{question_text[:60]}...' Claimed: {claimed}"
-        )
+
+        logging.info(f"[VERIFIER] Q{i+1}: Verifying '{question_text[:60]}...' Claimed: {claimed}")
 
         is_correct, verified, claimed_answer = verify_mcq_with_llm(question_text, options, claimed)
 
-        # Always save what the model originally generated
+        # Always save the claimed answer
         q["claimed_answer"] = claimed_answer
 
         if is_correct is False and verified in options:
-            logging.warning(
-                f"[VERIFIER] Q{i+1}: ❌ Incorrect → Fixing answer: {claimed_answer} → {verified}"
-            )
-            q["correct_answer"] = verified            # Verified correct answer (used for scoring)
-            q["verified_answer"] = verified           # Same as above, for transparency
-            q["is_verified"] = True
+            logging.warning(f"[VERIFIER] Q{i+1}: ❌ Incorrect → Fixing answer: {claimed_answer} → {verified}")
+            q["correct_answer"] = verified
+            q["verified_answer"] = verified
         else:
             logging.info(f"[VERIFIER] Q{i+1}: ✅ Verified as correct.")
-            q["correct_answer"] = claimed_answer       # Still store the claimed one
+            q["correct_answer"] = claimed_answer
             q["verified_answer"] = claimed_answer
-            q["is_verified"] = True
 
         q["is_verified"] = True
         updated = True
+
+        # ✅ Delay to stay under Gemini free-tier limit (15 requests/min)
+        if i < len(quiz["questions"]) - 1:
+            time.sleep(4.1)
 
     if updated:
         quizzes_collection.update_one(
@@ -63,6 +61,4 @@ def verify_quiz_answers_async(quiz_id):
         )
         logging.info(f"[VERIFIER] ✅ Quiz {quiz_id} verification completed and saved.")
     else:
-        logging.info(
-            f"[VERIFIER] 💤 No changes made. All questions were already verified."
-        )
+        logging.info(f"[VERIFIER] 💤 No changes made. All questions were already verified.")

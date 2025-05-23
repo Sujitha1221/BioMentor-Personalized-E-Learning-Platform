@@ -35,7 +35,7 @@ class SubmitQuizRequest(BaseModel):
     quiz_id: str
     responses: List[QuizResponse]  #  Expect a list of QuizResponse objects
 
-
+# Function to Estimate Student Ability
 def estimate_student_ability(user_id):
     """Estimates student ability dynamically using accuracy & response time from the last 10 quizzes."""
     user_data = users_collection.find_one({"_id": ObjectId(user_id)})
@@ -87,7 +87,7 @@ def estimate_student_ability(user_id):
 
     return round(ability, 2)
 
-
+# Function to Update User Performance
 def update_user_performance(user_id, responses):
     """Updates the user's accuracy and response time for each difficulty level."""
     user_data = users_collection.find_one({"_id": ObjectId(user_id)})
@@ -191,7 +191,7 @@ def update_user_performance(user_id, responses):
         logging.error(f" MongoDB Error updating user performance: {e}")
         raise RuntimeError(f"Database error while updating user performance: {e}")
 
-
+# API Route to Submit Quiz
 @router.post("/submit_quiz/")
 def submit_quiz(data: SubmitQuizRequest, current_user: str = Depends(get_current_user)):
     """
@@ -548,6 +548,7 @@ def get_quiz_attempt_results(
             detail="An error occurred while retrieving attempt results.",
         )
 
+# API Route to Generate Performance Graph
 @router.get("/performance_graph/{user_id}")
 def generate_performance_graph(
     user_id: str, current_user: str = Depends(get_current_user)
@@ -596,7 +597,7 @@ def generate_performance_graph(
         "message": "Performance data loaded successfully.",
     }
 
-
+# API Route to Fetch Progress Insights
 @router.get("/progress_insights/{user_id}")
 def get_progress_insights(user_id: str, current_user: str = Depends(get_current_user)):
     """Analyzes user progress and provides AI-driven insights."""
@@ -658,7 +659,7 @@ def get_progress_insights(user_id: str, current_user: str = Depends(get_current_
 
     return insights
 
-
+# API Route to Compare User Performance
 @router.get("/user_performance_comparison/{user_id}")
 def get_user_performance_comparison(
     user_id: str, current_user: str = Depends(get_current_user)
@@ -667,30 +668,35 @@ def get_user_performance_comparison(
     user_data = users_collection.find_one({"_id": ObjectId(user_id)})
     if not user_data:
         raise HTTPException(status_code=404, detail="User not found.")
+    
     if current_user != user_id:
         logging.error(f" Unauthorized access attempt by {current_user}")
         raise HTTPException(status_code=403, detail="Unauthorized access")
-    logging.info(f"User data: {user_data}")
-    if not user_data or "performance" not in user_data:
+    
+    if "performance" not in user_data:
         raise HTTPException(status_code=404, detail="No performance data found.")
+    
+    last_quizzes = user_data["performance"].get("last_10_quizzes", [])
+    if not last_quizzes:
+        return {"message": "Not enough data for comparison."}
 
     all_users = users_collection.find({"performance.total_quizzes": {"$gt": 0}})
-
+    
     total_accuracy = []
     total_time = []
 
     for user in all_users:
         performance = user.get("performance", {})
-        last_quizzes = performance.get("last_10_quizzes", [])
-        if last_quizzes:
-            total_accuracy.append(last_quizzes[-1]["accuracy"])
-            total_time.append(last_quizzes[-1]["total_time"])
+        user_last_quizzes = performance.get("last_10_quizzes", [])
+        if user_last_quizzes:
+            total_accuracy.append(user_last_quizzes[-1]["accuracy"])
+            total_time.append(user_last_quizzes[-1]["total_time"])
 
     if not total_accuracy:
         return {"message": "Not enough data for comparison."}
 
-    user_accuracy = user_data["performance"].get("last_10_quizzes", [])[-1]["accuracy"]
-    user_time = user_data["performance"].get("last_10_quizzes", [])[-1]["total_time"]
+    user_accuracy = last_quizzes[-1]["accuracy"]
+    user_time = last_quizzes[-1]["total_time"]
 
     avg_accuracy = sum(total_accuracy) / len(total_accuracy)
     avg_time = sum(total_time) / len(total_time)
@@ -745,7 +751,7 @@ def get_engagement_score(user_id: str, current_user: str = Depends(get_current_u
 
     return {"engagement_score": consistency_score, "category": category}
 
-
+#  API Route to Fetch Dashboard Data
 @router.get("/dashboard_data/{user_id}")
 def get_dashboard_data(user_id: str, current_user: str = Depends(get_current_user)):
     """Returns structured performance data for the user dashboard."""

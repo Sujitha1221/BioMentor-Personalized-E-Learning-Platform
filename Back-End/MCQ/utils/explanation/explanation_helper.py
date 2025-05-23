@@ -3,12 +3,12 @@ import logging
 from utils.model_loader import llm
 from utils.explanation.RAG_biology_helper import RAGBiology
 import re
-
-logger = logging.getLogger("explanation_helper")
-logger.setLevel(logging.INFO)
 import requests
 import os
 import google.generativeai as genai
+
+logger = logging.getLogger("explanation_helper")
+logger.setLevel(logging.INFO)
 
 rag = RAGBiology()
 
