@@ -166,16 +166,27 @@ async def concept_breakdown(request: Request):
     results = extract_keywords_with_definitions(text)
     return {"concepts": results}
 
+
 @app.post("/concept-videos")
 async def get_student_videos(request: Request):
+    """
+    Determines topic from summary (for docs) or from query (for queries),
+    then fetches relevant YouTube videos.
+    """
     try:
         data = await request.json()
-        text = data.get("text", "").strip()
-        if not text:
+        mode = data.get("mode", "summary")  # "summary" or "query"
+        input_text = data.get("text", "").strip()
+
+        if not input_text:
             return JSONResponse(content={"videos": [], "error": "No input text provided"}, status_code=400)
 
-        core_topic = extract_core_topic(text)
-        logging.info(f"Core topic extracted: {core_topic}")
+        if mode == "query":
+            core_topic = input_text  # Use query directly
+        else:
+            core_topic = extract_core_topic(input_text)  # Extract from summary
+
+        logging.info(f"Extracted topic for video search: {core_topic}")
         videos = search_youtube_videos(core_topic)
         return {"core_topic": core_topic, "videos": videos}
 

@@ -603,9 +603,11 @@ def extract_keywords_with_definitions(text: str):
 
 def extract_core_topic(text, sentence_limit=2):
     """
-    Extracts the core topic from the first few sentences of the text using TF-IDF.
+    Extracts the core topic from a summary using TF-IDF on the first few sentences.
     """
-    # Simple sentence splitting
+    import re
+    from sklearn.feature_extraction.text import TfidfVectorizer
+
     sentences = re.split(r'(?<=[.!?])\s+', text.strip())
     intro = " ".join(sentences[:sentence_limit])
 
@@ -613,43 +615,78 @@ def extract_core_topic(text, sentence_limit=2):
     X = vectorizer.fit_transform([intro])
     keywords = vectorizer.get_feature_names_out()
 
+    # Return most relevant keyword or fallback
     return keywords[0] if len(keywords) > 0 else "biology"
 
 
-def search_youtube_videos(topic, max_results=3):
+def search_youtube_videos(query, max_results=3):
     """
-    Searches YouTube for educational videos based on a given topic.
+    Searches YouTube using the exact user query.
+    Filters out non-English and non-educational videos.
+    Prioritizes biology-related educational content.
     """
+    from googleapiclient.discovery import build
+    import logging
+    import re
+
     try:
         youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
-        query = f"{topic} class 10 OR class 12 OR biology lecture OR NCERT OR for students"
+
+        # Refine the query to explicitly target biology education
+        enhanced_query = f"{query.strip()} in biology A-Level structure function lecture tutorial explained"
 
         request = youtube.search().list(
-            q=query,
+            q=enhanced_query,
             part="snippet",
             type="video",
-            maxResults=10  # fetch more to filter better
+            maxResults=10,
+            relevanceLanguage="en"
         )
         response = request.execute()
 
-        def is_student_friendly(item):
+        def extract_video_info(item):
+            return {
+                "title": item["snippet"]["title"],
+                "link": f"https://www.youtube.com/watch?v={item['id']['videoId']}",
+                "channel": item["snippet"]["channelTitle"],
+                "thumbnail": item["snippet"]["thumbnails"]["default"]["url"]
+            }
+
+        def is_english(text):
+            cleaned = re.sub(r'[^a-zA-Z0-9\s.,!?\'"-]', '', text)
+            return len(cleaned) / max(len(text), 1) > 0.8
+
+        def is_educational(item):
             title = item["snippet"]["title"].lower()
+            description = item["snippet"].get("description", "").lower()
             channel = item["snippet"]["channelTitle"].lower()
-            return any(kw in title for kw in [
-                "class", "student", "ncert", "lecture", "basics", "biology", "chapter", "explanation"
-            ]) or any(kw in channel for kw in [
-                "education", "academy", "learn", "school", "tutorial"
-            ])
+
+            educational_keywords = [
+                "class", "lecture", "tutorial", "chapter", "unit", "grade",
+                "a-level", "as level", "biology", "explained", "introduction",
+                "education", "study", "revision", "notes", "course", "syllabus",
+                "concept", "lesson", "academy", "school", "teacher", "student",
+                "explanation", "diagram", "function", "structure", "how it works"
+            ]
+
+            return any(kw in title or kw in description or kw in channel for kw in educational_keywords)
 
         filtered = []
+        seen_ids = set()
+
         for item in response.get("items", []):
-            if is_student_friendly(item):
-                filtered.append({
-                    "title": item["snippet"]["title"],
-                    "link": f"https://www.youtube.com/watch?v={item['id']['videoId']}",
-                    "channel": item["snippet"]["channelTitle"],
-                    "thumbnail": item["snippet"]["thumbnails"]["default"]["url"]
-                })
+            title = item["snippet"]["title"]
+            description = item["snippet"].get("description", "")
+            video_id = item["id"]["videoId"]
+
+            if (
+                video_id not in seen_ids and
+                is_english(title + " " + description) and
+                is_educational(item)
+            ):
+                filtered.append(extract_video_info(item))
+                seen_ids.add(video_id)
+
             if len(filtered) >= max_results:
                 break
 
