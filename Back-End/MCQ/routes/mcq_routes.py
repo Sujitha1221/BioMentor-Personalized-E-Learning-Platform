@@ -6,6 +6,8 @@ from fastapi import APIRouter, HTTPException, Depends
 from utils.user_mgmt_methods import get_current_user
 from database.database import quizzes_collection, users_collection
 from utils.generate_question import generate_mcq
+from threading import Thread
+from utils.answer_verifier import verify_quiz_answers_async 
 
 router = APIRouter()
 
@@ -86,6 +88,7 @@ def generate_quiz(user_id: str, current_user: str = Depends(get_current_user)):
             "created_at": time.time(),
         }
         quizzes_collection.insert_one(quiz_data)
+        Thread(target=verify_quiz_answers_async, args=(quiz_id,)).start()
 
         return {"quiz_id": quiz_id, "total_questions": len(mcqs), "mcqs": mcqs}
 

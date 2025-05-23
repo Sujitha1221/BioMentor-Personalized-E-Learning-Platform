@@ -11,6 +11,8 @@ import traceback
 import sys
 import numpy as np
 from utils.model_loader import embedding_model
+from threading import Thread
+from utils.answer_verifier import verify_quiz_answers_async 
 
 router = APIRouter()
 
@@ -110,6 +112,7 @@ def generate_next_quiz(user_id: str, question_count: int, current_user: str = De
         logging.info("🛠️ Saving quiz to the database...")
         sys.stdout.flush()
         quizzes_collection.insert_one(quiz_data)
+        Thread(target=verify_quiz_answers_async, args=(quiz_id,)).start()
         
         logging.info(f" Quiz generated successfully! Quiz ID: {quiz_id}")
         sys.stdout.flush()
