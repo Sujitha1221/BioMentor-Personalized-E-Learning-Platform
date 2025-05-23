@@ -8,7 +8,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 app = FastAPI()
 
-UPLOAD_DIR = "/app/uploads"  # ✅ Ensure it matches API Gateway
+UPLOAD_DIR = "/app/uploads"  # Ensure it matches API Gateway
 
 
 class FilePathRequest(BaseModel):

@@ -1,6 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { FaRegCopy, FaDownload, FaCheck } from "react-icons/fa";
+import {
+  FaRegCopy,
+  FaDownload,
+  FaCheck,
+  FaPlay,
+  FaPause,
+  FaVolumeUp,
+  FaTimes,
+} from "react-icons/fa";
 import { MdOutlineClose } from "react-icons/md";
 import axios from "axios";
 import ModalLoadingScreen from "../LoadingScreen/ModalLoadingScreen";
@@ -9,7 +17,7 @@ import { SUMMARIZE_URL } from "../util/config";
 
 const GenerateNotesModal = ({ isOpen, onClose }) => {
   const [topic, setTopic] = useState("");
-  const [language, setLanguage] = useState("english"); // Default language
+  const [language, setLanguage] = useState("english");
   const [notes, setNotes] = useState(
     "Your generated notes will appear here..."
   );
@@ -17,8 +25,17 @@ const GenerateNotesModal = ({ isOpen, onClose }) => {
   const [isNotesGenerated, setIsNotesGenerated] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [downloadLink, setDownloadLink] = useState(null);
-  const [alert, setAlert] = useState({ message: "", type: "" }); // Alert state
+  const [audioLink, setAudioLink] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [alert, setAlert] = useState({ message: "", type: "" });
+  const [isMediaPlayerOpen, setIsMediaPlayerOpen] = useState(false);
+  const [audioUrl, setAudioUrl] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const audioRef = useRef(null);
 
   // Prevent background scrolling when modal is open
   useEffect(() => {
@@ -46,30 +63,28 @@ const GenerateNotesModal = ({ isOpen, onClose }) => {
       setAlert({ message: "Please enter a topic.", type: "warning" });
       return;
     }
-  
+
     setIsGenerating(true);
     setIsLoading(true);
     setNotes("Generating notes... Please wait.");
-    setDownloadLink(null); // Reset download link before request
-  
+    setDownloadLink(null);
+    setAudioLink(null); // Reset audio link
+
     try {
-      // Prepare FormData
       const formData = new FormData();
       formData.append("topic", topic);
-  
-      // Convert language to API expected format
+
       let selectedLang = "";
       if (language === "tamil") {
         selectedLang = "ta";
       } else if (language === "sinhala") {
         selectedLang = "si";
       }
-  
-      // Append language if not English
+
       if (selectedLang) {
         formData.append("lang", selectedLang);
       }
-  
+
       const response = await axios.post(
         `${SUMMARIZE_URL}/generate-notes/`,
         formData,
@@ -77,19 +92,29 @@ const GenerateNotesModal = ({ isOpen, onClose }) => {
           headers: { "Content-Type": "multipart/form-data" },
         }
       );
-  
+
       if (response.data) {
         setNotes(response.data.structured_notes);
         setIsNotesGenerated(true);
-        console.log(response.data)
-  
-        // Set download link ONLY if API provides it
+        console.log("Notes response:", response.data);
+
         if (response.data.download_link) {
           setDownloadLink(response.data.download_link);
-        } else {
-          setDownloadLink(null);
         }
-  
+
+        if (language === "english" && response.data.voice_file) {
+          const audioPath = `${SUMMARIZE_URL}${response.data.voice_file}`;
+          const audioRes = await axios.get(audioPath, { responseType: "blob" });
+
+          if (audioRes.status === 200 && audioRes.data.size > 0) {
+            const blobUrl = URL.createObjectURL(audioRes.data);
+            setAudioLink(response.data.voice_file); // keep for download path
+            setAudioUrl(blobUrl); // preload for player and quick access
+          } else {
+            console.warn("Audio file was not loaded correctly.");
+          }
+        }
+
         setAlert({ message: "Notes generated successfully!", type: "success" });
       } else {
         throw new Error("Failed to generate notes. Please try again.");
@@ -106,7 +131,7 @@ const GenerateNotesModal = ({ isOpen, onClose }) => {
       setIsGenerating(false);
       setIsLoading(false);
     }
-  };  
+  };
 
   const handleCopy = () => {
     if (notes) {
@@ -124,25 +149,92 @@ const GenerateNotesModal = ({ isOpen, onClose }) => {
         responseType: "blob",
       });
 
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const fileExtension = language === "english" ? "pdf" : "txt";
+      const blobType =
+        fileExtension === "pdf" ? "application/pdf" : "text/plain";
+
+      const url = window.URL.createObjectURL(
+        new Blob([response.data], { type: blobType })
+      );
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `${topic}_notes.pdf`);
+      link.setAttribute("download", `${topic}_notes.${fileExtension}`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-
-      // setAlert({
-      //   message: "Notes PDF downloaded successfully!",
-      //   type: "success",
-      // });
     } catch (error) {
-      console.error("Error downloading PDF:", error);
+      console.error("Error downloading notes:", error);
       setAlert({
-        message: "Failed to download PDF. Please try again.",
+        message: "Failed to download notes. Please try again.",
         type: "error",
       });
     }
+  };
+
+  const handleFetchAudio = () => {
+    if (!audioUrl) {
+      setAlert({
+        message: "Audio not ready yet. Try again shortly.",
+        type: "warning",
+      });
+      return;
+    }
+
+    setIsMediaPlayerOpen(true);
+
+    setTimeout(() => {
+      if (audioRef.current) {
+        audioRef.current.src = audioUrl;
+        audioRef.current.play();
+        setIsPlaying(true);
+      }
+    }, 200);
+  };
+
+  const handleDownloadAudio = () => {
+    if (!audioUrl) {
+      setAlert({ message: "Audio not ready for download.", type: "warning" });
+      return;
+    }
+
+    const link = document.createElement("a");
+    link.href = audioUrl;
+    link.setAttribute("download", `${topic}_notes.mp3`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const togglePlayPause = () => {
+    
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleTimeUpdate = () =>
+    setCurrentTime(audioRef.current?.currentTime || 0);
+  const handleLoadedMetadata = () =>
+    setDuration(audioRef.current?.duration || 0);
+  const handleSeek = (e) => {
+    const time = parseFloat(e.target.value);
+    audioRef.current.currentTime = time;
+    setCurrentTime(time);
+  };
+  const handleVolumeChange = (e) => {
+    const vol = parseFloat(e.target.value);
+    audioRef.current.volume = vol;
+    setVolume(vol);
+  };
+  const handlePlaybackSpeedChange = (e) => {
+    const speed = parseFloat(e.target.value);
+    audioRef.current.playbackRate = speed;
+    setPlaybackSpeed(speed);
   };
 
   if (!isOpen) return null;
@@ -165,7 +257,7 @@ const GenerateNotesModal = ({ isOpen, onClose }) => {
       )}
 
       <div
-        className="bg-white rounded-2xl shadow-xl w-[600px] max-h-[90vh] p-6 transition-all max-w-full sm:p-6 relative"
+        className="bg-white rounded-2xl shadow-xl w-[600px] h-auto max-h-screen overflow-y-auto p-6 transition-all max-w-full sm:p-6 relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
@@ -254,19 +346,108 @@ const GenerateNotesModal = ({ isOpen, onClose }) => {
           </button>
         </div>
 
-        {/* Download Button (Only for English) */}
-        {language === "english" && downloadLink && (
+        {downloadLink && (
           <div className="flex justify-center mt-3">
             <motion.button
               onClick={handleDownloadNotes}
-              className="flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#00FF84] bg-[#00FF84] text-[#140342] font-semibold rounded-lg 
-                transition-transform duration-300 hover:scale-105 hover:bg-[#00cc70]"
+              className="flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#00FF84] bg-[#00FF84] text-[#140342] font-semibold rounded-lg hover:bg-[#00cc70]"
             >
               <FaDownload /> Download Notes
             </motion.button>
           </div>
         )}
+        {language === "english" && audioLink && (
+          <div className="mt-4">
+            <label className="font-semibold text-[#140342]">
+              Audible Notes
+            </label>
+            <div className="flex gap-4 mt-2">
+              <motion.button
+                onClick={handleFetchAudio}
+                className="flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-white bg-[#140342] font-semibold rounded-lg hover:bg-[#32265a]"
+              >
+                <FaPlay /> Play
+              </motion.button>
+              <motion.button
+                onClick={handleDownloadAudio}
+                className="flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#00FF84] bg-[#00FF84] text-[#140342] font-semibold rounded-lg hover:bg-[#00cc70]"
+              >
+                <FaDownload /> Download Audio
+              </motion.button>
+            </div>
+          </div>
+        )}
       </div>
+      {isMediaPlayerOpen && audioUrl && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div
+            className="bg-white p-6 rounded-lg shadow-lg w-96 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-lg font-bold text-[#140342]">Media Player</h3>
+              <button
+                onClick={() => setIsMediaPlayerOpen(false)}
+                className="text-gray-500 hover:text-gray-700 transition"
+              >
+                <FaTimes size={20} />
+              </button>
+            </div>
+
+            <audio
+              ref={audioRef}
+              onTimeUpdate={handleTimeUpdate}
+              onLoadedMetadata={handleLoadedMetadata}
+            />
+
+            <div className="flex justify-center items-center gap-3 mt-3">
+              <button
+                onClick={togglePlayPause}
+                className="p-2 rounded-full bg-[#140342] text-white hover:bg-[#32265a] transition"
+              >
+                {isPlaying ? <FaPause size={20} /> : <FaPlay size={20} />}
+              </button>
+              <input
+                type="range"
+                min="0"
+                max={duration}
+                value={currentTime}
+                onChange={handleSeek}
+                className="w-full accent-gray-800"
+              />
+              <FaVolumeUp />
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={volume}
+                onChange={handleVolumeChange}
+                className="w-20 accent-gray-800"
+              />
+            </div>
+
+            {/* Playback Speed Control (Focus on Slower and Faster Speeds) */}
+            <div className="mt-4 flex justify-center items-center gap-3">
+              <label className="text-sm font-semibold text-[#140342]">
+                Speed:
+              </label>
+              <select
+                value={playbackSpeed}
+                onChange={handlePlaybackSpeedChange}
+                className="border border-gray-300 rounded-md p-1 text-[#140342]"
+              >
+                <option value="0.25">0.25x (Very Slow)</option>
+                <option value="0.5">0.5x (Slow)</option>
+                <option value="0.75">0.75x (Moderate)</option>
+                <option value="1">1x (Normal)</option>
+                <option value="1.5">1.5x (Fast)</option>
+                <option value="2">2x (Very Fast)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

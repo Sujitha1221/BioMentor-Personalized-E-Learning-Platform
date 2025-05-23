@@ -15,6 +15,7 @@ import axios from "axios";
 import AlertMessage from "../Alert/Alert";
 import ModalLoadingScreen from "../LoadingScreen/ModalLoadingScreen";
 import { SUMMARIZE_URL } from "../util/config";
+import { jsPDF } from "jspdf";
 
 const UploadModal = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState("document");
@@ -36,6 +37,10 @@ const UploadModal = ({ isOpen, onClose }) => {
   const [alert, setAlert] = useState({ message: "", type: "" });
   const [copied, setCopied] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [concepts, setConcepts] = useState([]);
+  const [isConceptLoading, setIsConceptLoading] = useState(false);
+  const [videoSuggestions, setVideoSuggestions] = useState([]);
+  const [viewMode, setViewMode] = useState(null); // 'concepts' or 'videos'
 
   const audioRef = useRef(null);
 
@@ -57,6 +62,15 @@ const UploadModal = ({ isOpen, onClose }) => {
     setIsLoading(false);
     setTaskId(null);
     setAudioUrl(null);
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+    setVolume(1);
+    setIsMediaPlayerOpen(false);
+    setConcepts([]);
+    setVideoSuggestions([]);
+    setCopied(false);
+    setAlert({ message: "", type: "" });
   };
 
   const handleFileChange = (event) => {
@@ -83,6 +97,7 @@ const UploadModal = ({ isOpen, onClose }) => {
 
   const handleProcessSummary = async () => {
     setIsLoading(true);
+    setConcepts([]);
     setIsSummaryGenerated(false);
     setSummary("Processing...");
 
@@ -308,6 +323,66 @@ const UploadModal = ({ isOpen, onClose }) => {
     setPlaybackSpeed(speed);
   };
 
+  const handleFetchConcepts = async () => {
+    if (!summary || summary === "Your summarized text will appear here...") {
+      setAlert({ message: "Generate a summary first!", type: "error" });
+      return;
+    }
+
+    setIsConceptLoading(true);
+    try {
+      const response = await axios.post(`${SUMMARIZE_URL}/concept-breakdown`, {
+        text: summary,
+      });
+
+      if (response.data?.concepts?.length > 0) {
+        setConcepts(response.data.concepts);
+        setViewMode("concepts");
+        setAlert({
+          message: "Concepts extracted successfully!",
+          type: "success",
+        });
+      } else {
+        setConcepts([]);
+        setAlert({ message: "No concepts found.", type: "warning" });
+      }
+    } catch (error) {
+      console.error("Error fetching concepts:", error);
+      setAlert({ message: "Failed to extract concepts.", type: "error" });
+    } finally {
+      setIsConceptLoading(false);
+    }
+  };
+
+  const handleFetchConceptVideos = async () => {
+    if (!summary || summary === "Your summarized text will appear here...") {
+      setAlert({ message: "Generate a summary first!", type: "error" });
+      return;
+    }
+
+    setIsConceptLoading(true);
+    try {
+      const response = await axios.post(`${SUMMARIZE_URL}/concept-videos`, {
+        mode: "summary",
+        text: summary,
+      });
+
+      if (response.data?.videos?.length > 0) {
+        setVideoSuggestions(response.data.videos);
+        setViewMode("videos");
+        setAlert({ message: "Videos loaded successfully!", type: "success" });
+      } else {
+        setVideoSuggestions([]);
+        setAlert({ message: "No videos found.", type: "warning" });
+      }
+    } catch (error) {
+      console.error("Error fetching concept videos:", error);
+      setAlert({ message: "Failed to load video suggestions.", type: "error" });
+    } finally {
+      setIsConceptLoading(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -315,7 +390,6 @@ const UploadModal = ({ isOpen, onClose }) => {
       className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50"
       onClick={handleClose} // Clicking outside modal closes it
     >
-      {isLoading && <ModalLoadingScreen />} {/* Full-page spinner */}
       {alert.message && (
         <AlertMessage
           message={alert.message}
@@ -515,19 +589,144 @@ const UploadModal = ({ isOpen, onClose }) => {
               </button>
             </div>
 
-            {/* Download Summary */}
-            <div className="flex justify-center mt-3">
+            {/* Full-page spinner for both summary or concepts */}
+            {(isLoading || isConceptLoading) && <ModalLoadingScreen />}
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap justify-center gap-4 mt-3">
               <motion.button
                 onClick={handleDownloadSummary}
                 className={`flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#00FF84] bg-[#00FF84] text-[#140342] font-semibold rounded-lg 
-  transition-transform duration-300 hover:scale-105 hover:bg-[#00cc70] ${
-    !isSummaryGenerated ? "opacity-50 cursor-not-allowed" : ""
-  }`}
+    transition-transform duration-300 hover:scale-105 hover:bg-[#00cc70] ${
+      !isSummaryGenerated ? "opacity-50 cursor-not-allowed" : ""
+    }`}
                 disabled={!isSummaryGenerated}
               >
-                <FaDownload /> Download Summary
+                <FaDownload /> Summary
+              </motion.button>
+
+              <motion.button
+                onClick={handleFetchConcepts}
+                className={`flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-white bg-[#140342] font-semibold rounded-lg 
+    transition-transform duration-300 hover:scale-105 hover:bg-[#32265a] ${
+      !isSummaryGenerated ? "opacity-50 cursor-not-allowed" : ""
+    }`}
+                disabled={!isSummaryGenerated || isConceptLoading}
+              >
+                🧠 Keywords
+              </motion.button>
+
+              <motion.button
+                onClick={handleFetchConceptVideos}
+                className={`flex items-center justify-center gap-2 px-6 py-3 border-2 border-gray-600 text-gray-800 bg-gray-200 font-semibold rounded-lg 
+    transition-transform duration-300 hover:scale-105 hover:bg-gray-300 ${
+      !isSummaryGenerated ? "opacity-50 cursor-not-allowed" : ""
+    }`}
+                disabled={!isSummaryGenerated || isConceptLoading}
+              >
+                🎥 Videos
               </motion.button>
             </div>
+
+            {(viewMode === "concepts" || viewMode === "videos") && (
+              <div className="mt-6 border-t pt-4 relative">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-lg font-semibold text-[#140342]">
+                    {viewMode === "concepts"
+                      ? "🔍 Extracted Concepts:"
+                      : "🎥 Learn More: Concept Videos"}
+                  </h3>
+                  {viewMode === "concepts" && (
+                    <button
+                      onClick={() => {
+                        const doc = new jsPDF();
+                        doc.setFontSize(12);
+                        let y = 10;
+                        concepts.forEach(({ term, definition }, index) => {
+                          doc.setFont("helvetica", "bold");
+                          doc.text(`${index + 1}. ${term}`, 10, y);
+                          y += 6;
+                          doc.setFont("helvetica", "normal");
+                          const lines = doc.splitTextToSize(definition, 180);
+                          lines.forEach((line) => {
+                            if (y > 280) {
+                              doc.addPage();
+                              y = 10;
+                            }
+                            doc.text(line, 10, y);
+                            y += 6;
+                          });
+                          y += 4;
+                        });
+                        doc.save("concepts.pdf");
+                      }}
+                      className="flex items-center gap-2 text-sm px-4 py-2 bg-gray-200 p-2 rounded-md transition duration-300 hover:bg-gray-400"
+                    >
+                      <FaDownload />
+                    </button>
+                  )}
+                </div>
+
+                {viewMode === "concepts" ? (
+                  <ul className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                    {concepts.map((item, index) => {
+                      const wikiUrl = `https://en.wikipedia.org/wiki/${item.term.replace(
+                        / /g,
+                        "_"
+                      )}`;
+                      return (
+                        <li
+                          key={index}
+                          className="bg-gray-50 p-3 rounded-lg shadow"
+                        >
+                          <div>
+                            <a
+                              href={wikiUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm font-bold text-blue-800 hover:underline"
+                            >
+                              🔗 {item.term}
+                            </a>
+                            <p className="text-sm text-gray-700 mt-1">
+                              {item.definition}
+                            </p>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <ul className="space-y-3 max-h-60 overflow-y-auto pr-2">
+                    {videoSuggestions.map((vid, idx) => (
+                      <li
+                        key={idx}
+                        className="bg-gray-50 p-3 rounded-lg shadow flex gap-4"
+                      >
+                        <img
+                          src={vid.thumbnail}
+                          alt={vid.title}
+                          className="w-24 h-16 object-cover rounded"
+                        />
+                        <div>
+                          <a
+                            href={vid.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm font-bold text-blue-700 hover:underline"
+                          >
+                            {vid.title}
+                          </a>
+                          <p className="text-xs text-gray-500">
+                            Channel: {vid.channel}
+                          </p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
 
             {/* Audible Summary */}
             <div className="mt-4">

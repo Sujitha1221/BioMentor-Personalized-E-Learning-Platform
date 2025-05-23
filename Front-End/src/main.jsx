@@ -14,6 +14,7 @@ import QuestionAndAnsweringHomePage from "./components/Q&A/QuestionAndAnsweringH
 import QuestionAndAnsweringStudentDashboard from "./components/Q&A/QuestionAndAnsweringStudentDashboard.jsx";
 import QuestionAndAnsweringStudentHistory from "./components/Q&A/QuestionAndAnsweringStudentHistory.jsx";
 import QuestionAndAnsweringStudyMaterials from "./components/Q&A/QuestionAndAnsweringStudyMaterials.jsx";
+import MindMapPage from "./components/Q&A/MindMapPage.jsx";
 import Summarization from "./components/Summarization/Summarization.jsx";
 import MCQHomePage from "./components/MCQ/MCQHomePage.jsx";
 import QuizPage from "./components/MCQ/QuizPage.jsx";
@@ -74,6 +75,12 @@ const router = createBrowserRouter([
         path: "Q&A-materials",
         element: (
           <ProtectedRoute element={<QuestionAndAnsweringStudyMaterials />} />
+        ),
+      },
+      {
+        path: "mind-map",
+        element: (
+          <ProtectedRoute element={<MindMapPage />} />
         ),
       },
       {

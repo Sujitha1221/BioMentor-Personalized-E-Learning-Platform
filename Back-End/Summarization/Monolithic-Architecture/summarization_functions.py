@@ -1,3 +1,4 @@
+from sklearn.feature_extraction.text import TfidfVectorizer
 import io
 import asyncio
 import hashlib
@@ -11,6 +12,18 @@ import hashlib
 import asyncio
 import yaml
 from fastapi.responses import StreamingResponse
+import nltk
+from nltk import pos_tag
+import requests
+import os
+import re
+from dotenv import load_dotenv
+from googleapiclient.discovery import build
+load_dotenv()
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
+
+nltk.download("averaged_perceptron_tagger_eng")
+nltk.download("universal_tagset")
 
 
 with open("logging_config.yaml", "r") as file:
@@ -403,6 +416,16 @@ async def generate_notes_function(request: Request, topic, lang, rag_model):
                 file_store[pdf_filename] = pdf_bytes
                 logger.info(f"PDF Stored: {pdf_filename}")
 
+                try:
+                    import io
+                    audio_buffer = io.BytesIO()
+                    text_to_speech(structured_notes, audio_buffer)
+                    audio_filename = f"notes_{topic.replace(' ', '_')}_{lang}.mp3"
+                    file_store[audio_filename] = audio_buffer.getvalue()
+                    logger.info(f"Audio file stored: {audio_filename}")
+                except Exception as e:
+                    logger.warning(f"Voice generation failed: {e}")
+
                 # Handle disconnected client
                 if await request.is_disconnected():
                     return None
@@ -412,18 +435,32 @@ async def generate_notes_function(request: Request, topic, lang, rag_model):
 
                 return {
                     "structured_notes": structured_notes,
-                    "download_link": f"/download-notes/{pdf_filename}"
+                    "download_link": f"/download-notes/{pdf_filename}",
+                    "voice_file": f"/download-notes/{audio_filename}"
                 }
 
             else:
-                # For Tamil or Sinhala, do NOT generate/return PDF
+                # For Tamil or Sinhala, save as .txt file
+                lang_display = "Tamil" if lang == "ta" else "Sinhala"
+                full_text = f"{topic} - {lang_display} \n\n{structured_notes}"
+
+                txt_bytes = full_text.encode("utf-8")
+                txt_filename = f"notes_{topic.replace(' ', '_')}_{lang}.txt"
+
+                file_store[txt_filename] = txt_bytes
+                logger.info(f"Text file stored in memory: {txt_filename}")
+
+                # Handle disconnected client
                 if await request.is_disconnected():
                     return None
 
                 # Cleanup task
                 del ongoing_tasks[task_id]
 
-                return {"structured_notes": structured_notes}
+                return {
+                    "structured_notes": structured_notes,
+                    "download_link": f"/download-notes/{txt_filename}"
+                }
 
         except asyncio.CancelledError:
             logger.warning(
@@ -495,3 +532,166 @@ async def get_pdf_file(file_name: str):
     return StreamingResponse(io.BytesIO(file_store[file_name]),
                              media_type="application/pdf",
                              headers={"Content-Disposition": f"attachment; filename={file_name}"})
+
+# Extract noun keywords
+
+
+def is_scientific_term(term: str) -> bool:
+    """
+    Check if the term is relevant to scientific/biomedical domains using Wikipedia categories.
+    """
+    try:
+        response = requests.get(
+            "https://en.wikipedia.org/w/api.php",
+            params={
+                "action": "query",
+                "prop": "categories",
+                "format": "json",
+                "titles": term,
+                "cllimit": "max"
+            }
+        )
+        data = response.json()
+        pages = data.get("query", {}).get("pages", {})
+        for page in pages.values():
+            for cat in page.get("categories", []):
+                cat_title = cat.get("title", "").lower()
+                if any(kw in cat_title for kw in ["biology", "anatomy", "neuro", "science", "medical", "physiology", "health"]):
+                    return True
+    except Exception as e:
+        print(f"Error checking scientific term for {term}: {e}")
+    return False
+
+
+def extract_keywords_with_definitions(text: str):
+    """
+    Extract keywords (nouns) from text and return Wikipedia definitions
+    for those that are scientifically relevant.
+    """
+    words = text.split()
+    tagged = pos_tag(words, tagset="universal")
+
+    candidate_nouns = sorted(set([
+        word.strip(".,():;-").capitalize()
+        for word, tag in tagged
+        if tag == "NOUN" and len(word) > 4
+    ]))
+
+    results = []
+    for word in candidate_nouns:
+        try:
+            if not is_scientific_term(word):
+                continue
+
+            url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{word}"
+            response = requests.get(url)
+            data = response.json()
+
+            if response.status_code == 200 and data.get("type") != "disambiguation":
+                summary = data.get("extract")
+                if summary:
+                    results.append({
+                        "term": word,
+                        "definition": summary
+                    })
+        except Exception as e:
+            print(f"Error processing {word}: {e}")
+            continue
+
+    return results  # ✅ Add this line
+
+
+def extract_core_topic(text, sentence_limit=2):
+    """
+    Extracts the core topic from a summary using TF-IDF on the first few sentences.
+    """
+    import re
+    from sklearn.feature_extraction.text import TfidfVectorizer
+
+    sentences = re.split(r'(?<=[.!?])\s+', text.strip())
+    intro = " ".join(sentences[:sentence_limit])
+
+    vectorizer = TfidfVectorizer(stop_words='english', max_features=5)
+    X = vectorizer.fit_transform([intro])
+    keywords = vectorizer.get_feature_names_out()
+
+    # Return most relevant keyword or fallback
+    return keywords[0] if len(keywords) > 0 else "biology"
+
+
+def search_youtube_videos(query, max_results=3):
+    """
+    Searches YouTube using the exact user query.
+    Filters out non-English and non-educational videos.
+    Prioritizes biology-related educational content.
+    """
+    from googleapiclient.discovery import build
+    import logging
+    import re
+
+    try:
+        youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
+
+        # Refine the query to explicitly target biology education
+        enhanced_query = f"{query.strip()} in biology A-Level structure function lecture tutorial explained"
+
+        request = youtube.search().list(
+            q=enhanced_query,
+            part="snippet",
+            type="video",
+            maxResults=10,
+            relevanceLanguage="en"
+        )
+        response = request.execute()
+
+        def extract_video_info(item):
+            return {
+                "title": item["snippet"]["title"],
+                "link": f"https://www.youtube.com/watch?v={item['id']['videoId']}",
+                "channel": item["snippet"]["channelTitle"],
+                "thumbnail": item["snippet"]["thumbnails"]["default"]["url"]
+            }
+
+        def is_english(text):
+            cleaned = re.sub(r'[^a-zA-Z0-9\s.,!?\'"-]', '', text)
+            return len(cleaned) / max(len(text), 1) > 0.8
+
+        def is_educational(item):
+            title = item["snippet"]["title"].lower()
+            description = item["snippet"].get("description", "").lower()
+            channel = item["snippet"]["channelTitle"].lower()
+
+            educational_keywords = [
+                "class", "lecture", "tutorial", "chapter", "unit", "grade",
+                "a-level", "as level", "biology", "explained", "introduction",
+                "education", "study", "revision", "notes", "course", "syllabus",
+                "concept", "lesson", "academy", "school", "teacher", "student",
+                "explanation", "diagram", "function", "structure", "how it works"
+            ]
+
+            return any(kw in title or kw in description or kw in channel for kw in educational_keywords)
+
+        filtered = []
+        seen_ids = set()
+
+        for item in response.get("items", []):
+            title = item["snippet"]["title"]
+            description = item["snippet"].get("description", "")
+            video_id = item["id"]["videoId"]
+
+            if (
+                video_id not in seen_ids and
+                is_english(title + " " + description) and
+                is_educational(item)
+            ):
+                filtered.append(extract_video_info(item))
+                seen_ids.add(video_id)
+
+            if len(filtered) >= max_results:
+                break
+
+        return filtered
+
+    except Exception as e:
+        logging.error(f"Error fetching YouTube videos: {e}")
+        return []

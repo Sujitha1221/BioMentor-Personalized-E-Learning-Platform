@@ -66,7 +66,7 @@ genai.configure(api_key=GENAI_API_KEY)
 # List available models
 models = genai.list_models()
 
-gemini_model = genai.GenerativeModel('gemini-1.5-pro-latest')
+gemini_model = genai.GenerativeModel('gemini-1.5-flash')
 
 def retrieve_similar_content(query, k=5):
     """

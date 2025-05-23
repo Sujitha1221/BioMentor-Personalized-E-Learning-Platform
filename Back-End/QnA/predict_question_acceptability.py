@@ -1,10 +1,15 @@
-from gradio_client import Client
-import re
 import logging
-from better_profanity import profanity
-from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+import re
+import numpy as np
+import faiss
+import pandas as pd
 import spacy
+import torch
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from transformers import pipeline
+from better_profanity import profanity
+from sentence_transformers import SentenceTransformer
+from gradio_client import Client
 
 # Configure logging
 logging.basicConfig(
@@ -38,6 +43,34 @@ def load_nlp_models():
 
 # Load models
 nlp, analyzer, classifier = load_nlp_models()
+
+logging.info("Loading QA and notes datasets...")
+qa_df = pd.read_csv('Notes/cleaned_question_and_answer.csv', encoding='ISO-8859-1')
+chunked_notes_df = pd.read_csv('Notes/cleaned_Notes.csv', encoding='ISO-8859-1')
+
+logging.info("Loading embedding model and FAISS index...")
+embedder = SentenceTransformer('sentence-transformers/multi-qa-mpnet-base-dot-v1')
+index = faiss.read_index('DB/faiss_index.bin')
+
+def is_question_in_syllabus(query: str, k: int = 5) -> bool:
+    """
+    Check if the question is in syllabus by retrieving top-k matches from the FAISS index.
+    If any result is retrieved (from QA or Notes), return True.
+    """
+    try:
+        query_embedding = embedder.encode([query], convert_to_numpy=True).astype('float32')
+        distances, indices = index.search(query_embedding, k)
+
+        # If any indices are returned, we assume it's in the syllabus
+        if indices is not None and len(indices[0]) > 0:
+            logging.info(f"Found {len(indices[0])} related items from FAISS. Considering as in syllabus.")
+            return True
+
+        logging.info("No relevant content found in FAISS index.")
+        return False
+    except Exception as e:
+        logging.error(f"Error in syllabus check: {e}", exc_info=True)
+        return False
 
 
 def predict_question_acceptability_gradio(question: str) -> bool:
@@ -117,6 +150,9 @@ def moderate_question(query: str) -> tuple[bool, str]:
     content_warning = contains_inappropriate_content(query)
     if content_warning:
         return False, content_warning
+    
+    if not is_question_in_syllabus(query):
+        return False, "This question appears to be outside the current syllabus."
 
     return True, "Your question is acceptable."
 
