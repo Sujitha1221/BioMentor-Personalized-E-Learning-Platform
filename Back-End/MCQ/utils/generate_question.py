@@ -21,6 +21,7 @@ from routes.response_routes import estimate_student_ability
 from utils.model_loader import embedding_model, llm
 from sklearn.metrics.pairwise import cosine_similarity
 from utils.verification import verify_mcq_with_llm
+from utils.answer_verifier import generate_mcq_with_gemini
 
 load_dotenv()
 
@@ -29,10 +30,13 @@ index = faiss.read_index("dataset/question_embeddings.index")
 embeddings_matrix = np.load("dataset/question_embeddings.npy")
 dataset = pd.read_csv("dataset/question_dataset_with_clusters.csv")
 
+
 def build_llama2_chat_prompt(instruction: str) -> str:
     return f"<s>[INST] {instruction.strip()} [/INST]"
 
+
 mcq_cache = {}
+
 
 # Method to generate MCQs with unique context
 def generate_mcq(difficulty, user_id, max_retries=3, existing_questions=None):
@@ -66,7 +70,7 @@ def generate_mcq(difficulty, user_id, max_retries=3, existing_questions=None):
             context_list = (
                 [
                     f"- {textwrap.shorten(row['Question Text'], width=250, placeholder='...')} (Correct Answer: {row['Correct Answer']})"
-                    for _, row in context_questions.iterrows()                    
+                    for _, row in context_questions.iterrows()
                 ]
                 if not context_questions.empty
                 else []
@@ -108,16 +112,22 @@ def generate_mcq(difficulty, user_id, max_retries=3, existing_questions=None):
                 # Calculate prompt token length
                 prompt_tokens = len(llm.tokenize(prompt.encode("utf-8")))
                 max_total_tokens = 2048
-                adjusted_max_tokens = min(768, max_total_tokens - prompt_tokens - 10)  # Ensure room to generate
+                adjusted_max_tokens = min(
+                    768, max_total_tokens - prompt_tokens - 10
+                )  # Ensure room to generate
 
                 if adjusted_max_tokens <= 0:
                     logging.error("🚫 Prompt too long! Skipping generation.")
                     retries += 1
                     continue
 
-                output = llm(prompt, max_tokens=adjusted_max_tokens, temperature=0.8, top_p=0.95)
+                output = llm(
+                    prompt, max_tokens=adjusted_max_tokens, temperature=0.8, top_p=0.95
+                )
                 if "choices" not in output or not output["choices"]:
-                    logging.error("⚠ Model output missing 'choices'. Full output: %s", output)
+                    logging.error(
+                        "⚠ Model output missing 'choices'. Full output: %s", output
+                    )
                     retries += 1
                     continue
 
@@ -240,6 +250,7 @@ def generate_mcq_based_on_performance(
     existing_questions = existing_questions or set()
 
     theta = estimate_student_ability(user_id) or 0.0
+    used_prompt = None  # to reuse in fallback
 
     while retries < max_retries and len(valid_mcqs) < 3:
         try:
@@ -257,14 +268,10 @@ def generate_mcq_based_on_performance(
             random_question = sampled_question.iloc[0]["Question Text"]
             context_questions = retrieve_context_questions(random_question, top_k=3)
 
-            context_list = (
-                [
-                    f"- {textwrap.shorten(row['Question Text'], width=250, placeholder='...')} (Correct Answer: {row['Correct Answer']})"
-                    for _, row in context_questions.iterrows()
-                ]
-                if not context_questions.empty
-                else []
-            )
+            context_list = [
+                f"- {row['Question Text']} (Correct Answer: {row['Correct Answer']})"
+                for _, row in context_questions.iterrows()
+            ] if not context_questions.empty else []
 
             remaining = 3 - len(valid_mcqs)
             instruction = f"""
@@ -295,117 +302,102 @@ def generate_mcq_based_on_performance(
                 **Follow This Format exactly:**
                 {instruction.strip()}
                 """
-            prompt = build_llama2_chat_prompt(instruction)
-            # Calculate prompt token length
-            prompt_tokens = len(llm.tokenize(prompt.encode("utf-8")))
-            max_total_tokens = 2048
-            adjusted_max_tokens = min(768, max_total_tokens - prompt_tokens - 10)  # Ensure room to generate
 
+            prompt = build_llama2_chat_prompt(instruction)
+            used_prompt = prompt  
+
+            prompt_tokens = len(llm.tokenize(prompt.encode("utf-8")))
+            adjusted_max_tokens = min(768, 2048 - prompt_tokens - 10)
             if adjusted_max_tokens <= 0:
-                logging.error("🚫 Prompt too long! Skipping generation.")
                 retries += 1
                 continue
 
             output = llm(prompt, max_tokens=adjusted_max_tokens, temperature=0.8, top_p=0.95)
             if "choices" not in output or not output["choices"]:
-                logging.error("⚠ Model output missing 'choices'. Full output: %s", output)
                 retries += 1
                 continue
 
             raw_output = output["choices"][0]["text"]
-            logging.warning(f"⚠ RAW LOCAL MODEL RESPONSE: {raw_output}")
+            logging.info(f"⚠ RAW LOCAL MODEL RESPONSE: {raw_output}")
 
             extracted_mcqs = extract_mcqs(prompt, raw_output)
 
+            if not extracted_mcqs:
+                retries += 1
+                logging.warning("⚠ No valid MCQs extracted. Retrying...")
+                continue
+
+            added = 0
             for mcq in extracted_mcqs:
                 question = mcq.get("question", "").strip()
                 options = mcq.get("options", {})
                 correct_letters = clean_correct_answer(mcq.get("correct_answer", ""))
                 claimed_answer = correct_letters[0] if correct_letters else None
                 mcq["correct_answer"] = ", ".join(correct_letters)
-                # Verification before validation
+
                 is_correct, verified, claimed = verify_mcq_with_llm(
                     question, options, claimed_answer
                 )
-
-                # Always store the claimed answer from the model
                 mcq["claimed_answer"] = claimed
+                mcq["correct_answer"] = verified if not is_correct and verified in options else claimed
+                mcq["verified_answer"] = verified if is_correct else None
+                mcq["is_verified"] = is_correct is not None
 
-                if is_correct is False and verified in options:
-                    mcq["correct_answer"] = verified  # For scoring
-                    mcq["verified_answer"] = (
-                        verified  # To show user the corrected value
-                    )
-                    mcq["is_verified"] = True
-                elif is_correct is True:
-                    mcq["correct_answer"] = claimed  # Model got it right
-                    mcq["verified_answer"] = claimed
-                    mcq["is_verified"] = True
-                else:
-                    mcq["correct_answer"] = claimed  # Fallback to original
-                    mcq["verified_answer"] = None
-                    mcq["is_verified"] = False
-
-                if any(
-                    [
-                        is_similar_to_past_quiz_questions(
-                            question, user_id, threshold=0.65
-                        ),
-                        not question,
-                        len(options) != 5,
-                        any(not v.strip() for v in options.values()),
-                        len(set(options.values())) < 5,
-                        not correct_letters,
-                        any(c not in options for c in correct_letters),
-                        is_duplicate_faiss(question, index, 0.85),
-                        is_similar_to_same_quiz_questions(
-                            question, batch_generated_questions, threshold=0.85
-                        ),
-                        question in batch_generated_questions,
-                        question in existing_questions,
-                        "error" in question,
-                        "Question" in question,
-                        "<Insert your question>" in question,
-                        "Generate a" in question,
-                    ]
-                ):
+                if any([
+                    is_similar_to_past_quiz_questions(question, user_id, threshold=0.65),
+                    not question,
+                    len(options) != 5,
+                    any(not v.strip() for v in options.values()),
+                    len(set(options.values())) < 5,
+                    not correct_letters,
+                    any(c not in options for c in correct_letters),
+                    is_duplicate_faiss(question, index, 0.85),
+                    is_similar_to_same_quiz_questions(question, batch_generated_questions, 0.85),
+                    question in batch_generated_questions,
+                    question in existing_questions,
+                ]):
                     continue
 
                 if past_embeddings is not None:
                     new_vec = embedding_model.encode([question]).astype(np.float32)
-                    similarities = cosine_similarity(new_vec, past_embeddings)[0]
-                    if max(similarities) >= 0.65:
-                        logging.warning(
-                            f"🚫 Too similar to past quiz questions (cos sim ≥ 0.65): {question}"
-                        )
+                    if max(cosine_similarity(new_vec, past_embeddings)[0]) >= 0.65:
                         continue
 
-                mcq.update(
-                    {
-                        "difficulty": difficulty,
-                        "b": assign_difficulty_parameter(user_id, difficulty),
-                        "a": assign_discrimination_parameter(),
-                        "c": 0.2,
-                    }
-                )
+                mcq.update({
+                    "difficulty": difficulty,
+                    "b": assign_difficulty_parameter(user_id, difficulty),
+                    "a": assign_discrimination_parameter(),
+                    "c": 0.2,
+                })
 
                 new_vector = embedding_model.encode([question]).astype(np.float32)
                 index.add(new_vector)
                 valid_mcqs.append(mcq)
                 batch_generated_questions.add(question)
+                added += 1
 
                 if len(valid_mcqs) >= 3:
                     break
 
-            if len(valid_mcqs) < 3:
+            if added == 0:
                 retries += 1
-                logging.warning(
-                    f"\u26a0 Still need {3 - len(valid_mcqs)} MCQs. Retrying... ({retries}/{max_retries})"
-                )
 
         except Exception as e:
-            logging.error(f"\u26a0 Error in MCQ generation: {e}")
+            logging.error(f"⚠ Error during MCQ generation: {e}")
             retries += 1
-            time.sleep(1)  # slight delay between retries
+            time.sleep(1)
 
-    return valid_mcqs
+    if len(valid_mcqs) < 3:
+        try:
+            raw_output = generate_mcq_with_gemini(used_prompt)
+            extracted_mcqs = extract_mcqs(used_prompt, raw_output)
+            for mcq in extracted_mcqs:
+                if len(valid_mcqs) >= 3:
+                    break
+                valid_mcqs.append(mcq)
+        except Exception as e:
+            logging.error(f"❌ Gemini fallback failed: {e}")
+
+    logging.info(f"✅ Total valid MCQs generated: {len(valid_mcqs)} after {retries} retries.")
+    return valid_mcqs[:3]
+
