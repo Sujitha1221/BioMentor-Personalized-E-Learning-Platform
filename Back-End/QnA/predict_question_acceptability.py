@@ -24,6 +24,7 @@ def load_nlp_models():
     - spaCy for Named Entity Recognition (NER)
     - VADER for sentiment analysis
     - BERT-based classifier for toxic content detection
+    - Zero-shot classification model
     """
     logging.info("Loading NLP models...")
 
@@ -35,14 +36,18 @@ def load_nlp_models():
     analyzer = SentimentIntensityAnalyzer()
     logging.info("VADER sentiment analyzer initialized.")
 
-    # Load pre-trained BERT-based classifier for toxicity detection
+    # Load BERT-based toxicity classifier
     classifier = pipeline("text-classification", model="unitary/toxic-bert")
     logging.info("BERT-based toxicity classifier loaded.")
 
-    return nlp, analyzer, classifier
+    # Load Zero-Shot Classifier
+    zero_shot = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
+    logging.info("Zero-shot classifier loaded.")
+
+    return nlp, analyzer, classifier, zero_shot
 
 # Load models
-nlp, analyzer, classifier = load_nlp_models()
+nlp, analyzer, classifier, zero_shot = load_nlp_models()
 
 logging.info("Loading QA and notes datasets...")
 qa_df = pd.read_csv('Notes/cleaned_question_and_answer.csv', encoding='ISO-8859-1')
@@ -132,6 +137,27 @@ def contains_inappropriate_content(query):
     if result["label"] == "toxic" and result["score"] > 0.85:
         logging.warning(f"Toxic content detected: {query}")
         return "Your question seems inappropriate. Please rephrase."
+
+    # Zero-Shot Harm Detection
+    try:
+        candidate_labels = [
+            "self-harm", "violence", "drug abuse", "hate speech",
+            "sexual content", "nonsense", "biology", "educational"
+        ]
+        result = zero_shot(query, candidate_labels, multi_label=True)
+        for label, score in zip(result["labels"], result["scores"]):
+            if label not in ["biology", "educational"] and score > 0.85:
+                logging.warning(f"Zero-shot flagged as '{label}' ({score:.2f})")
+                return {
+                    "self-harm": "Your input seems related to self-harm or suicide. Please rephrase or seek support.",
+                    "violence": "Your input contains references to violence. Please rephrase appropriately.",
+                    "drug abuse": "Your query appears to involve drug-related content. Please focus on scientific context.",
+                    "hate speech": "Your input contains potentially hateful language. Please express your thoughts respectfully.",
+                    "sexual content": "Your question includes inappropriate sexual content. Please maintain a professional tone.",
+                    "nonsense": "Your input appears nonsensical or irrelevant. Please clarify your question."
+                }.get(label, "Your question seems inappropriate or unsafe. Please rephrase.")
+    except Exception as e:
+        logging.error(f"Zero-shot classification failed: {e}")
 
     return False
 
