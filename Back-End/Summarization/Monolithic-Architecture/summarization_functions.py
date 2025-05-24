@@ -598,7 +598,7 @@ def extract_keywords_with_definitions(text: str):
             print(f"Error processing {word}: {e}")
             continue
 
-    return results  
+    return results
 
 
 def extract_core_topic(text, sentence_limit=2):
