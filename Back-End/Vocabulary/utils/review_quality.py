@@ -1,4 +1,4 @@
-from Levenshtein import distance
+from rapidfuzz.distance.Levenshtein import distance
 
 def word_accuracy(original_word, entered_word):
     """
