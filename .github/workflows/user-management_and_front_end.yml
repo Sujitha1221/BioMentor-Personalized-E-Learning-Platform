@@ -41,6 +41,7 @@ jobs:
             npm run build
 
             # Optional: move built files to Nginx or serve via Node
-            sudo cp -r dist/* /var/www/html/
+            sudo cp -r dist/* /var/www/biomentor-frontend/
+
 
           EOF
