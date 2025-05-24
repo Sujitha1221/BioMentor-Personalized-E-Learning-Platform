@@ -1,7 +1,7 @@
 import csv
 from motor.motor_asyncio import AsyncIOMotorClient
 
-MONGO_URI = "mongodb://localhost:27017"
+MONGO_URI = "mongodb+srv://biomentor:biomentor123@cluster0.n4qtxie.mongodb.net"
 DB_NAME = "flashcards_db"
 
 client = AsyncIOMotorClient(MONGO_URI)
