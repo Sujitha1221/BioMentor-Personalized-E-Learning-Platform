@@ -1,0 +1,46 @@
+name: Deploy User Platform to Azure VM
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Back-End/User-Management/**'
+      - 'Front-End/**'
+
+jobs:
+  deploy-user-platform:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AZURE_USER_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.AZURE_USER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy User Management Backend and Frontend
+        run: |
+          ssh ${{ secrets.AZURE_USER }}@${{ secrets.AZURE_USER_HOST }} << 'EOF'
+            cd /home/azureuser/BioMentor-Personalized-E-Learning-Platform
+            git pull origin main
+
+            # --- Backend ---
+            cd Back-End/User-Management
+            source venv/bin/activate
+            pip install -r requirements.txt
+            sudo systemctl restart user-management
+
+            # --- Frontend ---
+            cd ../../../Front-End
+            npm install
+            npm run build
+
+            # Optional: move built files to Nginx or serve via Node
+            sudo cp -r dist/* /var/www/html/
+
+          EOF
