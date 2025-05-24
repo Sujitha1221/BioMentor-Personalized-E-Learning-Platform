@@ -591,6 +591,7 @@ const UploadModal = ({ isOpen, onClose }) => {
 
             {/* Full-page spinner for both summary or concepts */}
             {(isLoading || isConceptLoading) && <ModalLoadingScreen />}
+            
 
             {/* Action Buttons */}
             <div className="flex flex-wrap justify-center gap-4 mt-3">
