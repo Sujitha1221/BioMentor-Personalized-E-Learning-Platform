@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 import time
 import os
-import textwrap
 from dotenv import load_dotenv
 from utils.text_extraction import extract_mcqs
 from utils.quiz_generation_methods import (
@@ -67,14 +66,10 @@ def generate_mcq(difficulty, user_id, max_retries=3, existing_questions=None):
             context_questions = retrieve_context_questions(random_question, top_k=3)
 
             # Construct context-based prompt
-            context_list = (
-                [
-                    f"- {textwrap.shorten(row['Question Text'], width=250, placeholder='...')} (Correct Answer: {row['Correct Answer']})"
-                    for _, row in context_questions.iterrows()
-                ]
-                if not context_questions.empty
-                else []
-            )
+            context_list = [
+                f"- {row['Question Text']} (Correct Answer: {row['Correct Answer']})"
+                for _, row in context_questions.iterrows()
+            ] if not context_questions.empty else []
 
             remaining = 3 - len(valid_mcqs)
 
