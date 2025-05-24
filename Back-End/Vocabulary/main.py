@@ -1,12 +1,20 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes.flashcards import router as flashcards_router
-from routes.leaderboard import router as leaderboard_router  # ✅ Import Leaderboard Router
+from routes.leaderboard import router as leaderboard_router
 from database import load_vocab_into_db
+from contextlib import asynccontextmanager
 
-app = FastAPI(title="Flashcard API")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup logic
+    await load_vocab_into_db()
+    yield
+    # You can also add shutdown logic here if needed
 
-# ✅ Ensure CORS middleware is added
+app = FastAPI(title="Flashcard API", lifespan=lifespan)
+
+# ✅ Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,14 +23,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.on_event("startup")
-async def startup_db():
-    """Load vocabulary into MongoDB when the API starts."""
-    await load_vocab_into_db()
-
-# ✅ Ensure Leaderboard Router is included
+# ✅ Include routers
 app.include_router(flashcards_router, prefix="/flashcards", tags=["Flashcards"])
-app.include_router(leaderboard_router, prefix="/leaderboard", tags=["Leaderboard"])  # ✅ Add Leaderboard Router
+app.include_router(leaderboard_router, prefix="/leaderboard", tags=["Leaderboard"])
 
 @app.get("/")
 async def root():
