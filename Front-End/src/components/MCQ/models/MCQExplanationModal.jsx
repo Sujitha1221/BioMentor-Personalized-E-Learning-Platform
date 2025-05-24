@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { FaCheckCircle, FaCopy, FaTimes } from "react-icons/fa";
 import { Sparkles, ShieldCheck, ArrowLeft } from "lucide-react";
-import axios from "axios";
-import { MCQ_URL } from "../../util/config";
+import api from "../../axios/api";
 import AlertMessage from "../../Alert/Alert";
 import ModalLoadingScreen from "../../LoadingScreen/ModalLoadingScreen";
 
@@ -42,7 +41,7 @@ const MCQExplanationModal = ({ mode, onBack, onClose }) => {
     if (!validateInputs()) return;
     setLoading(true);
     try {
-      const res = await axios.post(`${MCQ_URL}/explanations/mcq/explain_only`, {
+      const res = await api.post(`/explanations/mcq/explain_only`, {
         question,
         options,
       });
@@ -61,8 +60,8 @@ const MCQExplanationModal = ({ mode, onBack, onClose }) => {
     if (!validateInputs()) return;
     setLoading(true);
     try {
-      const res = await axios.post(
-        `${MCQ_URL}/explanations/mcq/verify_and_explain`,
+      const res = await api.post(
+        `/explanations/mcq/verify_and_explain`,
         {
           question,
           options,

@@ -2,10 +2,10 @@ import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
 import api from "../axios/api"; // Import API handler
 import QuizLoadingScreen from "./loadingPage/QuizLoadingScreen"; // Import loading screen component
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import ExplainModal from "./models/ExplanationModel"; // Import the modal component for explanations
 
 const difficultyColors = {
   easy: "bg-green-200 text-green-800",
@@ -26,6 +26,10 @@ const QuizResults = () => {
   // Initialize results state (null at start)
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(true); //  Start with loading as true
+  const [isExplainOpen, setIsExplainOpen] = useState(false);
+  const [explanationText, setExplanationText] = useState("");
+  const [isLoadingExplanation, setIsLoadingExplanation] = useState(false);
+  const [verifiedAnswer, setVerifiedAnswer] = useState(null);
 
   useEffect(() => {
     if (userId && quizId && attemptNumber) {
@@ -172,6 +176,89 @@ const QuizResults = () => {
     pdf.save(`quiz-results-attempt-${results.attempt_number}.pdf`);
   };
 
+  const handleDownloadCSV = () => {
+    if (!results?.responses) return;
+
+    const headers = [
+      "Question",
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D",
+      "Option E",
+      "Correct Answer",
+    ];
+
+    const rows = results.responses.map((resp) => {
+      const question = `"${resp.question_text.replace(/"/g, '""')}"`;
+
+      const getOption = (letter) => resp.options[letter] || "";
+
+      const correct = `${resp.correct_answer}. ${getOption(
+        resp.correct_answer
+      )}`;
+
+      return [
+        question,
+        getOption("A"),
+        getOption("B"),
+        getOption("C"),
+        getOption("D"),
+        getOption("E"),
+        correct,
+      ];
+    });
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((r) =>
+        r.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `quiz_results_attempt_${results.attempt_number}.csv`
+    );
+    link.click();
+  };
+
+  // Function to fetch explanation for a question
+  const fetchExplanation = async (questionText, options, claimedAnswer) => {
+    setIsLoadingExplanation(true);
+    setIsExplainOpen(true);
+
+    try {
+      const response = await api.post(
+        `/explanations/mcq/verify_and_explain`,
+        {
+          question: questionText,
+          options,
+          claimed_answer: claimedAnswer,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      const { explanation, predicted_answer } = response.data;
+
+      setExplanationText(explanation || "No explanation found.");
+      setVerifiedAnswer(predicted_answer || null);
+    } catch (err) {
+      console.error("Failed to fetch explanation:", err);
+      setExplanationText("Error fetching explanation.");
+      setVerifiedAnswer(null);
+    } finally {
+      setIsLoadingExplanation(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="mt-0 sm:mt-20">
@@ -254,14 +341,20 @@ const QuizResults = () => {
         </div>
 
         {/* PDF Button */}
-        <div className="text-center mt-4">
+        <div className="text-center mt-4 space-x-4">
           <button
             onClick={handleGeneratePDF}
-            title="Download your quiz results as a PDF file"
-            aria-label="Download quiz results as PDF"
-            className="mt-3 sm:mt-0 px-4 py-2 bg-[#140342] text-white rounded-lg hover:bg-[#140342] transition-all"
+            title="Download as PDF"
+            className="px-4 py-2 bg-[#140342] text-white rounded-lg hover:bg-[#1f1b46] transition-all"
           >
-            📄 Download Quiz (PDF)
+            📄 Download PDF
+          </button>
+          <button
+            onClick={handleDownloadCSV}
+            title="Download as CSV"
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
+          >
+            🧾 Download CSV
           </button>
         </div>
 
@@ -353,6 +446,20 @@ const QuizResults = () => {
                       </div>
                     )}
                 </div>
+                <button
+                  onClick={() =>
+                    fetchExplanation(
+                      response.question_text,
+                      response.options,
+                      response.correct_answer
+                    )
+                  }
+                  className="mt-4 px-4 py-2 bg-[#140342] text-white rounded-lg hover:bg-[#140342] transition"
+                >
+                  {isCorrect
+                    ? "😊 What makes this the right answer?"
+                    : "🤔 Where did I go wrong?"}
+                </button>
               </motion.div>
             );
           })}
@@ -366,6 +473,13 @@ const QuizResults = () => {
           Back to Home
         </button>
       </motion.div>
+      <ExplainModal
+        isOpen={isExplainOpen}
+        onClose={() => setIsExplainOpen(false)}
+        explanation={explanationText}
+        loading={isLoadingExplanation}
+        verifiedAnswer={verifiedAnswer}
+      />
     </div>
   );
 };
