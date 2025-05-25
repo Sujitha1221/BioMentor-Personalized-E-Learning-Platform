@@ -1,4 +1,7 @@
 import logging
+import requests
+import os
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Optional
@@ -21,6 +24,9 @@ logging.basicConfig(
 
 # Initialize FastAPI app
 app = FastAPI()
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Add CORS middleware
 app.add_middleware(
@@ -173,20 +179,26 @@ def student_analytics(request: StudentEvaluationRequest):
         logging.error(f"Error while generating student analytics: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="An error occurred while retrieving student analytics.")
 
-# Function to fetch related websites using the free DuckDuckGo search (using DDGS)
-def get_related_websites(query: str):
-    results = []
+
+GOOGLE_API_KEY = os.getenv("API_KEY")
+GOOGLE_CX_ID = os.getenv("CX_ID")
+def get_related_websites(query: str, api_key: str = GOOGLE_API_KEY, cx: str = GOOGLE_CX_ID, max_results: int = 5):
+    url = "https://www.googleapis.com/customsearch/v1"
+    params = {
+        "key": api_key,
+        "cx": cx,
+        "q": query,
+        "num": max_results
+    }
+
     try:
-        with DDGS() as ddgs:
-            # Perform a text search; adjust parameters as needed
-            search_results = ddgs.text(query, max_results=5)
-            for result in search_results:
-                href = result.get("href")
-                if href:
-                    results.append(href)
-    except Exception as e:
-        logging.error(f"Error fetching related websites: {e}", exc_info=True)
-    return results
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
+        return [item.get("link") for item in data.get("items", []) if item.get("link")]
+    except requests.RequestException as e:
+        logging.error(f"Google CSE API request failed: {e}")
+    return []
     
 @app.get("/get-student-question/{student_id}")
 def get_student_question(student_id: str):
