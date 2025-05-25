@@ -1,5 +1,7 @@
 import sys
 import os
+import pytest
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from utils.text_extraction import extract_mcqs
@@ -23,14 +25,16 @@ def test_extract_mcqs_parsing_single_question():
     assert "A" in parsed[0]["options"]
     assert len(parsed[0]["options"]) == 5
 
-def test_clean_correct_answer_letters():
-    assert clean_correct_answer("Correct Answer: A") == ["A"]
-    assert clean_correct_answer("Answer: C and D") == ["C", "D"]
-    assert clean_correct_answer("B, D") == ["B", "D"]
-    assert clean_correct_answer("(E)") == ["E"]
-    assert clean_correct_answer("A, A, C") == ["A", "C"]
-    assert clean_correct_answer("123") == []
-    assert clean_correct_answer("") == []
-    assert clean_correct_answer("Correct Answer: A, C, E") == ["A", "C", "E"]  # ✅ this is the correct expectation
 
-   
+@pytest.mark.parametrize("raw_input, expected", [
+    ("Correct Answer: A", ["A"]),
+    ("Answer: C and D", ["C", "D"]),
+    ("B, D", ["B", "D"]),
+    ("(E)", ["E"]),
+    ("A, A, C", ["A", "C"]),
+    ("123", []),
+    ("", []),
+    ("Correct Answer: A, C, E", ["A", "C", "E"]),
+])
+def test_clean_correct_answer_letters(raw_input, expected):
+    assert clean_correct_answer(raw_input) == expected
