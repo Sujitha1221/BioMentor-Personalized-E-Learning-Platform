@@ -1,6 +1,6 @@
 import random
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from database import db
 from utils.review_quality import word_accuracy
 from bson import ObjectId
@@ -22,7 +22,7 @@ async def get_daily_questions(user_id):
     if not user:
         return {"error": "User not found"}
 
-    today = datetime.utcnow().date()
+    today = datetime.now(UTC).date()
     due_questions = []
 
     # Debugging step: Check what user["history"] contains
@@ -65,7 +65,7 @@ async def get_daily_questions(user_id):
 
 async def update_progress(user_id, question_id, user_answer):
     """Update spaced repetition progress for a specific user."""
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, UTC
     from utils.review_quality import word_accuracy
 
     # Fetch the vocabulary word
@@ -101,7 +101,7 @@ async def update_progress(user_id, question_id, user_answer):
 
     if history_entry is None:
         # If first time seeing the word, create a new entry
-        next_review = datetime.utcnow() + timedelta(days=1)
+        next_review = datetime.now(UTC) + timedelta(days=1)
         history_entry = {
             "question_id": str(question_id),
             "times_seen": 1,
@@ -129,7 +129,7 @@ async def update_progress(user_id, question_id, user_answer):
         else:
             interval = 1  # Immediate review required
 
-        history_entry["next_review"] = (datetime.utcnow() + timedelta(days=interval)).strftime("%Y-%m-%d")
+        history_entry["next_review"] = (datetime.now(UTC) + timedelta(days=interval)).strftime("%Y-%m-%d")
 
         await db["users"].update_one(
             {"_id": ObjectId(user_id), "history.question_id": str(question_id)},
