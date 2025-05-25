@@ -73,7 +73,24 @@ const UploadModal = ({ isOpen, onClose }) => {
     setAlert({ message: "", type: "" });
   };
 
+  const resetOutputStates = () => {
+    setSummary("Your summarized text will appear here...");
+    setIsSummaryGenerated(false);
+    setTaskId(null);
+    setAudioUrl(null);
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+    setVolume(1);
+    setIsMediaPlayerOpen(false);
+    setConcepts([]);
+    setVideoSuggestions([]);
+    setCopied(false);
+    setAlert({ message: "", type: "" });
+  };
+
   const handleFileChange = (event) => {
+    resetOutputStates();
     setSelectedFile(event.target.files[0]);
   };
 
@@ -504,7 +521,11 @@ const UploadModal = ({ isOpen, onClose }) => {
                   rows="5"
                   placeholder="Enter your text to summarize..."
                   value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
+                  onChange={(e) => {
+                    setInputText(e.target.value);
+                    setActiveTab("text");
+                    resetOutputStates(); // your custom function for clearing summary/audio/videos/etc.
+                  }}
                   className="w-full p-2 border border-gray-300 rounded-lg text-gray-700 focus:border-[#140342] focus:ring-[#140342]"
                 ></textarea>
               </>
@@ -527,15 +548,15 @@ const UploadModal = ({ isOpen, onClose }) => {
               onChange={(e) => {
                 const value = e.target.value;
                 setWordCount(value);
+                resetOutputStates();
 
-                // Show alert if word count is below 100
                 if (parseInt(value) < 100) {
                   setAlert({
                     message: "Word count must be at least 100.",
                     type: "warning",
                   });
                 } else {
-                  setAlert({ message: "", type: "" }); // Clear alert if valid
+                  setAlert({ message: "", type: "" });
                 }
               }}
               className={`w-full p-2 border ${
