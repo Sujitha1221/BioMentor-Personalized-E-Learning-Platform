@@ -4,6 +4,7 @@ import { MCQ_URL, LOGIN_URL } from "../util/config";
 const api = axios.create({
   baseURL: MCQ_URL,
 });
+console.log("📡 Base URL used:", MCQ_URL);
 
 // Attach access token to all requests
 api.interceptors.request.use(
