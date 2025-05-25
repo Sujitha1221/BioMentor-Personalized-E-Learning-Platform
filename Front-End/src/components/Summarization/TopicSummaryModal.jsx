@@ -81,6 +81,9 @@ const TopicSummaryModal = ({ isOpen, onClose }) => {
     setIsLoading(true);
     setIsSummaryGenerated(false);
     setSummary("Processing...");
+    setConcepts([]);
+    setVideoSuggestions([]);
+    setContentType(""); // Reset view state
 
     if (!topic.trim() || !wordCount.trim()) {
       setAlert({

@@ -97,9 +97,11 @@ const UploadModal = ({ isOpen, onClose }) => {
 
   const handleProcessSummary = async () => {
     setIsLoading(true);
-    setConcepts([]);
     setIsSummaryGenerated(false);
     setSummary("Processing...");
+    setConcepts([]);
+    setVideoSuggestions([]);
+    setViewMode(null);
 
     if (!wordCount.trim() || parseInt(wordCount) < 100) {
       setAlert({
