@@ -17,6 +17,48 @@ import textwrap
 import re
 import logging
 from transformers import pipeline
+import numpy as np
+
+# One-time global cache for performance
+_faiss_index = None
+_embedder = None
+
+
+def check_biology_relevance(
+    query: str,
+    faiss_index_path="faiss_files/biology_faiss.index",
+    threshold: float = 0.4
+):
+    """
+    Check if a query is biology-related using a FAISS index and a SentenceTransformer.
+
+    Returns:
+        - str: A warning message if NOT biology-related.
+        - False: If it IS biology-related.
+    """
+    global _faiss_index, _embedder
+
+    try:
+        # Lazy load FAISS index
+        if _faiss_index is None:
+            _faiss_index = faiss.read_index(faiss_index_path)
+
+        # Lazy load embedder
+        if _embedder is None:
+            _embedder = SentenceTransformer("all-MiniLM-L6-v2")
+
+        query_embedding = _embedder.encode([query]).astype("float32")
+        D, _ = _faiss_index.search(query_embedding, k=1)
+        similarity = 1 / (1 + D[0][0])  # Convert distance to similarity
+
+        if similarity < threshold:
+            logging.warning(
+                f"Off-topic query detected: '{query}' | similarity: {similarity:.2f}")
+            return "This question doesn't seem biology-related. Please ask something relevant to biology."
+    except Exception as e:
+        logging.error(f"Biology relevance check failed: {e}")
+
+    return False  # Passed
 
 
 # Setup
@@ -165,6 +207,11 @@ class RAGModel:
                     }.get(label, "Your question seems inappropriate or unsafe. Please rephrase.")
         except Exception as e:
             logging.error(f"Zero-shot classification failed: {e}")
+
+        # Step 5: Biology relevance check (FAISS)
+        relevance_msg = check_biology_relevance(query)
+        if relevance_msg:
+            return relevance_msg
 
         return False  # Query passed all checks
 
