@@ -12,7 +12,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://20.244.49.225/",
+        "http://20.244.49.225",
         "http://127.0.0.1:3000",
         "http://localhost:3000",
     ],  #  Allow both localhost & 127.0.0.1
