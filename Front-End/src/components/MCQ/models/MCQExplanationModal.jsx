@@ -60,14 +60,11 @@ const MCQExplanationModal = ({ mode, onBack, onClose }) => {
     if (!validateInputs()) return;
     setLoading(true);
     try {
-      const res = await api.post(
-        `/explanations/mcq/verify_and_explain`,
-        {
-          question,
-          options,
-          claimed_answer: claimedAnswer.toUpperCase(),
-        }
-      );
+      const res = await api.post(`/explanations/mcq/verify_and_explain`, {
+        question,
+        options,
+        claimed_answer: claimedAnswer.toUpperCase(),
+      });
       setResponse(res.data);
     } catch (error) {
       setAlert({
@@ -91,11 +88,25 @@ const MCQExplanationModal = ({ mode, onBack, onClose }) => {
     const opts = { A: "", B: "", C: "", D: "", E: "" };
 
     lines.forEach((line) => {
-      const match = line.match(/^([A-E])\)\s*(.*)/i);
-      if (match) {
-        const letter = match[1].toUpperCase();
-        opts[letter] = match[2].trim();
-      } else if (!q) {
+      // Match A) or A. or A: format
+      const alphaMatch = line.match(/^([A-Ea-e])[\)\.\:\-]?\s+(.*)/);
+      if (alphaMatch) {
+        const letter = alphaMatch[1].toUpperCase();
+        opts[letter] = alphaMatch[2].trim();
+        return;
+      }
+
+      // Match 1) or 1. or 1: format
+      const numberMatch = line.match(/^([1-5])[\)\.\:\-]?\s+(.*)/);
+      if (numberMatch) {
+        const numberToLetter = { 1: "A", 2: "B", 3: "C", 4: "D", 5: "E" };
+        const letter = numberToLetter[numberMatch[1]];
+        opts[letter] = numberMatch[2].trim();
+        return;
+      }
+
+      // If it's not an option line, and we don't yet have the question
+      if (!q) {
         q = line;
       }
     });
