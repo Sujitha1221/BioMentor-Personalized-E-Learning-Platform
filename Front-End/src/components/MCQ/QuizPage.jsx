@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import api from "../axios/api";
 import SubmitConfirmationModal from "./models/SubmitConfirmationModal";
+import LoadingScreen from "./loadingPage/QuizLoadingScreen";
 
 const difficultyColors = {
   easy: "bg-green-200 text-green-800",
@@ -31,6 +32,7 @@ const QuizPage = () => {
   const [timer, setTimer] = useState(2700); // 45 minutes timer
   const [speaking, setSpeaking] = useState(false);
   const [showVerificationNotice, setShowVerificationNotice] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const user = JSON.parse(localStorage.getItem("user"));
   const token = localStorage.getItem("token");
@@ -208,6 +210,8 @@ const QuizPage = () => {
       }
     }
 
+    setSubmitting(true); // ✅ Show loading screen
+
     const quizResults = questions.map((q, index) => ({
       question_text: q.question_text,
       selected_answer: answers[index] || "No Answer",
@@ -233,8 +237,6 @@ const QuizPage = () => {
         { headers }
       );
 
-      console.log("Quiz Results from Backend:", response.data);
-
       navigate("/quiz-results", {
         state: {
           userId: response.data.user_id,
@@ -244,6 +246,7 @@ const QuizPage = () => {
       });
     } catch (error) {
       console.error("Error submitting quiz:", error);
+      setSubmitting(false); // ❌ Hide loading if it fails
     }
   };
 
@@ -258,6 +261,10 @@ const QuizPage = () => {
 
     return () => clearInterval(interval); //  Cleanup to avoid memory leaks
   }, [timer]);
+
+  if (submitting) {
+    return <LoadingScreen />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col sm:flex-row justify-center items-start sm:items-center sm:mt-0 lg:mt-20 bg-gradient-to-br from-gray-100 to-gray-50 text-gray-900 p-5">
