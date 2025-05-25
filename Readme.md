@@ -30,4 +30,3 @@ By addressing the challenges of traditional learning methods, such as static tex
 | Sajeevan S     | IT21204302              |
 
 ---
-
