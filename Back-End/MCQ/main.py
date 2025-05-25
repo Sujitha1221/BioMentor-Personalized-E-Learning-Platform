@@ -11,7 +11,11 @@ app = FastAPI()
 #  Correct CORS Middleware Configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:3000", "http://localhost:3000"],  #  Allow both localhost & 127.0.0.1
+    allow_origins=[
+        "http://20.244.49.225/",
+        "http://127.0.0.1:3000",
+        "http://localhost:3000",
+    ],  #  Allow both localhost & 127.0.0.1
     allow_credentials=True,  #  Allows cookies (refresh token)
     allow_methods=["*"],  #  Allow all HTTP methods
     allow_headers=["*"],  #  Allow all headers
@@ -19,12 +23,14 @@ app.add_middleware(
 
 #  Include routers AFTER CORS middleware
 app.include_router(mcq_router, prefix="/mcqs", tags=["MCQ Generation"])
-app.include_router(adaptive_quiz_router, prefix="/quiz", tags=["Adaptive MCQ Generation"])
+app.include_router(
+    adaptive_quiz_router, prefix="/quiz", tags=["Adaptive MCQ Generation"]
+)
 app.include_router(response_router, prefix="/responses", tags=["User Responses"])
 app.include_router(topic_router, prefix="/topic", tags=["Topic based quiz"])
 app.include_router(explanation_router, prefix="/explanations", tags=["MCQ Explanation"])
 
+
 @app.get("/")
 def home():
     return {"message": "Welcome to the FastAPI Backend"}
-
