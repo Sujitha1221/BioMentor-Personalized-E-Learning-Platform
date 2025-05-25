@@ -1,8 +1,8 @@
 import axios from "axios";
-import { MCQ_URL} from "../util/config"
+import { MCQ_URL, LOGIN_URL } from "../util/config";
 // Base URL of your FastAPI backend
 const api = axios.create({
-  baseURL: MCQ_URL, 
+  baseURL: MCQ_URL,
 });
 
 // Attach access token to all requests
@@ -31,7 +31,7 @@ api.interceptors.response.use(
 
         // Call the /refresh endpoint with refresh token in request body
         const refreshResponse = await axios.post(
-          `http://127.0.0.1:8001/refresh`,
+          `${LOGIN_URL}/refresh`,
           { refresh_token: refreshToken } // Send refresh token in body
         );
 
