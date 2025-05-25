@@ -209,7 +209,7 @@ def compare_with_passpaper_answer (student_id, question, user_answer, question_t
 
         # Evaluate the user's answer against the saved answer
         logging.info("Evaluating user's answer against the pass paper answer...")
-        result = evaluate_answer_hybrid(user_answer, pass_paper_answer)
+        result = evaluate_answer_hybrid(user_answer, pass_paper_answer, question_type.lower())
         logging.info("Evaluation completed successfully.")
 
         # Save evaluation result
