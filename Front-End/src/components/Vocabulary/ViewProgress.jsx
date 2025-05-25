@@ -7,9 +7,11 @@ import {
 import progressImage from "../../assets/image/progress.png"; // Replace with actual image
 import { motion } from "framer-motion";
 import GenerateNotesModal from "../Summarization/GenerateNotesModal";
+import { useNavigate } from "react-router-dom";
 
 const ViewProgress = () => {
   const [isModalOpen, setIsModalOpen] = useState(false); // Modal state
+  const navigate = useNavigate();
 
   return (
     <section className="relative bg-gray-100 px-6 sm:px-12 py-16">
@@ -74,7 +76,7 @@ const ViewProgress = () => {
             transition={{ duration: 0.5, delay: 0.4 }}
           >
             <motion.button
-              onClick={() => setIsModalOpen(true)} // Opens Modal
+              onClick={() => navigate("stats")} // Opens Modal
               className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#140342] text-[#140342]
     font-semibold rounded-lg 
     hover:bg-[#140342] hover:text-white hover:rounded-2xl hover:shadow-lg transition-all duration-300 group"

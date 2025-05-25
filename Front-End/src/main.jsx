@@ -25,6 +25,7 @@ import TopicBasedQuizPage from "./components/MCQ/TopicBasedQuiz/TopicBasedQuizPa
 import ScrollToTop from "./components/ScrollToTop/ScrollToTop.jsx";
 import TopicBasedQuizResults from "./components/MCQ/TopicBasedQuiz/TopicBasedQuizResults.jsx";
 import VocabularyMemorization from "./components/Vocabulary/VocabularyMemorization.jsx";
+import UserStatsPage from "./components/Vocabulary/UserStatsPage.jsx";
 
 // Protected Route Component
 const ProtectedRoute = ({ element }) => {
@@ -40,6 +41,14 @@ const router = createBrowserRouter([
   {
     path: "/signup", // Signup Page (Public)
     element: <SignUp />,
+  },
+  {
+    path: "/vocabulary-memorization",
+    element: <VocabularyMemorization />,
+  },
+  {
+    path: "/vocabulary-memorization/stats",
+    element: <UserStatsPage />,
   },
   {
     path: "/", // Parent route for authenticated pages
@@ -113,10 +122,10 @@ const router = createBrowserRouter([
         path: "topic_quiz/results",
         element: <ProtectedRoute element={<TopicBasedQuizResults />} />,
       },
-      {
-        path: "vocabulary-memorization",
-        element: <ProtectedRoute element={<VocabularyMemorization />} />,
-      },
+      // {
+      //   path: "vocabulary-memorization",
+      //   element: <ProtectedRoute element={<VocabularyMemorization />} />,
+      // },
     ],
   },
 ]);

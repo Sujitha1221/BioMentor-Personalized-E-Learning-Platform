@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from services import get_daily_questions, update_progress, add_score, get_top_5
+from services import get_daily_questions, update_progress, add_score, get_top_5, get_user_stats
 from database import db
 from pydantic import BaseModel
 from bson import ObjectId
@@ -42,6 +42,14 @@ async def add_user_score(score_entry: ScoreEntry):
 async def get_leaderboard():
     """Retrieve the top 5 leaderboard entries."""
     return await get_top_5()
+
+@router.get("/user/{user_id}/stats")
+async def fetch_user_stats(user_id: str):
+    """Get user review statistics (JSON format)."""
+    stats = await get_user_stats(user_id)
+    if "error" in stats:
+        raise HTTPException(status_code=404, detail=stats["error"])
+    return stats
 
 # @router.get("/leaderboard")
 # async def get_leaderboard():

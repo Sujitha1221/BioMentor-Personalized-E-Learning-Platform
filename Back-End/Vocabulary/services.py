@@ -192,3 +192,35 @@ async def get_top_5():
         entry["_id"] = str(entry["_id"])
 
     return {"top_5": top_scores}
+
+async def get_user_stats(user_id):
+    """Display detailed stats about a user's review history."""
+    from collections import Counter
+
+    user = await db["users"].find_one({"_id": ObjectId(user_id)})
+    if not user:
+        return {"error": "User not found"}
+
+    history = user.get("history", [])
+    if not isinstance(history, list):
+        return {"error": "User history is not valid"}
+
+    total_reviews = len(history)
+    total_score = sum(entry.get("review_score", 0) for entry in history)
+    average_score = round(total_score / total_reviews, 2) if total_reviews > 0 else 0
+
+    # Count each score level
+    score_distribution = Counter(entry.get("review_score", 0) for entry in history)
+
+    # Count next review dates
+    review_schedule = Counter(entry.get("next_review", "N/A") for entry in history)
+
+    return {
+        "user_id": str(user["_id"]),
+        "username": user.get("username"),
+        "total_score": user.get("total_score", 0),
+        "total_reviews": total_reviews,
+        "average_score": average_score,
+        "score_distribution": dict(score_distribution),
+        "review_schedule": dict(review_schedule)
+    }

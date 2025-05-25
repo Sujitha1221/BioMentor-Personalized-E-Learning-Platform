@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes.flashcards import router as flashcards_router
 from routes.leaderboard import router as leaderboard_router
+from routes.stats import router as stats_router
 from database import load_vocab_into_db
 from contextlib import asynccontextmanager
 
@@ -26,6 +27,7 @@ app.add_middleware(
 # ✅ Include routers
 app.include_router(flashcards_router, prefix="/flashcards", tags=["Flashcards"])
 app.include_router(leaderboard_router, prefix="/leaderboard", tags=["Leaderboard"])
+app.include_router(stats_router, prefix="/stats", tags=["Stats"])
 
 @app.get("/")
 async def root():
