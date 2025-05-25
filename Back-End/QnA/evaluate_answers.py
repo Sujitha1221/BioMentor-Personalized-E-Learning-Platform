@@ -133,13 +133,13 @@ def jaccard_similarity(set1, set2):
     return similarity
 
 # Function to calculate hybrid similarity
-def hybrid_similarity(user_answer, model_answer, weights=None):
+def hybrid_similarity(user_answer, model_answer, weights):
     """
     Compute a hybrid similarity score combining SciBERT, TF-IDF, and Jaccard metrics.
     """
     logging.info("Calculating hybrid similarity...")
-    if weights is None:
-        weights = {"scibert": 0.5, "tfidf": 0.3, "jaccard": 0.2}  # Default weights
+    # if weights is None:
+    #     weights = {"scibert": 0.5, "tfidf": 0.3, "jaccard": 0.2}  # Default weights
 
     scibert_score = float(semantic_similarity_scibert(user_answer, model_answer))
     tfidf_score = float(tfidf_cosine_similarity(user_answer, model_answer))
@@ -181,13 +181,19 @@ def check_grammar(text):
     }
 
 # Function to evaluate the user's answer
-def evaluate_answer_hybrid(user_answer, model_answer):
+def evaluate_answer_hybrid(user_answer, model_answer, question_type):
     """
     Evaluate the user's answer using a hybrid similarity model, grammar, and keyword analysis.
     """
     logging.info("Evaluating user's answer...")
     # Step 1: Hybrid similarity
-    similarity_scores = hybrid_similarity(user_answer, model_answer)
+    if question_type == "structured":
+        weights = {"scibert": 0.5, "tfidf": 0.25, "jaccard": 0.2, "grammar": 0.05}
+    elif question_type == "essay":
+        weights = {"scibert": 0.7, "tfidf": 0.2, "jaccard": 0.05, "grammar": 0.05}
+
+
+    similarity_scores = hybrid_similarity(user_answer, model_answer, weights)
     semantic_score = float(similarity_scores["final_score"])
 
     # Step 2: Keyword comparison
@@ -197,7 +203,10 @@ def evaluate_answer_hybrid(user_answer, model_answer):
 
     # Step 3: Grammar check
     grammar_results = check_grammar(user_answer)
-    grammar_score = float(max(1 - grammar_results["errors"] / 10, 0))
+    # grammar_score = float(max(1 - grammar_results["errors"] / 10, 0))
+    word_count = max(1, len(user_answer.split()))
+    grammar_score = max(1 - grammar_results["errors"] / word_count, 0)
+
 
     # Step 4: Final weighted score
     final_score = float(0.6 * semantic_score + 0.25 * jaccard_score + 0.15 * grammar_score)
@@ -248,7 +257,7 @@ def evaluate_user_answer(student_id, question, user_answer, question_type):
 
         # Evaluate the user's answer against the generated model answer
         logging.info("Evaluating user's answer against the model answer...")
-        result = evaluate_answer_hybrid(user_answer, model_answer)
+        result = evaluate_answer_hybrid(user_answer, model_answer, question_type)
         logging.info("Evaluation completed successfully.")
         
         # Save evaluation result

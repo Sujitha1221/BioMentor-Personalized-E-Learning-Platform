@@ -57,6 +57,22 @@ const GenerateNotesModal = ({ isOpen, onClose }) => {
     setNotes("Your generated notes will appear here...");
     setIsLoading(false);
   };
+  const resetOutputStates = () => {
+    setNotes("Your generated notes will appear here...");
+    setIsGenerating(false);
+    setIsNotesGenerated(false);
+    setDownloadLink(null);
+    setAudioLink(null);
+    setAudioUrl(null);
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+    setVolume(1);
+    setPlaybackSpeed(1);
+    setIsMediaPlayerOpen(false);
+    setAlert({ message: "", type: "" });
+    setCopied(false);
+  };
 
   const handleGenerateNotes = async () => {
     if (!topic.trim()) {
@@ -206,7 +222,6 @@ const GenerateNotesModal = ({ isOpen, onClose }) => {
   };
 
   const togglePlayPause = () => {
-    
     if (audioRef.current) {
       if (isPlaying) {
         audioRef.current.pause();
@@ -286,7 +301,10 @@ const GenerateNotesModal = ({ isOpen, onClose }) => {
           type="text"
           placeholder="Enter a topic or keyword (e.g., Photosynthesis)"
           value={topic}
-          onChange={(e) => setTopic(e.target.value)}
+          onChange={(e) => {
+            setTopic(e.target.value);
+            resetOutputStates();
+          }}
           className="w-full p-2 border border-gray-300 rounded-lg text-gray-700 focus:border-[#140342] focus:ring-[#140342]"
         />
 
@@ -300,7 +318,10 @@ const GenerateNotesModal = ({ isOpen, onClose }) => {
         <select
           id="language-select"
           value={language}
-          onChange={(e) => setLanguage(e.target.value)}
+          onChange={(e) => {
+            setLanguage(e.target.value);
+            resetOutputStates();
+          }}
           className="w-full p-2 border border-gray-300 rounded-lg text-gray-700 focus:border-[#140342] focus:ring-[#140342]"
         >
           <option value="english">English</option>
