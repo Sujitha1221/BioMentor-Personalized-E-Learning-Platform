@@ -249,6 +249,8 @@ def generate_mcq_based_on_performance(
 
     while retries < max_retries and len(valid_mcqs) < 3:
         try:
+            logging.info(f"🔁 Retry {retries + 1}/{max_retries} — Generating {difficulty}-level MCQ for user {user_id} (Theta: {theta})")
+
             if dataset.empty:
                 logging.error("Dataset is empty. Cannot generate MCQs.")
                 return valid_mcqs
@@ -393,6 +395,6 @@ def generate_mcq_based_on_performance(
         except Exception as e:
             logging.error(f"❌ Gemini fallback failed: {e}")
 
-    logging.info(f"✅ Total valid MCQs generated: {len(valid_mcqs)} after {retries} retries.")
+    logging.info(f"✅ Generated {len(valid_mcqs)} valid MCQs in {retries} retries for difficulty: {difficulty}")
     return valid_mcqs[:3]
 
