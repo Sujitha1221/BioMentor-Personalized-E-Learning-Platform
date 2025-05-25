@@ -303,4 +303,4 @@ def root():
     Health check endpoint to ensure the API is running.
     """
     logging.info("Health check endpoint accessed.")
-    return {"message": "Question and Answer API is running!"}
+    return {"message": "Question and Answer API is running"}
