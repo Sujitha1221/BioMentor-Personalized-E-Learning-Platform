@@ -22,6 +22,7 @@ const PerformanceDashboard = () => {
   const [engagementScore, setEngagementScore] = useState(null);
   const [loading, setLoading] = useState(true);
   const [leaderboard, setLeaderboard] = useState([]);
+  const [streakData, setStreakData] = useState(null);
 
   const user = JSON.parse(localStorage.getItem("user"));
   const token = localStorage.getItem("token");
@@ -38,6 +39,7 @@ const PerformanceDashboard = () => {
           comparisonRes,
           engagementRes,
           leaderboardRes,
+          streakRes,
         ] = await Promise.all([
           api.get(`/responses/dashboard_data/${user.user_id}`, { headers }),
           api.get(`/responses/performance_graph/${user.user_id}`, { headers }),
@@ -47,6 +49,7 @@ const PerformanceDashboard = () => {
           }),
           api.get(`/responses/engagement_score/${user.user_id}`, { headers }),
           api.get(`/responses/leaderboard`, { headers }),
+          api.get(`/responses/user_streak/${user.user_id}`, { headers }),
         ]);
 
         setDashboardData({
@@ -58,7 +61,7 @@ const PerformanceDashboard = () => {
         setComparisonData(comparisonRes.data);
         setEngagementScore(engagementRes.data);
         setLeaderboard(leaderboardRes.data.leaderboard);
-
+        setStreakData(streakRes.data);
         setLoading(false);
       } catch (error) {
         console.error("Error fetching performance data:", error);
@@ -90,6 +93,33 @@ const PerformanceDashboard = () => {
         with peers. Unlock insights to improve your skills and become a quiz
         master! 🚀
       </p>
+      {streakData && streakData.streak > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className={`mx-auto mb-8 w-fit px-6 py-4 rounded-xl shadow-xl flex items-center gap-3 text-white font-semibold text-base
+      ${streakData.streak >= 5 ? "bg-green-500" : "bg-yellow-400"}`}
+          title="Don’t break your streak!"
+        >
+          <motion.span
+            initial={{ rotate: 0 }}
+            animate={{ rotate: [0, 15, -15, 0] }}
+            transition={{ repeat: Infinity, duration: 2 }}
+            className="text-lg"
+          >
+            🔔
+          </motion.span>
+          <div>
+            <p className="text-lg">{streakData.streak}-day streak active</p>
+            {streakData.longest_streak && streakData.longest_streak >= 5 && (
+              <p className="text-sm font-medium opacity-90">
+                Longest: {streakData.longest_streak} days
+              </p>
+            )}
+          </div>
+        </motion.div>
+      )}
 
       {/* 🎖 Dynamic Badge */}
       <div className="flex justify-center mb-10">

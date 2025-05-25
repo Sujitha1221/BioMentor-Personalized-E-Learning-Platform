@@ -15,7 +15,7 @@ router = APIRouter()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # Define difficulty levels
-DIFFICULTY_DISTRIBUTION = {"easy": 6, "medium": 6, "hard": 6}
+DIFFICULTY_DISTRIBUTION = {"easy": 8, "medium": 6, "hard": 6}
 
 @router.get("/generate_mcqs/{user_id}")
 def generate_quiz(user_id: str, current_user: str = Depends(get_current_user)):

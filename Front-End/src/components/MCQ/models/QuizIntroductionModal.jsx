@@ -49,7 +49,7 @@ const QuizIntroductionModal = ({ isOpen, onClose }) => {
         Authorization: `Bearer ${token}`,
       };
       if (hasPreviousQuizzes) {
-        response = await api.get(`/quiz/generate_adaptive_mcqs/${userId}/18`, {
+        response = await api.get(`/quiz/generate_adaptive_mcqs/${userId}/20`, {
           headers,
         });
       } else {

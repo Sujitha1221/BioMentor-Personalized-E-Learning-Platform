@@ -2,6 +2,14 @@ import time
 import logging
 from database.database import quizzes_collection
 from utils.verification import verify_mcq_with_llm
+import os
+import google.generativeai as genai
+
+# Load the Gemini API key
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+# Configure the Gemini SDK
+genai.configure(api_key=GEMINI_API_KEY)
 
 # Ensure logging is configured
 logging.basicConfig(
@@ -62,3 +70,13 @@ def verify_quiz_answers_async(quiz_id):
         logging.info(f"[VERIFIER] ✅ Quiz {quiz_id} verification completed and saved.")
     else:
         logging.info(f"[VERIFIER] 💤 No changes made. All questions were already verified.")
+
+
+def generate_mcq_with_gemini(prompt: str) -> str:
+    try:
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        response = model.generate_content(prompt)
+
+        return response.text.strip()
+    except Exception as e:
+        raise RuntimeError(f"Gemini SDK failed: {e}")
