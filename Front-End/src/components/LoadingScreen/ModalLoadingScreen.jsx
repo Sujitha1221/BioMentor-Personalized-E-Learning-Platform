@@ -12,6 +12,21 @@ const biologyFacts = [
   "CRISPR technology allows scientists to edit genes with extreme precision.",
   "Your heart beats around 100,000 times per day, pumping nearly 7,500 liters of blood.",
   "The largest single-celled organism is Caulerpa taxifolia, a giant algae spanning meters.",
+  "The human genome contains approximately 3 billion base pairs of DNA.",
+  "Some species of jellyfish are biologically immortal, meaning they can revert to earlier stages of life.",
+  "The average human sheds about 600,000 skin particles every hour.",
+  "Octopuses have three hearts and blue blood due to copper-rich hemocyanin.",
+  "Bananas share about 60% of their DNA with humans!",
+  "The axolotl can regenerate entire limbs, spinal cord, and even parts of its heart and brain.",
+  "Tardigrades (water bears) can survive extreme radiation, boiling heat, and freezing cold.",
+  "Your bones are about five times stronger than steel of the same density.",
+  "The longest-living cells in your body are brain cells, which can last an entire lifetime.",
+  "A single drop of seawater may contain millions of microscopic organisms, including bacteria and plankton.",
+  "Elephants have the largest brain of any land animal, weighing about 5 kg (11 lbs).",
+  "The smell of freshly-cut grass is actually a plant distress signal!",
+  "A hummingbird's heart beats over 1,200 times per minute during flight.",
+  "Sharks have been around for over 400 million years, making them older than dinosaurs!",
+  "Butterflies can taste with their feet!",
 ];
 
 const ModalLoadingScreen = () => {
