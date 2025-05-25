@@ -27,3 +27,4 @@ app.include_router(explanation_router, prefix="/explanations", tags=["MCQ Explan
 @app.get("/")
 def home():
     return {"message": "Welcome to the FastAPI Backend"}
+
