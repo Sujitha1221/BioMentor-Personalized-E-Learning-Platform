@@ -15,7 +15,7 @@ const VocabularyMasteryModal = ({ isOpen, onClose }) => {
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(20);
   const [isLoading, setIsLoading] = useState(true);
-  const username = "Gokul Abisheak"; // Hardcoded username for now
+  const username = "Gokul Abisheak";
   const [showSharingModal, setShowSharingModal] = useState(false);
 
   useEffect(() => {
@@ -37,7 +37,7 @@ const VocabularyMasteryModal = ({ isOpen, onClose }) => {
   const fetchQuestions = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/daily/683361d3c1e501ebfd63a7ef`);
+      const response = await axios.get(`${API_BASE_URL}/daily/67d6a31ad20c865759215988`);
       if (response.data && response.data.questions) {
         setQuestions(response.data.questions);
         setCurrentIndex(0);
