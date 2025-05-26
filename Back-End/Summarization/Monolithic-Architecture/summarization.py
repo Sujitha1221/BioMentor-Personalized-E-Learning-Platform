@@ -15,6 +15,8 @@ from summarization_functions import extract_core_topic
 from rag import RAGModel
 import yaml
 import logging
+import logging.config
+
 
 
 # Load logging configuration

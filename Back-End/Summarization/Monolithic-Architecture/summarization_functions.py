@@ -20,6 +20,7 @@ import re
 from dotenv import load_dotenv
 from googleapiclient.discovery import build
 load_dotenv()
+import logging.config
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 
 nltk.download("averaged_perceptron_tagger_eng")
@@ -556,7 +557,7 @@ def is_scientific_term(term: str) -> bool:
         for page in pages.values():
             for cat in page.get("categories", []):
                 cat_title = cat.get("title", "").lower()
-                if any(kw in cat_title for kw in ["biology", "anatomy", "neuro", "science", "medical", "physiology", "health"]):
+                if any(kw in cat_title for kw in ["biology", "anatomy", "science", "medical"]):
                     return True
     except Exception as e:
         print(f"Error checking scientific term for {term}: {e}")
