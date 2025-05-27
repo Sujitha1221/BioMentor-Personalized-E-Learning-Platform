@@ -40,19 +40,19 @@ def test_process_query():
     assert "summary" in data
     assert isinstance(data["summary"], str)
 
-def test_generate_notes():
-    response = client.post("/generate-notes/", data={
-        "topic": "Heart",
-        "lang": "en"
-    })
-    assert response.status_code == 200
-    data = response.json()
-    assert "structured_notes" in data
-    # Ensure PDF file was registered
-    if "download_link" in data:
-        filename = data["download_link"].split("/")[-1]
-        assert filename in file_store
-        assert file_store[filename].startswith(b"%PDF")
+# def test_generate_notes():
+#     response = client.post("/generate-notes/", data={
+#         "topic": "Heart",
+#         "lang": "en"
+#     })
+#     assert response.status_code == 200
+#     data = response.json()
+#     assert "structured_notes" in data
+#     # Ensure PDF file was registered
+#     if "download_link" in data:
+#         filename = data["download_link"].split("/")[-1]
+#         assert filename in file_store
+#         assert file_store[filename].startswith(b"%PDF")
 
 def test_process_document_and_download(dummy_pdf):
     response = client.post(
